@@ -1,6 +1,10 @@
 # Actigrafía
  Programa para analizar actividad motora en relación al ciclo de sueño y vigilia.
 
+> Ojo que uso funciones del olitos package dentro de las funciones.
+
+
+
 ## 1. Data Source
 
 Los datos necesarios provienen de un actígrafo (Actiwatch) en forma de archivo **AWD** el cual tiene un encabezado y sucesivos valores de pasadas de movimiento por el acelerómetro por unidad de tiempo. En este caso el file de ejemplo se llama `BenjamonVenegas.awd`
