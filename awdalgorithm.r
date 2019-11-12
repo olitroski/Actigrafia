@@ -453,18 +453,25 @@ create.actogram <- function(epifile = NULL, awdfile = NULL){}
     
     
     # A probar en la versión base
-    par(mar=c(2,2,0,0) + 0.5, xaxs = 'i', yaxs = 'i')
+
+    par(mar=c(2,2,0,2) + 0.5, xaxs = 'i', yaxs = 'i')
     plot(gdata$hrdec, gdata$act3, type='n', ylab='', axes=FALSE, xlim=limX, ylim=limY)
     for (i in 1:nrow(sdata)){
-        rect(sdata$min[i], 0, sdata$max[i], limY[2], col = "skyblue", border = "skyblue")
+        rect(sdata$min[i], 0, sdata$max[i], limY[2], col = alpha("skyblue", 0.5), border = "skyblue")
     }
     par(new=TRUE)
     plot(gdata$hrdec, gdata$act3, type='h', col='grey20', ylab='', axes=FALSE, xlim=limX, ylim=limY)
     abline(v = ylinea, col = "red")
-    title(ylab = (format(date(gdata$fec[1]), "%a %d-%b-%Y")), line = 0.5)
+    title(ylab = (format(date(gdata$fec[1]), "%A %d, %m--%Y")), line = 0.5)
     axis(side = 1, at = temp, labels = glab)
     box()
+    mtext(format(date(gdata$fec[nrow(gdata)]), "%A %d, %m--%Y"), side = 4, line = 0.5)
     
 
     
+     
+#     png('actogram.png', width = 1200, height = 230, units = "px" )
+#     dev.off()
+
+    ??col
     
