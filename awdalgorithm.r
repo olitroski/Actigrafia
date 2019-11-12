@@ -4,17 +4,18 @@
 # Antecedentes
 rm(list=ls())
 source("D:/OneDrive/GitHub/sources/exploratory/local_sources.r")
-setwd("D:/OneDrive/INTA/Sources/actigrafo/BenjaminVenegas")
+setwd("D:/OneDrive/INTA/Actigrafia")
 library(tictoc)
 source("settings.r")
 dir()
-# stop()
+#stop()
 
-
-## ----- Funcion crear Estado (W|S), fechas y horas partir de un awd ------------------ #
+## ------------------------------------------------------------------------------------ #
+## ----- Create ACV - Estado (W|S), fechas y horas partir de un awd ------------------- #
+## ------------------------------------------------------------------------------------ #
 # okeep("statedur", fun = TRUE)
 # awdfile <- "BenjaminVenegas.AWD"
-awd.seq <- function(awdfile = NULL, sensi = NULL){
+create.acv <- function(awdfile = NULL, sensi = NULL){
     # Leer archivo
     awd <- readLines(awdfile)
     awd.head <- awd[1:7]   
@@ -230,8 +231,9 @@ awd.seq <- function(awdfile = NULL, sensi = NULL){
 }
 
 
-
-## --- Detección de la noche o dia---------------------------------------------------- #
+## ------------------------------------------------------------------------------------ #
+## --- Create EPI - Detección de la noche o dia---------------------------------------- #
+## ------------------------------------------------------------------------------------ #
 # La logica es como ahora tengo el stage actigrafico alisado, puedo contruir periodos y 
 # hacerlos consecutivos y hacerles un summarize y buscar la noche y el día.
 create.epi <- function(awd = NULL){
@@ -345,20 +347,23 @@ create.epi <- function(awd = NULL){
 
 
 # Prueba
-awdfile <- "BenjaminVenegas.AWD"
-awd <- awd.seq(awdfile, sensi = 40)
-epi <- create.epi(awd)
-saveRDS(awd, "awd.rds")
-saveRDS(epi, "epi.rds")
 stop()
+awdfile <- "BenjaminVenegas.AWD"
+awd <- create.acv(awdfile, sensi = 40)
+epi <- create.epi(awd)
+# saveRDS(awd, "awd.rds")
+# saveRDS(epi, "epi.rds")
 
 
 
-
-## ----- Vamos a crear un file para graficar ------------------------------------------ #
+## ------------------------------------------------------------------------------------ #
+## ----- Actograma con ggplot --------------------------------------------------------- #
+## ------------------------------------------------------------------------------------ #
 epi <- readRDS("epi.rds")
 awd <- readRDS("awd.rds")
 head(epi)
+
+create.actogram <- function(epifile = NULL, awdfile = NULL){}
 
 # Trajinando el epi primero
 epi <- cbind(epi, data.frame(str_split(epi$periodo, " ", simplify = TRUE), stringsAsFactors = FALSE))
