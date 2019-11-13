@@ -227,9 +227,10 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
 }
 
 stop()
-test <- create.acv("BenjaminVenegas.AWD", sensi = 40)
-library(microbenchmark)
-microbenchmark(create.acv(awdfile, sensi = 40), times = 20)
+# library(microbenchmark)
+# awdfile <- "BenjaminVenegas.AWD"; sensi <- 40
+# test <- create.acv("BenjaminVenegas.AWD", sensi = 40)
+# microbenchmark(create.acv("BenjaminVenegas.AWD", sensi = 40), times = 20)
 
 
 
