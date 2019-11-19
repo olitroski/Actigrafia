@@ -226,11 +226,9 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
     return(awd)
 }
 
-stop()
-# library(microbenchmark)
+# stop()
 # awdfile <- "BenjaminVenegas.AWD"; sensi <- 40
-# test <- create.acv("BenjaminVenegas.AWD", sensi = 40)
-# microbenchmark(create.acv("BenjaminVenegas.AWD", sensi = 40), times = 20)
+# system.time(create.acv("BenjaminVenegas.AWD", sensi = 40))
 
 
 
@@ -348,12 +346,14 @@ create.epi <- function(awd = NULL){
     return(epi2)
 }
 
-
 # Prueba
 stop()
 awdfile <- "BenjaminVenegas.AWD"
 awd <- create.acv(awdfile, sensi = 40)
-epi <- create.epi(awd)
+
+microbenchmark(create.epi(awd), times = 10)
+
+
 # saveRDS(awd, "awd.rds")
 # saveRDS(epi, "epi.rds")
 
