@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------- #
-# ----- Main Script para procesar archivos de actigrafía - Nov.2019 ----------- #
-# ----- Lab. Sueño - INTA - U.Chile - O.Rojas - oliver.rojas.b@gmail.com ------ #
+# ----- Main Script para procesar archivos de actigrafÃ­a - Nov.2019 ----------- #
+# ----- Lab. SueÃ±o - INTA - U.Chile - O.Rojas - oliver.rojas.b@gmail.com ------ #
 # ----------------------------------------------------------------------------- #
 # Librerias
 library(stringr)
@@ -47,8 +47,8 @@ epi <- create.epi(awd)
 
 stop()
 rm(list=ls())
-
-
+head(awd)
+head(epi)
 
 
 
