@@ -1,16 +1,3 @@
-# ------------------------------------------------------------------------------------- #
-# ----- Replica del algoritmo del actividom --- 24.09.2019 v1.0 ----------------------- #
-# ------------------------------------------------------------------------------------- #
-# Antecedentes
-stop()
-rm(list=ls())
-source("D:/OneDrive/GitHub/sources/exploratory/local_sources.r")
-setwd("D:/OneDrive/INTA/Actigrafia")
-library(tictoc)
-source("settings.r")
-dir()
-# stop()
-
 
 ## ------------------------------------------------------------------------------------ #
 ## ----- Actograma con ggplot --------------------------------------------------------- #
@@ -130,4 +117,4 @@ create.actogram <- function(epifile = NULL, awdfile = NULL){}
 #     dev.off()
 
     ??col
-    
+   

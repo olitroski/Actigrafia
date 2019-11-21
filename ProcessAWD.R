@@ -47,8 +47,8 @@ epi <- create.epi(awd)
 
 stop()
 rm(list=ls())
-
-
+head(awd)
+head(epi)
 
 
 
