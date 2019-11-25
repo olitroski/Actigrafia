@@ -18,7 +18,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
     awd.data <- as.numeric(awd.data)
     rm(M)
     
-    # --- Antecedentes del header  --------------------------------------------- #
+    #----- Antecedentes del header  --------------------------------------------- 
     # Variables originales
     name <- awd.head[1]
     date <- awd.head[2]
@@ -28,13 +28,13 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
     serie <- awd.head[6]
     sexo <- awd.head[7]
     
-    # Corrección del epoch, si 4 = 1 minuto, si 1 = 15 segundos, 2 = 30 secs
+    # CorrecciÃ³n del epoch, si 4 = 1 minuto, si 1 = 15 segundos, 2 = 30 secs
     if (epoch.len == 1){
         epoch.len <- 25
     } else if (epoch.len == 4){
         epoch.len <- 60
     } else {
-        stop("error, algo pasó con el epoch len")
+        stop("error, algo pasÃ³ con el epoch len")
     }
     print(paste("File:", awdfile, " - Sensi:", sensi, " - Sampling:", epoch.len, " segundos", sep = ""))
         
@@ -45,7 +45,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
         stringsAsFactors = FALSE)
     mes <- filter(mes, esp == unlist(str_split(fec.ini, "-", 3))[2])
     
-    # Asume que está en español, se corrige si inglés.
+    # Asume que estÃ¡ en espaÃ±ol, se corrige si inglÃ©s.
     if (nrow(mes) > 0){
         fec.ini <- str_replace(fec.ini, mes[1,2], mes[1,1])
         fec.ini <- dmy_hm(fec.ini)
@@ -110,7 +110,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
         # Calculos, ponderados al multiplicador
         A <- sum(multi * epoch.data)
         
-        # Decisiones según la sensibilidad
+        # Decisiones segÃºn la sensibilidad
         if (sensi == 20){
             if (A > 20){acti.st[i] <- "W"} else {acti.st[i] <- "S"}
         } else if (sensi == 40){
@@ -124,7 +124,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
     awd$acti <- acti.st
     awd <- mutate(awd, index = 1:dim(awd)[1])
     
-    # ----- Calcular ahora el estado actigrafico corregido --------------------------------------- #
+    #----- Calcular ahora el estado actigrafico corregido -------------------------------
     # Calcular cuantas lineas tiene el statedur (duracion para cambio de estado)
     tdiff <- difftime(awd$fec[2], awd$fec[1], units = "secs")
     tdiff <- as.numeric(tdiff)
@@ -139,7 +139,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
         nW <- length(which(stXmin == "W")) 
         nS <- length(which(stXmin == "S")) 
         
-        # Lógica para detener
+        # LÃ³gica para detener
         if (nW == tdiff){
             state <- "W"
             ws = "Ok"
@@ -151,7 +151,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
         }
     }
 
-    # Si hay algo antes del 1° estado marcar como NC y crea variable
+    # Si hay algo antes del 1Â° estado marcar como NC y crea variable
     awd$acti2 <- NA
     if (i > 1){
         awd$acti2[1:(i-1)] <- "NC"
@@ -179,16 +179,16 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
     awd$acti2 <- acti.fix
 
 
-    # ----- Calcular los STAGES a partir el acti2 ----------------------------------- #
+    # ----- Calcular los STAGES a partir el acti2 ----------------------------------- 
     # Buscar indices que contengan W y S
     epi <- awd$acti2
     w <- which(epi == "W")
     s <- which(epi == "S")
 
-    # Hacer diferencias al i+1 para ver dónde comienza W y S
+    # Hacer diferencias al i+1 para ver dÃ³nde comienza W y S
     epiw <- data.frame(indx = w)
     epiw <- mutate(epiw, m = c(0, w[-length(w)]), d = m - indx)     # m = indx corrido un espacio
-    epiw <- filter(epiw, d < -1)        # Si se salta el d será menor a un lugar (< -1)
+    epiw <- filter(epiw, d < -1)        # Si se salta el d serÃ¡ menor a un lugar (< -1)
     epiw <- mutate(epiw, stage = paste("W-", row.names(epiw), sep = ""))
 
     epis <- data.frame(indx = s)
@@ -209,7 +209,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
     }
     awd$stage <- stage
     
-    # Corregir el último y el primero
+    # Corregir el Ãºltimo y el primero
     awd$stage[nrow(awd)] <- epi$stage[nrow(epi)-1]
     #awd <- filter(awd, acti2 != "NC")
     

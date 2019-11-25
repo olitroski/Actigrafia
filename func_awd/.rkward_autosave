@@ -62,7 +62,6 @@ actogram.per <- function(gdata = NULL){
 
 }
 
-stop()
 
 ##----- Crear todos los graficos ----------------------------------------------#
 # Con la función del grafico por día que se hagan todos los graficos
@@ -75,7 +74,7 @@ create.actogram <- function(epi = NULL, awd = NULL){
 
     # Merge epi-awd
     epi <- select(epi, stage, duracion, periodo, dianoc, nper)
-    awd <- omerge(awd, epi, byvar = "stage", keep = TRUE)       # Se va el primer dia
+    awd <- omerge(awd, epi, byvar = "stage", keep = TRUE, output = FALSE)       # Se va el primer dia
     awd <- awd$match
     awd <- arrange(awd, index) %>% select(-merge, -act2)
 
@@ -83,7 +82,7 @@ create.actogram <- function(epi = NULL, awd = NULL){
     # Con hora de inicio en dec, se hace una secuencia según el epoch
     temp <- NULL
     for (per in unique(awd$nper)){        
-         per = "05"
+        # per = "05"
         gdata <- filter(awd, nper == per) %>% arrange(fec) 
         
         # Hora decimal continua desde el inicio
@@ -102,4 +101,26 @@ create.actogram <- function(epi = NULL, awd = NULL){
     }    
     awd <- temp
 }
+
+
+##----- Apilar los graficos ---------------------------------------------------#
+create.actogram(epi, awd)
+
+dir()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
