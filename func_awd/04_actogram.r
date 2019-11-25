@@ -62,11 +62,10 @@ actogram.per <- function(gdata = NULL){
 
 }
 
-stop()
 
 ##----- Crear todos los graficos ----------------------------------------------#
 # Con la función del grafico por día que se hagan todos los graficos
-create.actogram <- function(epi = NULL, awd = NULL){
+create.actogram <- function(epi = NULL, awd = NULL, archivo = NULL){
     # Separar el período
     epi <- cbind(epi, 
                  data.frame(str_split(epi$periodo, " ", simplify = TRUE), 
@@ -75,7 +74,7 @@ create.actogram <- function(epi = NULL, awd = NULL){
 
     # Merge epi-awd
     epi <- select(epi, stage, duracion, periodo, dianoc, nper)
-    awd <- omerge(awd, epi, byvar = "stage", keep = TRUE)       # Se va el primer dia
+    awd <- omerge(awd, epi, byvar = "stage", keep = TRUE, output = FALSE)       # Se va el primer dia
     awd <- awd$match
     awd <- arrange(awd, index) %>% select(-merge, -act2)
 
@@ -83,7 +82,7 @@ create.actogram <- function(epi = NULL, awd = NULL){
     # Con hora de inicio en dec, se hace una secuencia según el epoch
     temp <- NULL
     for (per in unique(awd$nper)){        
-         per = "05"
+        # per = "05"
         gdata <- filter(awd, nper == per) %>% arrange(fec) 
         
         # Hora decimal continua desde el inicio
@@ -100,6 +99,23 @@ create.actogram <- function(epi = NULL, awd = NULL){
         actogram.per(gdata)
         dev.off()
     }    
-    awd <- temp
-}
 
+    ## Apilar los graficos
+    library(magick)
+    
+    # Las fotos
+    fotos <- dir()
+    fotos <- fotos[grep(".png", fotos)]
+    fotos <- sort(fotos, decreasing = TRUE)
+    imgs <- NULL
+    for (f in fotos){
+        temp <- image_read(f)
+        imgs <- c(temp, imgs)
+        file.remove(f)
+    }
+    
+    img.apilada <- image_append(imgs, stack = TRUE)
+    actoname <- paste(sub(".[Aa][Ww][Dd]", "", archivo), "_acto.png", sep = "")
+    image_write(img.apilada, path = actoname, format = "png")
+  
+}
