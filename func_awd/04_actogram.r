@@ -4,13 +4,13 @@
 # La idea es tomar el epi y awd creado por mis funciones y crear una base de datos nueva
 # para hacer actogramas, de momento guardar cada actograma en png no más
 # Ejemplo
-okeep(c("okeep", "omerge", "ordervar"))
-awd <- readRDS("BenjaminVenegas_acv.rds")
-epi <- readRDS("BenjaminVenegas_epi.rds")
+# okeep(c("okeep", "omerge", "ordervar"))
+# awd <- readRDS("BenjaminVenegas_acv.rds")
+# epi <- readRDS("BenjaminVenegas_epi.rds")
 
 
 ##----- Grafico ---------------------------------------------------------------#
-actogram.per <- function(gdata = NULL){
+plot.period <- function(gdata = NULL){
     # ---- Datos grafico -----
     # Escala de X 
     xscale <- gdata$dec.seq
@@ -66,6 +66,7 @@ actogram.per <- function(gdata = NULL){
 ##----- Crear todos los graficos ----------------------------------------------#
 # Con la función del grafico por día que se hagan todos los graficos
 create.actogram <- function(epi = NULL, awd = NULL, archivo = NULL){
+   
     # Separar el período
     epi <- cbind(epi, 
                  data.frame(str_split(epi$periodo, " ", simplify = TRUE), 
@@ -80,9 +81,8 @@ create.actogram <- function(epi = NULL, awd = NULL, archivo = NULL){
 
     # Crear la secuencia continua de horas decimales -----
     # Con hora de inicio en dec, se hace una secuencia según el epoch
-    temp <- NULL
-    for (per in unique(awd$nper)){        
-        # per = "05"
+    temp <- list()
+    for (per in unique(awd$nper)){           # per = "01"
         gdata <- filter(awd, nper == per) %>% arrange(fec) 
         
         # Hora decimal continua desde el inicio
@@ -91,18 +91,19 @@ create.actogram <- function(epi = NULL, awd = NULL, archivo = NULL){
         epoch <- gdata$dec[2] - gdata$dec[1]
         secuencia <- seq(from = desde, by = epoch, length.out = hasta)
         gdata$dec.seq <- secuencia
-        temp <- rbind(temp, gdata)     # <<<< considerar sacar esto
         
         # La parte de los graficos
         gfile <- paste(per, ".png", sep = "")
         png(gfile, width = 1000, height = 180, units = "px")
-        actogram.per(gdata)
+        plot.period(gdata)
         dev.off()
+        
+        # Guardar los datos de cada gdata
+#         temp[[per]] <- gdata
     }    
+    saveRDS(temp, "gdata.rds")
 
     ## Apilar los graficos
-    library(magick)
-    
     # Las fotos
     fotos <- dir()
     fotos <- fotos[grep(".png", fotos)]
@@ -111,11 +112,15 @@ create.actogram <- function(epi = NULL, awd = NULL, archivo = NULL){
     for (f in fotos){
         temp <- image_read(f)
         imgs <- c(temp, imgs)
-        file.remove(f)
     }
     
     img.apilada <- image_append(imgs, stack = TRUE)
     actoname <- paste(sub(".[Aa][Ww][Dd]", "", archivo), "_acto.png", sep = "")
     image_write(img.apilada, path = actoname, format = "png")
-  
+    
+    # Zip archivos
+    zip.files <- list.files(pattern = ".png$")
+    zip.files <- append(zip.files, "gdata.rds")
+    zip::zipr(zipfile = paste(prename, "_acto.zip", sep = ""), files = zip.files)
+    for (f in zip.files){file.remove(f)}
 }
