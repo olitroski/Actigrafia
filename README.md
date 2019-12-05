@@ -104,11 +104,30 @@ Simplemente hay que modificarlo según se necesite.
 
 
 
-## 5. func awd
+## 5. Procesado raw data (func_awd)
 
-Las funciones para procesar los AWD son a grandes rasgos las siguientes.
+Las funciones para procesar los AWD son a grandes rasgos las siguientes y arrojan los siguientes resultados
+
+### Create acv
 
 
+
+### Create epi
+
+
+
+### Create actogram
+
+
+
+## 6. Actividad por hora (func_acti)
+
+### Create actdata 
+
+Esta función crea a partir de un awd datos para el análisis por actividad.
+
+1. Tomar el acv y combinar con el epi para que tenga la info de periodos dia y noche
+2. 
 
 
 

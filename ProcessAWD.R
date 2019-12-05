@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------- #
-# ----- Main Script para procesar archivos de actigrafí­a - Nov.2019 ----------- #
+# ----- Main Script para procesar archivos de actigrafía - Nov.2019 ----------- #
 # ----- Lab. Sueño - INTA - U.Chile - O.Rojas - oliver.rojas.b@gmail.com ------ #
 # ----------------------------------------------------------------------------- #
 rm(list=ls())
@@ -42,18 +42,19 @@ prename <- paste(sub(".[Aa][Ww][Dd]", "", archivo))
 # ----- Procesamiento de datos ----------------------------------------------- #
 # Crear el awd
 source(file.path(progfolder, "func_awd", "02_acv.r"))
-awd <- create.acv(archivo, sensivar)
-saveRDS(awd, paste(prename, "_acv.rds", sep = ""))
+acv <- create.acv(archivo, sensivar)
+# saveRDS(awd, paste(prename, "_acv.rds", sep = ""))
 
 # Crear el epi
 source(file.path(progfolder, "func_awd", "03_epi.r"))
-epi <- create.epi(awd)
-saveRDS(epi, paste(prename, "_epi.rds", sep = ""))
+epi <- create.epi(acv)
+# saveRDS(epi, paste(prename, "_epi.rds", sep = ""))
 
 # Cargar el modulo actograma
 source(file.path(progfolder, "func_awd", "04_actogram.r"))
-create.actogram(epi, awd, archivo)
+create.actogram(epi, acv, archivo)
 
+# Modulo apara anásis de actividad por hora
 
 
 
