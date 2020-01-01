@@ -1,9 +1,8 @@
+# -*- coding: ANSI -*-
 ## ------------------------------------------------------------------------------------ #
 ## ----- Create ACV - Estado (W|S), fechas y horas partir de un awd ------------------- #
 ## ------------------------------------------------------------------------------------ #
 create.acv <- function(awdfile = NULL, sensi = NULL){
-    # Librerias
-    library(dplyr); library(lubridate); library(stringr)
 
     # Leer archivo
     awd <- readLines(awdfile)
@@ -14,9 +13,9 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
     if (length(grep("M", awd.data)) > 0){
         M <- grep("M", awd.data)
         awd.data[M] <- sub("M", "", awd.data[M])
+        rm(M)
     }
     awd.data <- as.numeric(awd.data)
-    rm(M)
     
     #----- Antecedentes del header  --------------------------------------------- 
     # Variables originales
@@ -28,13 +27,13 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
     serie <- awd.head[6]
     sexo <- awd.head[7]
     
-    # CorrecciÃ³n del epoch, si 4 = 1 minuto, si 1 = 15 segundos, 2 = 30 secs
+    # Corrección del epoch, si 4 = 1 minuto, si 1 = 15 segundos, 2 = 30 secs
     if (epoch.len == 1){
         epoch.len <- 25
     } else if (epoch.len == 4){
         epoch.len <- 60
     } else {
-        stop("error, algo pasÃ³ con el epoch len")
+        stop("error, algo pasó con el epoch len")
     }
     print(paste("File:", awdfile, " - Sensi:", sensi, " - Sampling:", epoch.len, " segundos", sep = ""))
         
@@ -45,7 +44,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
         stringsAsFactors = FALSE)
     mes <- filter(mes, esp == unlist(str_split(fec.ini, "-", 3))[2])
     
-    # Asume que estÃ¡ en espaÃ±ol, se corrige si inglÃ©s.
+    # Asume que está en español, se corrige si inglés.
     if (nrow(mes) > 0){
         fec.ini <- str_replace(fec.ini, mes[1,2], mes[1,1])
         fec.ini <- dmy_hm(fec.ini)
@@ -53,16 +52,17 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
         fec.ini <- dmy_hm(fec.ini)
     }
     
-    # --- Crear Secuencia de fechas ---------------------------------------------- #
+    # --- Crear Secuencia de fechas (Crea el AWD) ----------------------------------------- #
     fec.ini <- fec.ini + seconds(seq(0, by = epoch.len, length.out = length(awd.data)))
     awd <- data.frame(nombre = awd.head[1], act = awd.data, fec = fec.ini, stringsAsFactors = FALSE)
     awd <- mutate(awd, dec = hour(fec)+minute(fec)/60)
     
     # Recorte de peaks de actividad al percentil 98
     awd <- mutate(awd, act2 = ifelse(act > 0, act, NA))
-    p98 <- quantile(awd$act2, 0.98, na.rm = TRUE)
+    p98 <- quantile(awd$act2, 0.98, na.rm = TRUE)                                       # >>>> el centile <<<<
     awd <- mutate(awd, act3 = ifelse(act < p98, act, p98), act3 = round(act3, 0))
     awd <- ordervar(awd, c("act2", "act3"), after = "act")
+
     
     ## Algoritmo del Actiwatch con el vector de actividad 3, el recortado
     ini <- 1
@@ -98,7 +98,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
         indx <- c(i - pre, i, i + pos)
         indx[indx < 1] <- 0
         indx[indx > fin] <- 0
-        epoch.data <- act[indx]
+        epoch.data <- act[indx]     # <<<< la secuencia de actividad >>>>
         
         # Si el trozo esta cerca del inicio|fin agrega ceros para tener una secuencia con N ok
         if (i < length(indx)){
@@ -110,7 +110,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
         # Calculos, ponderados al multiplicador
         A <- sum(multi * epoch.data)
         
-        # Decisiones segÃºn la sensibilidad
+        # Decisiones según la sensibilidad
         if (sensi == 20){
             if (A > 20){acti.st[i] <- "W"} else {acti.st[i] <- "S"}
         } else if (sensi == 40){
@@ -125,6 +125,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
     awd <- mutate(awd, index = 1:dim(awd)[1])
     
     #----- Calcular ahora el estado actigrafico corregido -------------------------------
+    # Con la regla de que para que cambie debe pasar 5 (statdur) minutos
     # Calcular cuantas lineas tiene el statedur (duracion para cambio de estado)
     tdiff <- difftime(awd$fec[2], awd$fec[1], units = "secs")
     tdiff <- as.numeric(tdiff)
@@ -139,7 +140,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
         nW <- length(which(stXmin == "W")) 
         nS <- length(which(stXmin == "S")) 
         
-        # LÃ³gica para detener
+        # Lógica para detener
         if (nW == tdiff){
             state <- "W"
             ws = "Ok"
@@ -151,14 +152,25 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
         }
     }
 
-    # Si hay algo antes del 1Â° estado marcar como NC y crea variable
-    awd$acti2 <- NA
-    if (i > 1){
-        awd$acti2[1:(i-1)] <- "NC"
+    # Si hay algo antes del 1° estado detectado marcar como NC, si no hubiera y (i == 1) 
+    # poner en el acti[1] un 1 para que tome después el numero del estado
+#         awd$acti2 <- NA
+#         if (i > 1){
+#             awd$acti2[1:(i-1)] <- "NC"
+#         } 
+#         
+#         else if (i == 1){
+#             awd$acti2[1] <- "NC"
+#             i <- 2
+#         }
+    
+    # Si es que parte desde el inicio en el mismo estado obliga a que parta del epoch 2
+    if (i == 1){
+        i <- 2
     }
 
-    # Listo, ahora a contar desde i con state como inicial                                      # xx
-    acti.fix <- rep(1:fin)
+    # Listo, ahora a contar desde i con "obj::state" como inicial                                      # xx
+    acti.fix <- rep(1:fin)      # de aqui sale el acti2[1]=1
     acti <- awd$acti
     for (x in i:(nrow(awd) - tdiff + 1)){
         # Capturar el trozo
@@ -185,10 +197,10 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
     w <- which(epi == "W")
     s <- which(epi == "S")
 
-    # Hacer diferencias al i+1 para ver dÃ³nde comienza W y S
+    # Hacer diferencias al i+1 para ver dónde comienza W y S
     epiw <- data.frame(indx = w)
     epiw <- mutate(epiw, m = c(0, w[-length(w)]), d = m - indx)     # m = indx corrido un espacio
-    epiw <- filter(epiw, d < -1)        # Si se salta el d serÃ¡ menor a un lugar (< -1)
+    epiw <- filter(epiw, d < -1)        # Si se salta el d será menor a un lugar (< -1)
     epiw <- mutate(epiw, stage = paste("W-", row.names(epiw), sep = ""))
 
     epis <- data.frame(indx = s)
@@ -209,7 +221,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
     }
     awd$stage <- stage
     
-    # Corregir el Ãºltimo y el primero
+    # Corregir el último y el primero
     awd$stage[nrow(awd)] <- epi$stage[nrow(epi)-1]
     #awd <- filter(awd, acti2 != "NC")
     

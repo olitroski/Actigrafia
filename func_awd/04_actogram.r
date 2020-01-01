@@ -2,11 +2,7 @@
 ## ----- Actograma con ggplot --------------------------------------------------------- #
 ## ------------------------------------------------------------------------------------ #
 # La idea es tomar el epi y awd creado por mis funciones y crear una base de datos nueva
-# para hacer actogramas, de momento guardar cada actograma en png no mÃ¡s
-# Ejemplo
-# okeep(c("okeep", "omerge", "ordervar"))
-# awd <- readRDS("BenjaminVenegas_acv.rds")
-# epi <- readRDS("BenjaminVenegas_epi.rds")
+# para hacer actogramas, de momento guardar cada actograma en png no más
 
 
 ##----- Grafico ---------------------------------------------------------------#
@@ -35,7 +31,7 @@ plot.period <- function(gdata = NULL){
                 max(gdata$dec.seq[gdata$dianoc == "Noche"]),
                 gdata$dec.seq[nrow(gdata)])
 
-    # sueÃ±o data para el background
+    # sueño data para el background
     sdata <- filter(gdata, acti2 == "S")
     sdata <- group_by(sdata, stage)
     sdata <- as.data.frame(summarize(sdata, min = min(dec.seq), max = max(dec.seq)))
@@ -43,16 +39,39 @@ plot.period <- function(gdata = NULL){
     # Limites de Y
     limY <-  c(0, ceiling(max(gdata$act3)/100)*100)
     limX <- c(min(xscale), max(xscale))
+    
+    # Limites de dia o noche o ambos
+    dianocdata <- group_by(gdata, dianoc)
+    dianocdata <- as.data.frame(summarize(dianocdata, min = min(dec.seq), max = max(dec.seq)))
+    
 
-    # ----- Grafico base ------
+    # ----- Grafico ------------------------------------------------------------------------------
     # Los colores para ponerlos con alpha en rgb <<col2rgb("skyblue", alpha = 0.5)/255>>
+    
+    # Plot en blanco con Margenes nulos
     par(mar=c(2,2,0,2) + 0.5, xaxs = 'i', yaxs = 'i')
     plot(gdata$dec.seq, gdata$act3, type='n', ylab='', axes=FALSE, xlim=limX, ylim=limY)
-    for (i in 1:nrow(sdata)){
-        rect(sdata$min[i], 0, sdata$max[i], limY[2], col = rgb(0.529,0.808, 0.922,0.5), border = "skyblue")
+    
+    # Los indicadores de dia noche    
+    day <- filter(dianocdata, dianoc == "Dia")
+    noc <- filter(dianocdata, dianoc == "Noche")
+    if (nrow(day) == 1){
+        rect(day$min[1], 0, day$max[1], limY[2], col = rgb(1,1,0,0.3), border = "yellow")
     }
+    if (nrow(noc) == 1){
+        rect(noc$min[1], 0, noc$max[1], limY[2], col = "grey90", border = "grey90")
+    }
+    
+    # Los indicadores de sueño  steelblue3  rgb(0.5294,0.8078,0.9216,0.5)
+    for (i in 1:nrow(sdata)){
+        rect(sdata$min[i], 0, sdata$max[i], limY[2], col = "turquoise1", border = "turquoise1")
+    }
+    
+    # Añadir nuevo grafico encima
     par(new=TRUE)
     plot(gdata$dec.seq, gdata$act3, type='h', col='grey20', ylab='', axes=FALSE, xlim=limX, ylim=limY)
+    
+    # Agrega más detalls
     abline(v = ylinea, col = "red")
     title(ylab = (format(date(gdata$fec[1]), "%a%d, %b%y")), line = 0.5)
     axis(side = 1, at = xscale, labels = xlabel)
@@ -64,13 +83,12 @@ plot.period <- function(gdata = NULL){
 
 
 ##----- Crear todos los graficos ----------------------------------------------#
-# Con la funciÃ³n del grafico por dÃ­a que se hagan todos los graficos
-create.actogram <- function(epi = NULL, awd = NULL, archivo = NULL){
+# Con la función del grafico por día que se hagan todos los graficos
+create.actogram <- function(epi = NULL, awd = NULL, awdfile = NULL){
    
-    # Separar el perÃ­odo
-    epi <- cbind(epi, 
-                 data.frame(str_split(epi$periodo, " ", simplify = TRUE), 
-                            stringsAsFactors = FALSE))
+    # Separar el período
+    epi <- cbind(epi, data.frame(str_split(epi$periodo, " ", simplify = TRUE), 
+                      stringsAsFactors = FALSE))
     epi <- rename(epi, dianoc = X1, nper = X2)
 
     # Merge epi-awd
@@ -80,7 +98,7 @@ create.actogram <- function(epi = NULL, awd = NULL, archivo = NULL){
     awd <- arrange(awd, index) %>% select(-merge, -act2)
 
     # Crear la secuencia continua de horas decimales -----
-    # Con hora de inicio en dec, se hace una secuencia segÃºn el epoch
+    # Con hora de inicio en dec, se hace una secuencia según el epoch
     temp <- list()
     for (per in unique(awd$nper)){           # per = "01"
         gdata <- filter(awd, nper == per) %>% arrange(fec) 
@@ -95,7 +113,7 @@ create.actogram <- function(epi = NULL, awd = NULL, archivo = NULL){
         # La parte de los graficos
         gfile <- paste(per, ".png", sep = "")
         png(gfile, width = 1000, height = 180, units = "px")
-        plot.period(gdata)
+            plot.period(gdata)
         dev.off()
         
         # Guardar los datos de cada gdata
@@ -115,7 +133,8 @@ create.actogram <- function(epi = NULL, awd = NULL, archivo = NULL){
     }
     
     img.apilada <- image_append(imgs, stack = TRUE)
-    actoname <- paste(sub(".[Aa][Ww][Dd]", "", archivo), "_acto.png", sep = "")
+    prename <- sub(".[Aa][Ww][Dd]", "", awdfile)
+    actoname <- paste(prename, "_acto.png", sep = "")
     image_write(img.apilada, path = actoname, format = "png")
     
     # Zip archivos

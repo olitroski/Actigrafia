@@ -9,6 +9,7 @@ create.epi <- function(awd = NULL){
     # de noche y dia
 
     # --- Crear un epi FTW --- #
+    awd <- filter(awd, stage != is.na(stage))
     epi <- group_by(awd, stage)
     epi <- summarize(epi, ini = min(fec), fin = max(fec), 
         duracion = difftime(fin, ini, units = "mins"), estado = unique(acti2))
@@ -32,7 +33,7 @@ create.epi <- function(awd = NULL){
         } else if (epi$estado[i] == "S"){
             # fecha|hora de la linea '>=' a 'fec'
             if (epi$ini[i] >= fec){
-                # Corrección por si es past 00
+                # Corrección por si es past 00:00
                 if (hour(epi$ini[i]) < 20){
                     hora <- hm(paste(hour(epi$ini[i]) + 24, ":", minute(epi$ini[i]), sep=""))
                 } else {
@@ -59,6 +60,58 @@ create.epi <- function(awd = NULL){
         } else {i <- i + 1}
     }
 
+    
+    ## Asigna a cada stage si es dia o noche según las horas de ininoc e inidia.
+    # No cubre la duración del stage eso va después
+    hr <- function(x){hm(paste(hour(x),":",minute(x), sep=""))}
+    epi <- mutate(epi, dianoc = ifelse(hr(ini) >= hm("00:00") & hr(ini) < inidia, "Noche",
+                                ifelse(hr(ini) >= inidia & hr(ini) < ininoc, "Dia",
+                                ifelse(hr(ini) >= ininoc & hr(ini) < hms("23:59:59"), "Noche", "Error"))),
+                       durWA  = ifelse(dianoc == "Dia" & duracion >= durawake, 1,
+                                ifelse(dianoc == "Noche" & duracion >= dursleep, 1, 0)))
+    
+    # Ahora detectar el 1° stage mayora a durawake y dursleep
+    epi$durWA2 <- NA
+    st <- epi$dianoc[1]
+    i <- 1
+    while (i < nrow(epi)){
+        dn <- epi$dianoc[i]
+        dur <- epi$durWA[i]
+        
+        if (dn == st & dur == 1){
+            epi$durWA2[i] <- 1
+            if (st == "Dia"){st <- "Noche"} else if (st == "Noche"){st <- "Dia"}
+            i <- i+1
+        } else {
+            epi$durWA2[i] <- 0
+            i <- i+1
+        }
+    }
+    
+    # Fabricar el dianoc final
+    period <- NA
+    i <- 1
+    while (i < nrow(epi)){
+        dur <- epi$durWA2[i]
+        
+        # Si es 1 captura el dianoc
+        if (dur == 1){
+            st <- epi$dianoc[i]
+            epi$period[i] <- st
+            i <- i + 1
+        } else {
+            epi$period[i] <- st
+            i <- i + 1            
+        }
+    }
+    
+    i
+    epi
+    
+    
+epi    
+    
+    
     # Rellena los espacios NA
     epi$periodo[1:(which(epi$periodo == "Noche 01")-1)] <- "PreNoc1"
     for (i in 1:dim(epi)[1]){
