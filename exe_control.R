@@ -42,6 +42,14 @@ if (app == FALSE){
     unzip("app_sueno.zip", exdir = "app_sueno") 
     file.remove("app_sueno.zip")
     
+    # Crear el bat en el escritorio
+    bat <- paste("R CMD BATCH '", file.path(usrfolder, "app_sueno/exe_control.R'"), sep = "")
+    bat <- c(bat, "pause")
+    batf <- paste(usrfolder, "\\Desktop\\holi.bat", sep = "")
+    writeLines(text = bat, batf)
+    rm(bat, batf)
+    
+    
 # Está la app, pero no es la versión correcta
 } else if (app == TRUE & version == FALSE){
     # Borramos la carpeta primero (unlink)
@@ -52,16 +60,28 @@ if (app == FALSE){
     download.file(url = versurl, destfile = file.path(usrfolder, "app_sueno.zip"))
     unzip("app_sueno.zip", exdir = "app_sueno") 
     file.remove("app_sueno.zip")
-
+    
+    # Crear el bat en el escritorio
+    bat <- paste("R CMD BATCH '", file.path(usrfolder, "app_sueno/exe_control.R'"), sep = "")
+    bat <- c(bat, "pause")
+    batf <- paste(usrfolder, "\\Desktop\\holi.bat", sep = "")
+    writeLines(text = bat, batf)
+    rm(bat, batf)
+    
 # Está la app y es la última versión
 } else if (app == TRUE & version == TRUE){
     # Todo Ok, ejecuta la app
-    print("source(a_algo)")
+    file.path(usrfolder, "app_sueno/appdeprueba.R")
 
 # Si no hay nada de esto es error
 } else {
     stop("Algo pasó... para resetear borrar la carpeta 'app_sueno' de la carpeta del usuario")
 }
+
+
+
+
+
 
 
 

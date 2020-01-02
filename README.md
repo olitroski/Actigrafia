@@ -1,3 +1,12 @@
+Para instalar
+
+1. Abrir R o RStudio
+2. Pegar este comando.
+``
+source("https://raw.githubusercontent.com/olitroski/Actigrafia/master/exe_control.R")
+``
+
+
 # Actigrafía
  Programa para analizar actividad motora en relación al ciclo de sueño y vigilia.
 
