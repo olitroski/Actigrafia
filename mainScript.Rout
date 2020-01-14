@@ -1,0 +1,43 @@
+
+R version 3.6.0 (2019-04-26) -- "Planting of a Tree"
+Copyright (C) 2019 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+
+R es un software libre y viene sin GARANTIA ALGUNA.
+Usted puede redistribuirlo bajo ciertas circunstancias.
+Escriba 'license()' o 'licence()' para detalles de distribucion.
+
+R es un proyecto colaborativo con muchos contribuyentes.
+Escriba 'contributors()' para obtener más información y
+'citation()' para saber cómo citar R o paquetes de R en publicaciones.
+
+Escriba 'demo()' para demostraciones, 'help()' para el sistema on-line de ayuda,
+o 'help.start()' para abrir el sistema de ayuda HTML con su navegador.
+Escriba 'q()' para salir de R.
+
+> # ----------------------------------------------------------------------------- #
+> # ----- Main Script para procesar archivos de actigrafÃ­a - Nov.2019 ----------- #
+> # ----- Lab. SueÃ±o - INTA - U.Chile - O.Rojas - oliver.rojas.b@gmail.com ------ #
+> # ----------------------------------------------------------------------------- #
+> rm(list=ls())
+> 
+> # ----- Cargar funciones, settings -------------------------------------------- #
+> # Folder del programa
+> mainfolder <- "D:/OneDrive/INTA/Actigrafia"
+> setwd(mainfolder)
+> source("function_loader.R")
+> 
+> # Cargar el directorio guardado
+> savedir <- readLines("workdir.lab")
+> 
+> # Cargar funciones mias y settings
+> function_loader(dir = "func_awd")
+> function_loader(dir = "func_acti")
+> function_loader(dir = "func_folder")
+> 
+> # Cargar cosas
+> set <- getset()        # <<<<"configuracion.set">>>>
+Error in str_split(temp, "=", simplify = TRUE) : 
+  no se pudo encontrar la función "str_split"
+Calls: getset -> leer
+Ejecución interrumpida

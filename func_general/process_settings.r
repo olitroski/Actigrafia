@@ -1,11 +1,7 @@
 ## ----- Lectura del archvio de settings <<- al global environment directo ----- #
 getset <- function(){
-
-    # Leer el wd para capturar el archivo
-    library(stringr)
-    library(lubridate)
     currentdir <- getwd()
-    setfile <- file.path(currentdir, "parametros.set")
+    setfile <- file.path(currentdir, "settings.lab")
 
     # Leer el archivo 
     file <- readLines(setfile)
@@ -18,24 +14,39 @@ getset <- function(){
         return(temp)
     }
     
-    # Inicios 
-    ininoc <<- leer("ininoc")
-    inidia <<- leer("inidia")
+    # Inicio de la noche
+    ininoc <- leer("ininoc")
+    # ininoc <<- leer("ininoc")
+    
+    # Inicio dle día
+    inidia <- leer("inidia")
+    # inidia <<- leer("inidia")
+
        
     # Primer sueño y vigilia
     dursleep <- leer("dursleep")
-    dursleep <<- minute(dursleep)
+    dursleep <- minute(dursleep)
+    # dursleep <<- minute(dursleep)
     
     durawake <- leer("durawake")
-    durawake <<- minute(durawake)
-    
+    durawake <- minute(durawake)
+    # durawake <<- minute(durawake)
+
+        
     # Duracion del cambio estado
     statedur <- leer("statedur")
-    statedur <<- period_to_seconds(statedur)
+    statedur <- period_to_seconds(statedur)
+    # statedur <<- period_to_seconds(statedur)
 
     # Sensibilidad minimitter
     sensivar <- file[grep("sensi", file)]
     sensivar <- str_split(sensivar, "=", simplify = TRUE)
     sensivar <- sensivar[1,2]
-    sensivar <<- as.numeric(sensivar)
+    sensivar <- as.numeric(sensivar)
+    # sensivar <<- as.numeric(sensivar)
+    
+    set <- list(ininoc=ininoc, inidia=inidia, dursleep=dursleep, 
+                durawake=durawake, statedur = statedur, sensivar=sensivar)
+    return(set)
+    
 }

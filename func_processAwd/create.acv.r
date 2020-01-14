@@ -2,7 +2,7 @@
 ## ------------------------------------------------------------------------------------ #
 ## ----- Create ACV - Estado (W|S), fechas y horas partir de un awd ------------------- #
 ## ------------------------------------------------------------------------------------ #
-create.acv <- function(awdfile = NULL, sensi = NULL){
+create.acv <- function(awdfile = NULL, sensi = NULL, edit = FALSE){
 
     # Leer archivo
     awd <- readLines(awdfile)
@@ -16,8 +16,18 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
         rm(M)
     }
     awd.data <- as.numeric(awd.data)
+   
+    # Revisar que solo hayan numeros desde la posición 8 en adelante
+    numtest <- as.numeric(awd.data)
+    if (sum(is.na(numtest)) > 0){
+        stop("Hay un valor no numerico en el AWD a partir linea 8")
+    }
     
-    #----- Antecedentes del header  --------------------------------------------- 
+    
+    # ----------------------------------------------------------------------------------- #
+    # ----- Antecedentes del header  ---------------------------------------------------- # 
+    # ----------------------------------------------------------------------------------- #
+    ## Procesar los antecedentes del header
     # Variables originales
     name <- awd.head[1]
     date <- awd.head[2]
@@ -27,15 +37,19 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
     serie <- awd.head[6]
     sexo <- awd.head[7]
     
-    # Corrección del epoch, si 4 = 1 minuto, si 1 = 15 segundos, 2 = 30 secs
+    # Identificar el epoch, si 4 = 1 minuto, si 1 = 15 segundos, 2 = 30 secs
     if (epoch.len == 1){
-        epoch.len <- 25
+        epoch.len <- 15
+    } else if (epoch.len == 2) {
+        epoch.len <- 30
     } else if (epoch.len == 4){
         epoch.len <- 60
     } else {
         stop("error, algo pasó con el epoch len")
     }
-    print(paste("File:", awdfile, " - Sensi:", sensi, " - Sampling:", epoch.len, " segundos", sep = ""))
+    msg <- (paste("File: ", awdfile, "\nSensibilidad = ", sensi, " - Sampling = ", epoch.len, "secs - ", sep = ""))
+#     cat(paste(msg, "\n", sep = ""))
+    cat(msg)
         
     # Crear fecha-hora inicial y Cambiar tambien el mes a ingles "se trabaja en character"
     fec.ini <- paste(awd.head[2], awd.head[3])
@@ -52,7 +66,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
         fec.ini <- dmy_hm(fec.ini)
     }
     
-    # --- Crear Secuencia de fechas (Crea el AWD) ----------------------------------------- #
+    # --- Crear Secuencia de fechas (Crea el AWD) ------------------------------------- #
     fec.ini <- fec.ini + seconds(seq(0, by = epoch.len, length.out = length(awd.data)))
     awd <- data.frame(nombre = awd.head[1], act = awd.data, fec = fec.ini, stringsAsFactors = FALSE)
     awd <- mutate(awd, dec = hour(fec)+minute(fec)/60)
@@ -62,13 +76,16 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
     p98 <- quantile(awd$act2, 0.98, na.rm = TRUE)                                       # >>>> el centile <<<<
     awd <- mutate(awd, act3 = ifelse(act < p98, act, p98), act3 = round(act3, 0))
     awd <- ordervar(awd, c("act2", "act3"), after = "act")
-
     
-    ## Algoritmo del Actiwatch con el vector de actividad 3, el recortado
+    
+    # --------------------------------------------------------------------------------- #
+    # ----- Algoritmo del Actiwatch - MiniMitter -------------------------------------- #
+    # --------------------------------------------------------------------------------- #
+    ## Usa el vector de actividad recortado con el percentil 98
     ini <- 1
     fin <- nrow(awd)
 
-    # Secuncia para determinar multiplcadores 
+    # Secuencia para determinar multiplcadores 
     if (epoch.len == 15){
         pre <- c(8:1)
         pos <- c(1:8)
@@ -88,9 +105,8 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
     } else {
         error("En la seleccion del multiplicador")
     }
-
-    # La magia... en una variable <<<< mini mitter algorithm >>>>
-    # Weno, vamoa a intentar que sea en parallel
+    
+    # Algoritmo de detección
     act <- awd$act3
     acti.st <- rep(NA, times = fin)
     for (i in 1:fin){                                                                           # xx
@@ -124,14 +140,18 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
     awd$acti <- acti.st
     awd <- mutate(awd, index = 1:dim(awd)[1])
     
-    #----- Calcular ahora el estado actigrafico corregido -------------------------------
+    
+    # ----------------------------------------------------------------------------------- #
+    # ---- Calcular ahora el estado actigrafico corregido ------------------------------- #
+    # ----------------------------------------------------------------------------------- #
     # Con la regla de que para que cambie debe pasar 5 (statdur) minutos
     # Calcular cuantas lineas tiene el statedur (duracion para cambio de estado)
     tdiff <- difftime(awd$fec[2], awd$fec[1], units = "secs")
     tdiff <- as.numeric(tdiff)
-    tdiff <- statedur / tdiff
+    tdiff <- set$statedur / tdiff
 
-    # Buscar el STATE inicial... si, el primero [1]
+    # Buscar el STATE inicial como los primeros "statedur" (5) epoch iguales
+    # pueden entonces quedar algunos epoch iniciales sin estado corregido.
     ws <- "NotOK"
     i <- 1
     while (ws != "Ok"){
@@ -151,25 +171,13 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
             i <- i + 1
         }
     }
-
-    # Si hay algo antes del 1° estado detectado marcar como NC, si no hubiera y (i == 1) 
-    # poner en el acti[1] un 1 para que tome después el numero del estado
-#         awd$acti2 <- NA
-#         if (i > 1){
-#             awd$acti2[1:(i-1)] <- "NC"
-#         } 
-#         
-#         else if (i == 1){
-#             awd$acti2[1] <- "NC"
-#             i <- 2
-#         }
     
     # Si es que parte desde el inicio en el mismo estado obliga a que parta del epoch 2
     if (i == 1){
         i <- 2
     }
 
-    # Listo, ahora a contar desde i con "obj::state" como inicial                                      # xx
+    # Listo, ahora a contar desde i con "obj::state" como inicial
     acti.fix <- rep(1:fin)      # de aqui sale el acti2[1]=1
     acti <- awd$acti
     for (x in i:(nrow(awd) - tdiff + 1)){
@@ -189,46 +197,63 @@ create.acv <- function(awdfile = NULL, sensi = NULL){
     # Arreglar el final
     acti.fix[(nrow(awd) - tdiff + 2):nrow(awd)] <- state
     awd$acti2 <- acti.fix
-
-
-    # ----- Calcular los STAGES a partir el acti2 ----------------------------------- 
-    # Buscar indices que contengan W y S
-    epi <- awd$acti2
-    w <- which(epi == "W")
-    s <- which(epi == "S")
-
-    # Hacer diferencias al i+1 para ver dónde comienza W y S
-    epiw <- data.frame(indx = w)
-    epiw <- mutate(epiw, m = c(0, w[-length(w)]), d = m - indx)     # m = indx corrido un espacio
-    epiw <- filter(epiw, d < -1)        # Si se salta el d será menor a un lugar (< -1)
-    epiw <- mutate(epiw, stage = paste("W-", row.names(epiw), sep = ""))
-
-    epis <- data.frame(indx = s)
-    epis <- mutate(epis, m = c(0, s[-length(s)]), d = m - indx)
-    epis <- filter(epis, d < -1)
-    epis <- mutate(epis, stage = paste("S-", row.names(epis), sep = ""))
-
-    # Corrige el final
-    epi <- bind_rows(epiw, epis) %>% select(indx, stage) %>% arrange(indx)
-    epi <- bind_rows(epi, data.frame(indx = nrow(awd), stage = NA))
-
-    # Agregar el stage al awd
-    stage <- rep(NA, nrow(awd))
-    for (i in 1:(nrow(epi) - 1)){
-        ini <- epi$indx[i]
-        fin <- epi$indx[i+1] - 1
-        stage[ini:fin] <- epi$stage[i]
-    }
-    awd$stage <- stage
     
-    # Corregir el último y el primero
-    awd$stage[nrow(awd)] <- epi$stage[nrow(epi)-1]
-    #awd <- filter(awd, acti2 != "NC")
     
-    # --- ahora siiii  :) ---------- #
+    # ----------------------------------------------------------------------------------- #
+    # ----- Calcular los STAGES a partir el acti2 --------------------------------------- # 
+    # ----------------------------------------------------------------------------------- #
+#     # Buscar indices que contengan W y S
+#     epi <- awd$acti2
+#     w <- which(epi == "W")
+#     s <- which(epi == "S")
+# 
+#     # Hacer diferencias al i+1 para ver dónde comienza W y S
+#     epiw <- data.frame(indx = w)
+#     epiw <- mutate(epiw, m = c(0, w[-length(w)]), d = m - indx)     # m = indx corrido un espacio
+#     epiw <- filter(epiw, d < -1)        # Si se salta el d será menor a un lugar (< -1)
+#     epiw <- mutate(epiw, stage = paste("W-", row.names(epiw), sep = ""))
+# 
+#     epis <- data.frame(indx = s)
+#     epis <- mutate(epis, m = c(0, s[-length(s)]), d = m - indx)
+#     epis <- filter(epis, d < -1)
+#     epis <- mutate(epis, stage = paste("S-", row.names(epis), sep = ""))
+# 
+#     # Corrige el final
+#     epi <- bind_rows(epiw, epis) %>% select(indx, stage) %>% arrange(indx)
+#     epi <- bind_rows(epi, data.frame(indx = nrow(awd), stage = NA))
+# 
+#     # Agregar el stage al awd
+#     stage <- rep(NA, nrow(awd))
+#     for (i in 1:(nrow(epi) - 1)){
+#         ini <- epi$indx[i]
+#         fin <- epi$indx[i+1] - 1
+#         stage[ini:fin] <- epi$stage[i]
+#     }
+#     awd$stage <- stage
+#     
+#     # Corregir el último y el primero
+#     awd$stage[nrow(awd)] <- epi$stage[nrow(epi)-1]
+#     #awd <- filter(awd, acti2 != "NC")
+
+
+    # ---- Cambiar nombres de variables y ordenar ------------------------------------- #
+    awd <- select(awd, index, nombre, act, act3, fec, dec, acti, acti2)
+    names(awd) <- c("indx","nombre","act.raw", "act.smooth", "time", "hrdec", "st.mm", "st.stable")
+    
+    # Copia elementos para la edicion
+    awd$act.edit <- awd$act.smooth
+    awd$st.edit <- awd$st.stable
+    awd$filter <- NA
+    
+    # quitar minutos iniciales sin estado
+    ini <- nrow(awd)
+    awd <- filter(awd, st.edit == "S" | st.edit =="W")
+    fin <- nrow(awd)
+    cat(paste("Lineas borradas al inicio =", ini - fin, "\n"))
+    
+    # Agregar el nombre el archivos
+    awd$filename <- awdfile
+    
+    # --- ahora si, listo  :) ---------- #
     return(awd)
 }
-
-# stop()
-# awdfile <- "BenjaminVenegas.AWD"; sensi <- 40
-# system.time(create.acv("BenjaminVenegas.AWD", sensi = 40))

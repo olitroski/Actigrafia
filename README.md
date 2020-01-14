@@ -30,17 +30,17 @@ V964291
 M
 ```
 
-
+La información más relevante de esta parte es la fecha y hora de inicio que permiten aplicar temporalidad de la actividad y el valor 4° que indica la cantidad de mediciones por minuto.
 
 ## 2. Archivos de salida Actividorm
 
-La carpeta de **archivos** tiene las salidas del programa **actividorm** de fabricación propia del laboratorio,  mi programa se construyó con ingeniería inversa porque el original en C++ es un desastre, sin documentación,  un spagetti code y como además no sé mucho de C++ aborté misión y lo hice desde cero en R.
+Esta aplicación se inspira en el software *Actividorm* de fabricación propia del laboratorio y escrito en C++. Mediante ingeniería inversa se determinó el funcionamiento y se replicó desde cero en R, principalmente por la falta de documentación y desorden en el código fuente, además R se usa más en ambientes académicos y de data science. No se hizo en Python porque no quise...
 
-Hay otros archivos pero estos son los importantes en términos de datos, los otros eran de transición imagino. Yo no hago eso y dejo todo en las funciones.
+Los principales archivos de salida de Actividorm y con los cuales se pueden construir todas las estadísticas e indicadores para hacer análisis de sueño o actividad motora son:
 
 ### acv01
 
-Este archivo es el más importante porque contienen la detección de sueño con el algoritmo de mini mitter y la determinación del cambio de estado con la regla de minutos mínimos.
+Este archivo es el más importante porque contienen la detección de sueño con el algoritmo de *Mini Mitter* que es por lejos el más usado y la determinación del cambio de estado con la regla de minutos mínimos.
 
 ```
 Nombre Sujeto	Hora Registro	Estado actigrafico	Estado filtrado	Cantidad de movimiento
@@ -53,7 +53,7 @@ BenjaminVenegas	10-12-2009 16:04	W	W	171
 
 ### epi
 
-Este tipo de archivo es la identificación de cada stage de sueño o vigilia detectado con los antecedentes del settings, se usa mucho para el actograma y posteriores estadísticas.
+Este tipo de archivo corresponde a la asignación de noches, identificación de cada estado de sueño o vigilia detectado con los antecedentes del settings. Permite la segmentación del análisis y salidas de estadísticas generales.
 
 ```
 Nombre Sujeto;Periodo del registro;Hora;Estado;Actividad;Duracion (min);Promedio actividad por minuto;Numero Episodio;Episodio del estado
@@ -65,23 +65,41 @@ BenjaminVenegas;Noche 01;11-12-2009 03:45:00;W;715;   5,0; 143,0;004;W002
 
 ### arq
 
-Corresponde a las estadísticas que se usaban para hacer los análisis, este es el archivo que posteriormente se le hacen correcciones manuales, la idea de todo esto es no llegar a hacer este tipo de correcciones y que este tipo de archivos sean finales.
+Corresponde a las estadísticas que se usaban para hacer los análisis, si un registro actigráfico estuviera perfecto este archivo reflejaría las estadísticas de sueño perfectas para el sujeto, sin embargo, existen diversas y extensivas omisiones en el uso del actígrafo lo cual repercute en que este archivo que es la fuente de las estadísticas de sueño y vigilia deba ser corregido manualmente.
+
+cada corrección depende de un protocolo, sin embargo lo más complejo es que no es replicable o automatizable ya que completamente manual. En el fondo es corregir un sistema que fue mal calculado.
 
 ```
-Nombre Sujeto;Periodo del registro;Jornada;Hora Inicio;Hora Fin;Numero Episodios W;Numero Episodios S;Duracion Total W;Duracion Total S;Movimiento Total W;Movimiento Total S;Duracion Promedio Episodios W(min);Duracion Promedio Episodios S(min);% de Tiempo de los Episodios W;% de Tiempo de los Episodios S;Promedio de actividad para episodios de W;Promedio de actividad para episodios de S;Promedio de actividad por minuto para W;Promedio de actividad por minuto para S;Promedio de actividad por hora para W;Promedio de actividad por hora para S
+Nombre Sujeto;Periodo del registro;Jornada;Hora Inicio;
+Hora Fin;Numero Episodios W;Numero Episodios S;Duracion Total W;Duracion Total S;Movimiento Total W;Movimiento Total S;Duracion Promedio Episodios W(min);Duracion Promedio Episodios S(min);% de Tiempo de los Episodios W;% de Tiempo de los Episodios S;Promedio de actividad para episodios de W;Promedio de actividad para episodios de S;Promedio de actividad por minuto para W;Promedio de actividad por minuto para S;Promedio de actividad por hora para W;Promedio de actividad por hora para S
 ```
+
+La idea principal de esta aplicación es dejar un registro escrito de las ediciones y que estas sean realizadas en la primera etapa de modo que no solo quede un registro, sino que se puedena mover parámetros y reprocesar registros sin tener que realizar todo el proceso desde cero, como es actualmente.
+
+**Por ejemplo**. Si se decide cambiar el tiempo mínimo para considerar un estado de sueño o vigilia como consolidado desde 5 minutos a 10 minutos.
+
+**Con el sistema actual**: Habría que reprocesar y se perderán la ediciones hechas en el setting de 5 mintuos, por lo cual habría que realizar las correcciones desde cero.
+
+**Con el nuevo sistema**: Solo habría que modificar el setting a 10 minutos, ya que la selección y edición ya estaría realizada.
 
 ### Manuales
 
-Los manuales originales a partir del cual se hizo la ingeniería inversa
+Los manuales originales a partir del cual se hizo la ingeniería inversa se encuentran en la carpeta **Archivos**
 
 ## 3. Main Script
 
-El Script principal de momento lo tengo en 1 archivo de R, luego separo y ordeno, tengo que traer los script para las stats.
+Como la aplicación estará implementada con programa web mediante Shiny de RStudio, no hay ejecutable, y se depende de un Script principal que carga el ambiente de trabajo, determina algunos parámetros y carga la aplicación.
 
-## 4. Settings
+1. Borra el *environment*
+2. Carga todas las funciones que se utilizarán 
+3. Carga las settings en forma de **lista** 
+4. Ejecuta la aplicación.
 
-Hay un script de R que contiene los parámetros iniciales `parametros.set` de momento tiene las siguientes variables y es un archivo de texto.
+El control del resto de los procesos está depositado en la aplicación.
+
+### Archivo de Settings
+
+Mediante un archivo de texto de nombre `parametros.set` se guardan y cargan los parámetros principales para el análisis actigráfico. Se cargan mediante la función **`function_loader()`**
 
 ```
 Valores de configuración del sistema, modificar la linea correspondiente.
@@ -111,7 +129,21 @@ sensi = 40
 
 Simplemente hay que modificarlo según se necesite.
 
+> A futuro se debe permitir utilizar varios archivos de ajustes.
 
+
+
+# 4. Aplicación Shiny
+
+
+
+
+
+
+
+
+
+---------
 
 ## 5. Procesado raw data (func_awd)
 

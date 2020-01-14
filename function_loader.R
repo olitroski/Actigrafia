@@ -1,14 +1,6 @@
 # Cargador de funciones
 # En subcarpetas del wd 
-
 function_loader <- function(dir = NULL, mf = NULL){
-	# Librerias
-	library(stringr)
-	library(dplyr)
-	library(lubridate)
-	library(magick)
-	library(zip)
-
     # Capturar el working directory
     if (class(mf) == "NULL"){
         mf <- mainfolder
