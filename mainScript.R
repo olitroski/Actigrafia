@@ -15,16 +15,10 @@ lapply(X=dir()[grep("func_", dir())], FUN=function_loader)
 load.library()          # librerias
 set <- getset()         # <<<<"configuracion.set">>>>
 
-
-
-
-
-
 # Cargar el directorio guardado, para el app shiny
 # savedir <- readLines("workdir.lab")
 # Cargar App
 # runApp(launch.browser = TRUE)
-
 
 # ----- Para pruebas -------------------------------------------------- #
 awdfolder <- "D:/OneDrive/INTA/Patricio Peirano/2019.12 Kansas/kansas"
@@ -32,7 +26,6 @@ awdfolder <- "D:/OneDrive/INTA/Patricio Peirano/2019.12 Kansas/kansas"
 setwd(awdfolder)
 archivos <- dir()
 archivos <- archivos[grep(".[Aa][Ww][Dd]$", archivos)]
-
 
 # Toda la vuelta del primer procesado
 awdfile <- archivos[1]

@@ -36,19 +36,19 @@ create.actogram <- function(awdfile, fy = 1){
     limX2 <- c(min(xscale2), max(xscale2))
     
     # Se saca toda la info desde la lista <semiper> filtros todo...   :)
-    nplot <- length(semiper)
-    par(mfrow = c(nplot+2, 1))
+    nplot <- length(semiper) + 2
+    par(mfrow = c(nplot, 1))
     
+    par(mar=c(2, 3.5, 0, 2.5))
     plot(0, type = 'n', ann = FALSE, axes = FALSE, xlim = limX2)
     axis(side = 1, at = xscale2, labels = xlabel2)
     
-    for (g in 1:nplot){
-        create.plotActo(semiper[[g]], fy)
-    }
+    for (g in 1:nplot){create.plotActo(semiper[[g]], fy)}
     
+    par(mar=c(0, 3.5, 2, 2.5))
     plot(0, type = 'n', ann = FALSE, axes = FALSE, xlim = limX2)
-    axis(side = 1, at = xscale2, labels = xlabel2)
+    axis(side = 3, at = xscale2, labels = xlabel2)
 
 }
 
-# create.actogram(awdfile)
+#create.actogram(awdfile)

@@ -72,7 +72,7 @@ create.plotActo <- function(semiperdf, pct.y = 1){
     # ----- Grafico ------------------------------------------------------------------------------
     # Los colores para ponerlos con alpha en rgb <<col2rgb("skyblue3", alpha = 0.5)/255>>
     # Plot en blanco con Margenes nulos
-    par(mar=c(2,2,0,2) + 0.5, xaxs = 'i', yaxs = 'i')
+    par(mar=c(0,3,0,2) + 0.5, xaxs = 'i', yaxs = 'i')
     plot(semiperdf$xscale, semiperdf$act.edit, type='n', ylab='', axes=FALSE, xlim=limX, ylim=limY)
     
     # <<SLEEP>>: Los indicadores de sueño  <<  col2rgb("skyblue3", alpha = 0.5)/255  >>
@@ -106,17 +106,16 @@ create.plotActo <- function(semiperdf, pct.y = 1){
         }
     }    
     
-    # Añadir nuevo grafico encima
+    # Añadir nuevo grafico encima: Los datos de actividad
     par(new=TRUE)
     plot(semiperdf$xscale, semiperdf$act.edit, type='h', col='grey20', ylab='', axes=FALSE, xlim=limX, ylim=limY)
     
     # Agrega más detalls
     abline(v = ylinea, col = "red")
-    #title(ylab = (format(date(semiperdf$time[1]), "%A %d, %m--%Y")), line = 0.5)
-    # axis(side = 1, at = xscale, labels = xlabel)
-    box()
-   
-    # Etiqueta en Y
-    #mtext(format(date(semiperdf$time[nrow(semiperdf)]), "%A %d, %m--%Y"), side = 4, line = 0.5)
+    
+    yfec <- paste(format(date(semiperdf$time[1]), "%a"),
+                  format(date(semiperdf$time[1]), "%d-%m"), sep = "\n")
+    mtext(yfec, side = 2, las = 1, line = 0.5, cex = 0.8)
 
+    box()
 }
