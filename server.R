@@ -1,5 +1,6 @@
 server <- function(input, output){
-    # #### El lado derecho de las settings primero ################################ #    
+    # Panel 1 - ARCHIVOS ------------------------------------------------------
+    # | -- Parametros detección -----------------------------------------------
     output$showSet1 <- renderUI({
         HTML(
             paste("<strong>Hora inicio noche:</strong><br>", set$ininoc, "<br>",
@@ -11,67 +12,63 @@ server <- function(input, output){
                   "<br><br>", sep = "")
         )
     })
-    
-    output$wd <- renderText(getwd())
 
 
-    # #### Elementos tab Archivos ################################################# #
-    # ---- Seleccionar directorio ------------------------------------------------- #
+    # | -- Botón Seleccionar directorio ---------------------------------------
     # Capturar y mostrar el directorio  
     volumes <- c("Usuario" = fs::path_home(), getVolumes()())
-    shinyDirChoose(input, "awdfolder", roots = volumes, restrictions = system.file(package = "base"))
-    
-    # Texto del buscar folder
-    output$ledir <- renderPrint({
-        if (is.integer(input$awdfolder) & length(savedir) == 0) {
-            cat("Directorio de archivos AWD")
-        } else if (is.integer(input$awdfolder) & length(savedir) == 1){
-            cat(savedir)
-        } else {
-            cat(as.character(parseDirPath(volumes, input$awdfolder)))
+    shinyDirChoose(input, "BrowsePath", roots = volumes, restrictions = system.file(package = "base"))
+
+    # Texto del buscar folder y wd si hubiera
+    output$wdFolderTxt <- renderPrint({
+        # Con datos el input es una lista y en awdfolder siempre habrá un valor aunque esté vacio el file
+        if (is.list(input$BrowsePath) == FALSE & length(awdfolder) == 0) {
+            cat(awdfolder)
+        } else if (is.list(input$BrowsePath) == FALSE & length(awdfolder) == 1){
+            cat(awdfolder)
+        } else if (is.list(input$BrowsePath) == TRUE){
+            cat(as.character(parseDirPath(volumes, input$BrowsePath)))
+            awdfolder <<- as.character(parseDirPath(volumes, input$BrowsePath))
         }
     })
     
+    # Resuelto lo anterior ya podemos poner el working directory
+    setwd(awdfolder)
 
-    # Botón de guardar directorio
+    # | -- Botón de guardar directorio ----------------------------------------
     observeEvent(input$saveDir, {
         currdir <- getwd()
         setwd(mainfolder)
-        writeLines(as.character(parseDirPath(volumes, input$awdfolder)), "workdir.lab")        
+        writeLines(as.character(parseDirPath(volumes, input$BrowsePath)), "workdir.lab")        
         setwd(currdir)
     })
 
     
-    # Mostrar los archivos
+    # | -- Table de los archivos ----------------------------------------------
     output$dfdir <- renderTable({
-        if (is.integer(input$awdfolder) & length(savedir) == 0) {
-            cat("")
-        } else if (is.integer(input$awdfolder) & length(savedir) == 1){
-            setwd(savedir)
-            
-            # Un data frame en 2 lineas
-            df <- dir()
-            cutval <- floor(length(df)/2)
-            df1 <- df[1:cutval]
-            df2 <- df[(cutval+1):length(df)]
-            
-            df <- data.frame(Archivos = df1, Archivos = df2, stringsAsFactors = FALSE)
-            df
-        } else {
-            # Al wd
-            setwd(parseDirPath(volumes, input$awdfolder))
-            # Un data frame en 2 lineas
-            df <- dir()
-            cutval <- floor(length(df)/2)
-            df1 <- df[1:cutval]
-            df2 <- df[(cutval+1):length(df)]
-            
-            df <- data.frame(Archivos = df1, Archivos = df2, stringsAsFactors = FALSE)
-            df
-        }    
-        
+        df <- load.awdfolder(awdfolder)
+        df
+    })
+    
+    
+    # | -- radioButton para filtrar -------------------------------------------
+    
+    
+    
+    # | -- Table de los recuentos ---------------------------------------------
+    # Esta es solo de prueba para que se vea <<tableDir>>
+    output$tableDir <- renderTable({
+        data.frame(Status = c("No procesado", "En edición", "Terminado", "Con error"),
+                        N = c(21,342,54,1))
         
     })
+    
+    
+    
+    
+    # Panel 2 - EDICION DE ARCHIVOS -------------------------------------------
+    
+    
     
 }
 

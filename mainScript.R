@@ -1,10 +1,10 @@
 # ----------------------------------------------------------------------------- #
-# ----- Main Script para procesar archivos de actigrafi­a - Nov.2019 ----------- #
+# ----- Main Script para procesar archivos de actigrafia - Nov.2019 ----------- #
 # ----- Lab. Sueño - INTA - U.Chile - O.Rojas - oliver.rojas.b@gmail.com ------ #
 # ----------------------------------------------------------------------------- #
 rm(list=ls())
 
-# ----- Cargar funciones, settings -------------------------------------------- #
+# ----- Cargar funciones, settings --------------------------------------------
 # Folder del programa
 mainfolder <- "D:/OneDrive/INTA/Actigrafia"
 setwd(mainfolder)
@@ -16,11 +16,15 @@ load.library()          # librerias
 set <- getset()         # <<<<"configuracion.set">>>>
 
 # Cargar el directorio guardado, para el app shiny
-# savedir <- readLines("workdir.lab")
+awdfolder <- load.savedir(mainfolder)
+
 # Cargar App
 # runApp(launch.browser = TRUE)
 
-# ----- Para pruebas -------------------------------------------------- #
+stop()
+
+
+# ----- Para pruebas -------------------------------------------------- 
 awdfolder <- "D:/OneDrive/INTA/Patricio Peirano/2019.12 Kansas/kansas"
 # sensi <- 40
 setwd(awdfolder)
@@ -33,6 +37,8 @@ acv <- create.acv(awdfile, set$sensivar)
 semiper <- create.semiper(awdfile, acv)
 filter.stats <- create.firstfilter(awdfile, semiper)
 acv.edit <- create.acvedit(awdfile, acv, filter.stats)
-create.actogram(awdfile)
 
+windows()
+create.actogram(awdfile)
+dev.off()
 
