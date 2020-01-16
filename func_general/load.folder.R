@@ -23,12 +23,12 @@ load.awdfolder <- function(awdfolder){
     terminados <- basename %in% terminados
     
     # Terminar el output
-    statusdf <- data.frame(Sujeto = basename, N.Files = nbase, Finalizado = terminados)
+    statusdf <- data.frame(Sujeto = basename, N.Files = nbase, Finalizado = terminados, stringsAsFactors = FALSE)
     row.names(statusdf) <- NULL
     
     statusdf <- statusdf %>% mutate(Status = ifelse(N.Files == 1 & Finalizado == FALSE, 1,
                                              ifelse(N.Files > 1  & Finalizado == FALSE, 2,
                                              ifelse(N.Files > 1  & Finalizado == TRUE,  3, 4)))) %>% arrange(Status)
-    statusdf$Status <- factor(statusdf$Status, levels = c(1,2,3,4), labels = c("No procesado", "En Edicion", "Finalizado", "Error"))
+    statusdf$Status <- factor(statusdf$Status, levels = c(1,2,3,4), labels = c("No procesado", "En edicion", "Terminado", "Con error"))
     return(statusdf)
 }

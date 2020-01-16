@@ -4,8 +4,8 @@ ui <- navbarPage(
 
         # Panel 1 - ARCHIVOS --------------------------------------------------
         tabPanel("Archivos",
+            # | Seccion: Seleccion y visualizacion archivos -------------------
             fluidRow(
-                # | Seccion: Seleccion y visualizacion archivos ---------------
                 column(9, align="left", 
         
                     # | --- Seleccionar archivo -------------------------------
@@ -13,7 +13,7 @@ ui <- navbarPage(
                     h4("Seleciona el directorio de trabajo"),
                     
                     div(style="display: inline-block; vertical-align: top",
-                        actionButton("saveDir", "Defecto")),
+                        actionButton("saveDir", "Guardar")),
 
                     div(style="display: inline-block; vertical-align: middle; width: 650px",
                         verbatimTextOutput("wdFolderTxt")),
@@ -37,7 +37,8 @@ ui <- navbarPage(
                         column(4, align = "left",
                                h4("Filtrar según Status"),
                                radioButtons("filterDir", label = NULL, choices = c("No procesado", 
-                                            "En edición", "Terminado", "Con error")),
+                                            "En edición", "Terminado", "Con error", "Todos"),
+                                            selected = "Todos"),
                                br(),
                                h4("Recuentos"),
                                tableOutput("tableDir")
@@ -46,7 +47,7 @@ ui <- navbarPage(
                     )
                 ),
                 
-                # | Seccion: Lateral con info del settings -----------------------------
+                # | Seccion: Lateral con info del settings --------------------
                 column(3,
                     h4("Parámetros para detección"),
                     htmlOutput("showSet1")
@@ -63,12 +64,42 @@ ui <- navbarPage(
     
 
         # Panel 2 - EDICION DE ARCHIVOS ---------------------------------------
-        tabPanel("Edición",
-        
-            h1("holi")
+        tabPanel("Actograma",
+            # | Seccion: Seleccion de Sujetos ---------------------------------
+            fluidRow(
+                
+                # | --- Pegar sujeto ------------------------------------------
+                column(3,
+                    h4("Pegar o seleccionar sujeto"),
+                    textInput("awdfile1", label = NULL, value = "Pegar"),
+                    uiOutput("subjInput")
+                ),
+                
+                # | --- Seleccionar el sujeto ---------------------------------
+                column(3,
+                    h4("Selección"),
+                    textOutput("selectedSubj"),
+                    verbatimTextOutput("statsSubj")
+                    
+                    
+                    
+                ),
+                
+                column(6, 
+                    h4("Botones")
+                )
+                
+            ),
             
-        
+            hr(),
+            
+            # | Sección: Actograma --------------------------------------------
+            fluidRow(
+                column(12,
+                    h4("Actograma"),
+                    plotOutput("actograma")
+                )
+                
+            )
         )
-               
-    
 )

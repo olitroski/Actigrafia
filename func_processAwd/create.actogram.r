@@ -1,14 +1,14 @@
 ## ------------------------------------------------------------------------------------ #
 ## ----- Actograma con ggplot --------------------------------------------------------- #
 ## ------------------------------------------------------------------------------------ #
-# La idea es tomar un acv y mostrarlos de 20 a 20 horas asi aseguramos tener todos los días
-# Solo se superponen sueño y vigilia, la idea es que sirva para editar el awd.
+# La idea es tomar un acv y mostrarlos de 20 a 20 horas asi aseguramos tener todos los d?as
+# Solo se superponen sue?o y vigilia, la idea es que sirva para editar el awd.
 create.actogram <- function(awdfile, fy = 1){
 
     # Cargar semiperiodos, se supone estamos en el working directory de los awd
-    awdfolder <- dir()
-    acv.edit <- grep(sub(".[Aa][Ww][Dd]$", "_acv.edit.RDS", awdfile), awdfolder)
-    acv.edit <- awdfolder[acv.edit]
+    lefiles <- dir()
+    acv.edit <- grep(sub(".[Aa][Ww][Dd]$", "_acv.edit.RDS", awdfile), lefiles)
+    acv.edit <- lefiles[acv.edit]
     acv.edit <- readRDS(acv.edit)
     semiper <- create.semiper(awdfile, acv.edit)
     
