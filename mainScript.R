@@ -16,10 +16,10 @@ load.library()          # librerias
 set <- getset()         # <<<<"configuracion.set">>>>
 
 # Cargar el directorio guardado, para el app shiny
-awdfolder <- load.savedir(mainfolder)
+# awdfolder <- load.savedir(mainfolder)
 
 # Cargar App
-# runApp(launch.browser = TRUE)
+ # runApp(launch.browser = TRUE)
 
 # stop()
 
