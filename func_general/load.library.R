@@ -11,7 +11,5 @@ load.library <- function(packlist = c("kableExtra", "Hmisc", "openxlsx", "fs", "
     for (lib in packlist){
         eval(parse(text=paste("library(",lib,")",sep="")))
     }
-    
-    # un awdfile nulo para que cargue al env y se pueda trabajar desde el server
-    awdfile <<- NULL
+
 }

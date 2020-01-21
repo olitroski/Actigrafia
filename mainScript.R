@@ -19,7 +19,7 @@ set <- getset()         # <<<<"configuracion.set">>>>
 # awdfolder <- load.savedir(mainfolder)
 
 # Cargar App
- # runApp(launch.browser = TRUE)
+# runApp(launch.browser = TRUE)
 
 # stop()
 

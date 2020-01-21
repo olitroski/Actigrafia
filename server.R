@@ -27,7 +27,7 @@ server <- function(input, output, session){
             setwd(awdfolder())
         }
     }
-    
+
     # | -- Output del folder -------------------------------------------------
     output$wdFolderTxt <- renderPrint({
         cat(awdfolder())
@@ -50,47 +50,56 @@ server <- function(input, output, session){
     # Cargar el directorio en un data.frame
     subjectDF <- reactive({
         fn.setwd()
-        load.awdfolder() 
+        
+        # new.files <- function() {dir()}
+        # get.files <- function() {dir()}
+        # my_files <- reactivePoll(100, session, checkFunc = new.files, 
+        #                                        valueFunc = get.files)
+        
+        load.awdfolder()
     })
 
-        # | -- -- Tabla directorio ----------------------------------
-        output$dfdir <- renderTable({
-            # Los radio buttons para el filtraje
-            if (input$filterDir != "Todos"){
-                filter(subjectDF(), Status == input$filterDir)            
-            } else {
-                subjectDF()
-            }
-        })
 
-        # | -- -- Tabla de los recuentos ----------------------------
-        output$tableDir <- renderTable({
-            if (subjectDF()[1,1] != "Directorio sin archivos AWD"){
-                summDF <- otable(rvar = "Status", data = subjectDF())
-                summDF <- summDF %>% mutate(pct = pct*100, pct = paste(pct, "%", sep="")) %>%
-                    rename(N = freq, Porcentaje = pct)
-                levels(summDF$Status)[length(levels(summDF$Status))] <- "Total"
-                summDF
-            } else {
-                data.frame(Status = "Directorio sin archivos AWD")
-            }
-        })
+    # | -- -- Tabla directorio ----------------------------------
+    output$dfdir <- renderTable({
+        # Los radio buttons para el filtraje
+        if (input$filterDir != "Todos"){
+            filter(subjectDF(), Status == input$filterDir)            
+        } else {
+            subjectDF()
+        }
+    })
+
+    # | -- -- Tabla de los recuentos ----------------------------
+    output$tableDir <- renderTable({
+        if (subjectDF()[1,1] != "Directorio sin archivos AWD"){
+            summDF <- otable(rvar = "Status", data = subjectDF())
+            summDF <- summDF %>% mutate(pct = pct*100, pct = paste(pct, "%", sep="")) %>%
+                rename(N = freq, Porcentaje = pct)
+            levels(summDF$Status)[length(levels(summDF$Status))] <- "Total"
+            summDF
+        } else {
+            data.frame(Status = "Directorio sin archivos AWD")
+        }
+    })
     
     # | -- Boton para re-cargar directorio ---------------------------------------
-    observeEvent(input$btn_cargar, {
-        subjectDF <- reactive({
-            fn.setwd()
-            load.awdfolder() 
-        })
-    })
-
+    # observeEvent(input$btn_cargar, {
+    #     subjectDF <- reactive({
+    #         fn.setwd()
+    #         load.awdfolder()
+    #     })
+    # })
     
+    # Si me resulta lo dejo reactivo :)
     # Este boton debe re iniciar el proceso de cargar el directorio, no lo hace por algún motivo
     # claramente es porque no tiene nada reactivo dentro, la funcion tiene reactivo, pero no la funcion
     # de leer entonces.
     
-    
-    
+    output$tests <- renderPrint({
+        # fn.setwd()
+        paste(getwd())
+    })
     
     
     

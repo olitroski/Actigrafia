@@ -25,6 +25,7 @@ ui <- navbarPage(
                     actionButton("btn_cargar", "Cargar")),
 
                 hr(),
+                verbatimTextOutput("tests"),
 
                 # | --- Contenido del directorio --------------------------
                 fluidRow(
@@ -40,7 +41,7 @@ ui <- navbarPage(
                            # Seleccion de filtro
                            h4("Filtrar según Status"),
                            radioButtons("filterDir", label = NULL, choices = c("No procesado", 
-                                        "En edición", "Terminado", "Con error", "Todos"),
+                                        "En edicion", "Terminado", "Con error", "Todos"),
                                         selected = "Todos"),
                            br(),
                            # Tabla de recuentos
