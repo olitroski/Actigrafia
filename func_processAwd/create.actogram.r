@@ -30,7 +30,7 @@ create.actogram <- function(semiper, fy = 1){
     semiper <- perlist
     rm(per, perlist, p, cmd, i, temp, acv.edit)
     
-    ## Hace el actograma
+    ## ---- Hace el actograma -----------------------------------------------------------------------
     xscale2 <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
     xlabel2 <- ifelse(xscale2 >= 48, xscale2 - 48, ifelse(xscale2 >= 24, xscale2 - 24, xscale2))
     limX2 <- c(min(xscale2), max(xscale2))
@@ -54,3 +54,12 @@ create.actogram <- function(semiper, fy = 1){
 }
 
 #create.actogram(awdfile)
+
+
+
+
+
+
+
+
+

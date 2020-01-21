@@ -25,7 +25,6 @@ ui <- navbarPage(
                     actionButton("btn_cargar", "Cargar")),
 
                 hr(),
-                verbatimTextOutput("tests"),
 
                 # | --- Contenido del directorio --------------------------
                 fluidRow(

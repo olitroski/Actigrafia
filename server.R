@@ -47,16 +47,15 @@ server <- function(input, output, session){
     })
 
     #| -- Cargar directorio en df ---------------------------------------------
-    # Cargar el directorio en un data.frame
+    # Tiene un reactivePoll para ver si cambian los archivos del folder. Solo en nombres OJO.
+    new.files <- function() {dir()}
+    get.files <- function() {dir()}
+    my_files <- reactivePoll(100, session, checkFunc = new.files,valueFunc = get.files)
+    
+    # Cargar el directorio de acuerdo a lo que diga el reactivePoll
     subjectDF <- reactive({
         fn.setwd()
-        
-        # new.files <- function() {dir()}
-        # get.files <- function() {dir()}
-        # my_files <- reactivePoll(100, session, checkFunc = new.files, 
-        #                                        valueFunc = get.files)
-        
-        load.awdfolder()
+        load.awdfolder(filelist = my_files())
     })
 
 
@@ -225,9 +224,7 @@ server <- function(input, output, session){
     # | -- Actograma ----------------------------------------------------------
     output$actograma <- renderPlot({
         fn.setwd()
-        sujeto <- paste(awdfile, ".AWD", sep = "")
-        
-
+        #sujeto <- paste(awdfile, ".AWD", sep = "")
         
         awdfile <- "2058-001-368 JRG Baseline.AWD"
         newname <- str_replace(string=awdfile,

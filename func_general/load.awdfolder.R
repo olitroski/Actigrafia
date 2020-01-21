@@ -5,9 +5,10 @@
 # awdfolder <- "D:/OneDrive/INTA/Patricio Peirano/2019.12 Kansas/kansas"
 # load.awdfolder(awdfolder)
 
-load.awdfolder <- function(){
+load.awdfolder <- function(filelist = NULL){
     # capturar archivos
-    archivos <- dir()
+    # archivos <- dir()
+    archivos <- filelist
 
     # Solo awd y el sujeto
     awdfiles <- archivos[grep("[.][Aa][Ww][Dd]$", archivos)]
