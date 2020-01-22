@@ -82,28 +82,7 @@ server <- function(input, output, session){
         }
     })
     
-    # | -- Boton para re-cargar directorio ---------------------------------------
-    # observeEvent(input$btn_cargar, {
-    #     subjectDF <- reactive({
-    #         fn.setwd()
-    #         load.awdfolder()
-    #     })
-    # })
-    
-    # Si me resulta lo dejo reactivo :)
-    # Este boton debe re iniciar el proceso de cargar el directorio, no lo hace por algún motivo
-    # claramente es porque no tiene nada reactivo dentro, la funcion tiene reactivo, pero no la funcion
-    # de leer entonces.
-    
-    output$tests <- renderPrint({
-        # fn.setwd()
-        paste(getwd())
-    })
-    
-    
-    
-    
-    
+
     # | -- Parametros detección -----------------------------------------------
     # Los parametros se leen de la lista de settings.
     output$showSet <- renderUI({
@@ -119,13 +98,17 @@ server <- function(input, output, session){
     })
 
 
-
-    # Panel - ACTOGRAMA -------------------------------------------
+    # ####################################################################################### #
+    # Panel - ACTOGRAMA -----------------------------------------------------------------------
+    # ####################################################################################### #
     # |------------- UN TEST -------------------| ------
     output$test <- renderPrint({
-        awdfile()=="Debe ingresar un sujeto"
+        actSelection()
     })
-
+    
+    
+    
+    
     # | -- UI selectInput de sujetos ------------------------------------------  renderUI
     output$subjInput <- renderUI({
         lechoices <- c("Seleccionar", as.character(subjectDF()$Sujeto))
@@ -133,8 +116,8 @@ server <- function(input, output, session){
     })
     
         
-    # | -- Determina el awdfile ----------------------------------------------
-    # | -- -- reactive -------------------------------------------------------
+    # | Determina el sujeto a trabajar ----------------------------------------
+    # | ---- Reactive awdfile() -----------------------------------------------
     awdfile <-  reactive({
         # Tomar los valores si es que hay -- Bien verboso para que sea facil de analizar
         
@@ -180,7 +163,7 @@ server <- function(input, output, session){
     })
     
     
-    # | -- -- Output awdfile (el sujeto en realidad) --------------------------
+    # | ---- Output Sujeto ----------------------------------------------------
     output$selectedSubj <- renderPrint({
         if (length(awdfile()) == 0){
             " "
@@ -190,7 +173,7 @@ server <- function(input, output, session){
     })
     
 
-    # | -- Status del sujeto ------------------------------------------------------
+    # | ---- Status Sujeto ----------------------------------------------------
     output$statsSubj <- renderPrint({
         nfiles <- filter(subjectDF(), Sujeto == awdfile()) %>% select(N.Files)
         
@@ -212,36 +195,97 @@ server <- function(input, output, session){
     })
     
     
-    # Cuando aprieto "Proceder" para tomar una accion tiene que suceder esta secuencia.
-    # 1. Analizar
-    # 2. Ejecuta sobre el awdfile todo el pool de funciones iniciales
-    # 3. Se tiene que volver a leer el subjectDF()
-    # 4. Por lo tanto recargar la pestaña archivos
-    # 5. Modificar el resultado de la seleccion 
     
     
-     
+    # | Acciones a tomar ------------------------------------------------------
+    # Crear un reactive cada vez que se apriete el boton
+    actSelection <- eventReactive(input$accion_button, {
+        
+        # | ---- Analisis inicial -------------------------------------------------
+        if (input$accion_choice == "Analizar"){
+            # Si aprieta y no se ha seleccionado un sujeto
+            if (awdfile() == "Debe ingresar un sujeto"){
+                showNotification("Error, no hay sujeto")
+                FALSE
+                                
+            # Si hay sujeto proseguir
+            } else {
+                subj.status <- filter(subjectDF(), Sujeto == awdfile()) %>% select(Status)
+                subj.status <- subj.status[1,1]
+                
+                # Hay sujeto, pero con status Editar
+                if (subj.status == "En edicion"){
+                    showNotification("Error, Sujeto en edición")
+                    FALSE
+                
+                # Hay sujeto pero está terminado
+                } else if (subj.status == "Terminado"){
+                    showNotification("Error, Sujeto terminado")
+                    FALSE
+                    
+                # Ahora si procesar el sujeto desde cero
+                } else if (subj.status == "No procesado"){
+                    showNotification("Procesando...")
+                    
+                    # La vuelta completa está en el powerpoint
+                    sujeto <- paste(awdfile(), ".AWD", sep = "")
+                    acv <- create.acv(sujeto, set$sensivar)
+                    semiper <- create.semiper(sujeto, acv)
+                    filter.stats <- create.firstfilter(sujeto, semiper)
+                    acv.edit <- create.acvedit(sujeto, acv, filter.stats)
+                    FALSE
+                }
+            }
+            
+        # Si es que selecciona el histograma
+        } else if (input$accion_choice == "Cargar Actograma"){
+            # Si aprieta y no se ha seleccionado un sujeto
+            if (awdfile() == "Debe ingresar un sujeto"){
+                showNotification("Error, no hay sujeto")
+                FALSE
+                
+            # Si hay sujeto proseguir
+            } else {
+                subj.status <- filter(subjectDF(), Sujeto == awdfile()) %>% select(Status)
+                subj.status <- subj.status[1,1]
+                
+                # Hay sujeto, pero con status Editar
+                if (subj.status == "En edicion"){
+                    showNotification("Error, Sujeto en edición")
+                    # Devuelve el nombre del sujeto, 
+                    # asi si cambia no se hace el actograma
+                    awdfile()
+                } else {
+                    FALSE
+                }
+            
+            }
+            
+        } else {
+            FALSE
+        }
+        
+        
+        
+    
+    })
+    
+
+    
     # | -- Actograma ----------------------------------------------------------
+    # La lógica depende del botón, cuando se aprieta, el output es o FALSE o el 
+    # awdfile() y como es eventReactive no lo cambia de valor al cambiar el sujeto
     output$actograma <- renderPlot({
-        fn.setwd()
-        #sujeto <- paste(awdfile, ".AWD", sep = "")
-        
-        awdfile <- "2058-001-368 JRG Baseline.AWD"
-        newname <- str_replace(string=awdfile,
-                               pattern=".[Aa][Ww][Dd]$",
-                               replacement = "_acv.edit.RDS")
-        acv.edit <- readRDS(file = newname)
-        semiper <- create.semiper(awdfile, acv.edit)
-        
-        # lefiles <- dir()
-        # acv.edit <- grep(sub(".[Aa][Ww][Dd]$", "_acv.edit.RDS", awdfile), lefiles)
-        # acv.edit <- lefiles[acv.edit]
-        # acv.edit <- readRDS(acv.edit)
-        # semiper <- create.semiper(awdfile, acv.edit)
-        # windows()
-        create.actogram(semiper)
-
-
+        if (actSelection() == awdfile()){
+            # Lee el archivo primero
+            sujeto <- paste(awdfile(), ".AWD", sep = "")
+            sujeto <- str_replace(sujeto, ".[Aa][Ww][Dd]$", "_acv.edit.RDS")
+            acv.edit <- readRDS(sujeto)
+            
+            # Y hace el actograma
+            semiper <- create.semiper(awdfile(), acv.edit)
+            create.actogram(semiper)
+        }
     })
 
 

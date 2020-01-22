@@ -21,8 +21,8 @@ ui <- navbarPage(
                 div(style="display: inline-block; vertical-align: top",
                     shinyDirButton(id="BrowsePath", label="Buscar...", title = "Directorio de los AWD" )),
                 
-                div(style="display: inline-block; vertical-align: top",
-                    actionButton("btn_cargar", "Cargar")),
+                # div(style="display: inline-block; vertical-align: top",
+                #     actionButton("btn_cargar", "Cargar")),
 
                 hr(),
 
@@ -64,7 +64,7 @@ ui <- navbarPage(
     # Panel 2 - EDICION DE ARCHIVOS ---------------------------------------
     tabPanel("Actograma",
         
-        # test #################################################### 
+        # test #################################################### -----
         fluidRow(
              column(12,
                     verbatimTextOutput("test")
@@ -93,7 +93,7 @@ ui <- navbarPage(
                 h4("Acciones"),
                 radioButtons("accion_choice", label = NULL, 
                             choices = c("Analizar", "Editar", "Cargar Actograma"),
-                            selected = "Editar"),
+                            selected = NA),
                 actionButton("accion_button", "Proceder")
             )
         ),
@@ -104,8 +104,7 @@ ui <- navbarPage(
         fluidRow(
             column(1),
             column(10,
-
-                plotOutput("actograma", height = "1400px")
+                plotOutput("actograma", width = "100%")
             ),
             column(1)
             

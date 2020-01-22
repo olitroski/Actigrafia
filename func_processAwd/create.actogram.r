@@ -28,7 +28,7 @@ create.actogram <- function(semiper, fy = 1){
         eval(parse(text=cmd))
     }
     semiper <- perlist
-    rm(per, perlist, p, cmd, i, temp, acv.edit)
+    # rm(per, perlist, p, cmd, i, temp, acv.edit)
     
     ## ---- Hace el actograma -----------------------------------------------------------------------
     xscale2 <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
