@@ -53,9 +53,5 @@ create.semiper <- function(awdfile, acv, noc = set$ininoc, dia = set$inidia){
     peslist <- paste("pes <- list(",  paste(pes, "=", pes, collapse = ", "), ")", sep ="")
     eval(parse(text = peslist))
     
-    # Guardar el RDS y sale
-    # rdsname <- str_replace(awdfile, ".[Aa][Ww][Dd]$", "_semiper.RDS")
-    # cat(paste("Se crea el archivo: ", rdsname, "\n"))
-    # saveRDS(pes, rdsname)
     return(pes)
 }

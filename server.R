@@ -98,17 +98,9 @@ server <- function(input, output, session){
     })
 
 
-    # ####################################################################################### #
+
     # Panel - ACTOGRAMA -----------------------------------------------------------------------
-    # ####################################################################################### #
-    # |------------- UN TEST -------------------| ------
-    output$test <- renderPrint({
-        actSelection()
-    })
-    
-    
-    
-    
+
     # | -- UI selectInput de sujetos ------------------------------------------  renderUI
     output$subjInput <- renderUI({
         lechoices <- c("Seleccionar", as.character(subjectDF()$Sujeto))
@@ -237,7 +229,7 @@ server <- function(input, output, session){
                 }
             }
             
-        # Si es que selecciona el histograma
+        # Si es que selecciona el actograma
         } else if (input$accion_choice == "Cargar Actograma"){
             # Si aprieta y no se ha seleccionado un sujeto
             if (awdfile() == "Debe ingresar un sujeto"){
@@ -249,30 +241,26 @@ server <- function(input, output, session){
                 subj.status <- filter(subjectDF(), Sujeto == awdfile()) %>% select(Status)
                 subj.status <- subj.status[1,1]
                 
-                # Hay sujeto, pero con status Editar
+                # Hay sujeto y con status Editar guarda el awdfile para graficar.
                 if (subj.status == "En edicion"){
-                    showNotification("Error, Sujeto en edición")
-                    # Devuelve el nombre del sujeto, 
-                    # asi si cambia no se hace el actograma
+                    showNotification("Creando actograma")
+                    # Devuelve el nombre del sujeto, asi si cambia en el selectInput 
+                    # no se hace el actograma para otro sujeto.
                     awdfile()
                 } else {
                     FALSE
                 }
-            
             }
-            
+         
+        # Si es que seleccionó EDITAR  
         } else {
+            # La idea es que nos mande para la pestaña siguiente.
             FALSE
         }
-        
-        
-        
-    
     })
     
-
     
-    # | -- Actograma ----------------------------------------------------------
+    # | ---- Actograma ----------------------------------------------------------
     # La lógica depende del botón, cuando se aprieta, el output es o FALSE o el 
     # awdfile() y como es eventReactive no lo cambia de valor al cambiar el sujeto
     output$actograma <- renderPlot({
@@ -288,7 +276,27 @@ server <- function(input, output, session){
         }
     })
 
-
+    
+    # Panel - EDICION ---------------------------------------------------------
+    output$editFile <- renderPrint({
+        asdf <- readLines("D:/OneDrive/INTA/Actigrafia/testfolder/test_kansas/2058-001-368 JRG Baseline.edit")
+        cat(paste(asdf, collapse = "\n"))
+    })
+    
+    
+    output$SubjEdicion <- renderPrint({
+        cat("Oliver Rojas de las Pampas")
+    })
+    
+    
+    output$periodoenedicion <- renderPrint({
+        cat("martes, 25 de julio de 1981")
+    })
+    
+    
+    output$periodPlot <- renderPlot({
+        plot(mtcars$mpg, mtcars$disp)
+    })
     
 }
 

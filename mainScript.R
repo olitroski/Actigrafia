@@ -18,12 +18,12 @@ set <- getset()         # <<<<"configuracion.set">>>>
 # Cargar App
 # runApp(launch.browser = TRUE)
 
-# stop()
+stop()
 
 
 # ----- Para pruebas -------------------------------------------------- 
-awdfolder <- "D:/OneDrive/INTA/Patricio Peirano/2019.12 Kansas/kansas"
 sensi <- 40
+awdfolder <- "D:/OneDrive/INTA/Patricio Peirano/2019.12 Kansas/kansas"
 setwd(awdfolder)
 archivos <- dir()
 archivos <- archivos[grep(".[Aa][Ww][Dd]$", archivos)]
@@ -34,8 +34,25 @@ acv <- create.acv(awdfile, set$sensivar)
 semiper <- create.semiper(awdfile, acv)
 filter.stats <- create.firstfilter(awdfile, semiper)
 acv.edit <- create.acvedit(awdfile, acv, filter.stats)
-# 
-windows()
-create.actogram(awdfile)
+
+semiper2 <- create.semiper(awdfile, acv.edit)
+create.actogram(semiper2)
+
+
+# Jugar con los tamaños
+setwd(mainfolder)
+png("ola k ase.png", width = 1000, height = 1320)
+create.actogram(semiper2)
 dev.off()
+
+
+1320/11
+
+# Cada plot suma 120 pixeles al actograma.
+
+
+
+
+
+
 

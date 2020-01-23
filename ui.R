@@ -61,15 +61,8 @@ ui <- navbarPage(
 
 
 
-    # Panel 2 - EDICION DE ARCHIVOS ---------------------------------------
+    # Panel 2 - ACTOGRAMA ---------------------------------------
     tabPanel("Actograma",
-        
-        # test #################################################### -----
-        fluidRow(
-             column(12,
-                    verbatimTextOutput("test")
-             )
-         ),
         
         # | Seccion: Seleccion de Sujetos -------------------------------------
         fluidRow(
@@ -100,7 +93,7 @@ ui <- navbarPage(
         
 
         
-        # | Sección: Actograma --------------------------------------------
+        # | Sección: Actograma ------------------------------------------------
         fluidRow(
             column(1),
             column(10,
@@ -109,5 +102,126 @@ ui <- navbarPage(
             column(1)
             
         )
+    ),
+    
+    
+    # Panel 3 - EDICION DE ARCHIVOS -------------------------------------------
+    tabPanel("Edicion",
+        # | Fila para el selector de periodo ----------------------------------
+        fluidRow(
+            # Mostrar el sujeto
+            column(4, 
+                h4("Sujeto en edición"),
+                verbatimTextOutput("SubjEdicion")       
+            ),
+            
+            # Mostar un select input (deberá ser outputUI)
+            column(8,
+                h4("Seleccionar el período a editar"),
+                selectInput("periodEdicion", label = NA, choices = c("A", "B", "C"))
+            )
+        ),
+        
+        
+        # | Fila para el plot y slider ----------------------------------------
+        fluidRow(
+            column(12, align = "center",
+            
+                # El plot
+                plotOutput("periodPlot", height = 300, width = "90%"),
+                
+                # El Slider
+                sliderInput("sliderEdicion", label = NA,
+                            min = 0, max = 100, value = c(0,100), width = "90%")
+                
+            )
+        ),
+        
+        
+        # | Fila para el panel edicion ----------------------------------------
+        fluidRow(
+            # | -- Archivo de edición -----------------------------------------
+            # << Hay que crear una funcion que haga solo eso >>
+            column(4,
+                h4("Archivo de edición"),
+                verbatimTextOutput("editFile")
+            ),
+            
+            column(8,
+                # La fecha del grafico
+                fluidRow(
+                    column(12,
+                        h4("El período en edición es:"),
+                        verbatimTextOutput("periodoenedicion")
+                    )
+                ),
+                
+                # Los segmentos de edición
+                fluidRow(
+                    # | -- Edición de períodos ----------------------------------------
+                    column(4,
+                        h4("Edición de periodos"),
+                        p("Seleccionar dia, noche o ambos"),
+                        checkboxGroupInput("dianoc", label=NA, 
+                                          choices = c("Día", "Noche"), 
+                                          inline = TRUE),
+                        actionButton("cambia_periodo", label = "Filtrar", icon = icon("refresh"))
+                    ),
+                    
+                    
+                    # | -- Edicion de actividad ---------------------------------------
+                    column(8,
+                        h4("Edición de actividad"),
+                        p("Seleccionar hora de inicio, hora de fin y el tipo de edición"),
+                        
+                        fluidRow(
+                            column(3,
+                                # p("fin"),
+                                textInput("ini", value = "hh:mm", label = "Inicio"),
+                                actionButton("cambia_actividad", label = "Editar", icon = icon("refresh"))
+                            ),
+                            
+                            column(3,
+                                # p("fin"),
+                                textInput("fin", value = "hh:mm", label = "Fin")
+                            ),
+                            
+                            column(6,
+                                selectInput("editActiv", label = "Seleccionar tipo de edición", 
+                                           choices = c("Seleccionar", "Sueño a Vigilia", "Vigilia a sueño"))
+                                
+                            )
+                            
+                        )
+
+                    )
+
+                )
+
+            )
+        )
     )
 )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
