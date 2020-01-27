@@ -3,7 +3,7 @@
 ## ------------------------------------------------------------------------------------ #
 # Toma un data.frame de la lista "semiper" y con eso hace el gráfico
 # create.plot(semiperdf)
-create.plotSimple <- function(semiperdf, pct.y = 1){
+create.plotSimple <- function(semiperdf, pct.y = 1, limites = NULL){
     # ---- Data para los ejes --------------------------------------------------------- #
     # Hora decimal continua
     lim <- as.numeric(set$ininoc)/3600
@@ -19,7 +19,16 @@ create.plotSimple <- function(semiperdf, pct.y = 1){
     # Y: Limites 
     limY <-  c(0, ceiling(max(semiperdf$act.edit)/10)*10)
     limY[2] <- limY[2] * pct.y
-    limX <- c(min(xscale), max(xscale))
+    
+    # Limite en X
+    if (class(limites) == "NULL"){
+        limX <- c(min(xscale), max(xscale))
+    } else {
+        limX <- limites
+    }
+    
+    
+    
     
     
     # --- sueño y wake data para el background (indices) ------------------------------ #

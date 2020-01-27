@@ -23,12 +23,14 @@ set <- getset()         # <<<<"configuracion.set">>>>
 # 
 # # ----- Para pruebas -------------------------------------------------- 
 # sensi <- 40
-awdfolder <- "D:/OneDrive/INTA/Actigrafia/testfolder/test_kansas"
-setwd(awdfolder)
-archivos <- dir()
-archivos <- archivos[grep(".[Aa][Ww][Dd]$", archivos)]
-awdfile <- archivos[1]
-awdfile <- str_replace(awdfile, ".AWD", "")
+# awdfolder <- "D:/OneDrive/INTA/Actigrafia/testfolder/test_kansas"
+# setwd(awdfolder)
+# archivos <- dir()
+# archivos <- archivos[grep(".[Aa][Ww][Dd]$", archivos)]
+# awdfile <- archivos[1]
+# awdfile <- str_replace(awdfile, ".AWD", "")
+
+# Prueba para el plot con slider
 
 
 # 

@@ -107,6 +107,10 @@ ui <- navbarPage(
     
     # Panel 3 - EDICION DE ARCHIVOS -------------------------------------------
     tabPanel("Edición",
+        
+        verbatimTextOutput("test"),
+             
+             
         # | Fila para el selector de periodo ----------------------------------
         fluidRow(
             # Mostrar el sujeto
@@ -144,12 +148,12 @@ ui <- navbarPage(
             column(12, align = "center",
             
                 # El plot
-                plotOutput("periodPlot", height = 300, width = "90%"),
+                plotOutput("periodPlot", height = 200, width = "90%"),
                 
                 # El Slider
                 sliderInput("sliderEdicion", label = NA,
                             min = 0, max = 100, value = c(0,100), width = "90%")
-                
+
             )
         ),
         
@@ -204,7 +208,7 @@ ui <- navbarPage(
                             
                             column(6,
                                 selectInput("editActiv", label = "Seleccionar tipo de edición", 
-                                           choices = c("Seleccionar", "Sueño a Vigilia", "Vigilia a sueño"))
+                                           choices = c("Seleccionar", "Agregar actividad", "Convertir en Sueño"))
                                 
                             )
                             

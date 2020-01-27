@@ -257,31 +257,29 @@ server <- function(input, output, session){
         # | ---- Accion: Editar -----------------------------------------------
         } else if (input$accion_choice == "Editar"){
             # La idea es que nos mande para la pestaña siguiente.
-            semiperEdit <- getSemiper()
             updateNavbarPage(session, inputId = "TablasApp", selected = "Edición")
             
             # Marca false para hacer el actograma.
-            FALSE
+            # TRUE   <- Este es el original, dejo el awdfile() para que se haga
+            # el histograma y se pueda consultar
+            awdfile()
+        
+        # Algo extraño pasó
         } else {
             stop("Error en la selección de la acción")
         }
     })
+
     
-    
-    # FUncion para cargar los semiperiodos, se usa en el edit boton y en edicion
-    getSemiper <- function(){
-        # Asegurar el WD
-        if (length(input$dir) != 1 | (length(saved.folder()) == 1)){
-            setwd(awdfolder())
+    # | Cargar el check.acvfilter ---------------------------------------------
+    semiperEdit0 <- eventReactive(input$accion_button,{
+        if (input$accion_choice == "Editar"){
+            check.acvfilter(awdfile())
         }
-        
-        return(check.acvfilter(awdfile()))
-        
-    }
+    })
     
     
-    
-    # | Actograma ----------------------------------------------------------
+    # | Actograma -------------------------------------------------------------
     # La lógica depende del botón, cuando se aprieta, el output es: FALSE o el 
     # awdfile() y como es eventReactive no lo cambia de valor al cambiar el sujeto
     output$actograma <- renderPlot({
@@ -297,38 +295,56 @@ server <- function(input, output, session){
         }
     })
 
+    
+    
 
     
     # Panel - EDICION ---------------------------------------------------------
-    
-    
-    
-    
-    # | Reactive para los datos
-    semiperData <- reactive({
-        sujeto <- paste(awdfile(), ".AWD", sep = "")
-        acv <- create.acv(sujeto, set$sensivar)
-        acv.edit <- create.acvedit(sujeto, acv, filter.stats)
-        semiper <- create.semiper(awdfile(), acv.edit)
-        
+    # Le test de este panel
+    output$test <- renderPrint({
+        # names(semiperEdit0())
+        # semiperEdit0()$timelist
+        # names(semiperEdit0()$semiper)
+        # head(gdata())
     })
+
     
-    
-    # | Sujeto y selección de periodo a editar --------------------------------
+    # | -- Sujeto en edición --------------------------------------------------
     # Dijimos que cada vez se carga el awdfile, asi que primero checar si quedó 
     # seleccionado
     output$SubjEdicion <- renderPrint({
         cat(awdfile())
     })
     
-    # renderUI para selección de periodos
+    # | -- Seleccionar el período a editar ------------------------------------
     output$perSelection <- renderUI({
-        periodos <- c(1, 2, 3)    
+        periodos <- semiperEdit0()$timelist
+        periodos <- paste(periodos$period, "-", periodos$tlist)
         selectInput(inputId = "perChoose", label = NULL, choices = periodos)
     })
     
     
-    # | ---- Botón de carga del semi periodo ----------------------------------
+    # | -- Botón de carga -----------------------------------------------------
+    # El botón de carga no interviene en nada mas que hacer el gráfico, pero 
+    # como tiene que estar actualizado al status del txt de filtro carga la data
+    gdata <- eventReactive(input$cargaSemip, {
+        # Capturar datos
+        data <- check.acvfilter(awdfile())
+        data <- data$semiper
+        
+        # Capturar el nombre del elemnto en la lista
+        periodo <- str_sub(input$perChoose, 1, 5)
+        periodo <- data[[periodo]]
+    })
+    
+    
+    # | -- El plot ------------------------------------------------------------
+    output$periodPlot <- renderPlot({
+        create.plotSimple(gdata())
+    })
+    
+    
+    
     
     
     
@@ -349,9 +365,6 @@ server <- function(input, output, session){
     })
     
     
-    output$periodPlot <- renderPlot({
-        plot(mtcars$mpg, mtcars$disp)
-    })
     
 }
 
