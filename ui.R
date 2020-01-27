@@ -1,6 +1,6 @@
 # OlitoSleep UI - La mejor app del lab.
 ui <- navbarPage(
-    "OlitoSleep",
+    "OlitoSleep", id = "TablasApp",
 
     # Panel 1 - ARCHIVOS --------------------------------------------------
     tabPanel("Archivos",
@@ -61,7 +61,7 @@ ui <- navbarPage(
 
 
 
-    # Panel 2 - ACTOGRAMA ---------------------------------------
+    # Panel 2 - ACTOGRAMA -----------------------------------------------------
     tabPanel("Actograma",
         
         # | Seccion: Seleccion de Sujetos -------------------------------------
@@ -106,7 +106,7 @@ ui <- navbarPage(
     
     
     # Panel 3 - EDICION DE ARCHIVOS -------------------------------------------
-    tabPanel("Edicion",
+    tabPanel("Edición",
         # | Fila para el selector de periodo ----------------------------------
         fluidRow(
             # Mostrar el sujeto
@@ -117,8 +117,24 @@ ui <- navbarPage(
             
             # Mostar un select input (deberá ser outputUI)
             column(8,
-                h4("Seleccionar el período a editar"),
-                selectInput("periodEdicion", label = NA, choices = c("A", "B", "C"))
+                fluidRow(
+                    column(12,
+                        h4("Seleccionar el período a editar")
+                    )
+                ),
+                
+                # Fila para el input y el botón
+                fluidRow(
+                    column(4,
+                        # selectInput("periodEdicion", label = NA, choices = c("A", "B", "C"))
+                        uiOutput("perSelection")
+                    ),
+                    
+                    column(8, align = "left",
+                        # Y un botón
+                        actionButton("cargaSemip", label = "Cargar")
+                    )
+                )
             )
         ),
         
@@ -200,28 +216,13 @@ ui <- navbarPage(
 
             )
         )
+    ),
+    
+    
+    
+    # Panel 4 - ESTADISTICAS --------------------------------------------------
+    tabPanel("Estadísticas"
+        
+        
     )
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

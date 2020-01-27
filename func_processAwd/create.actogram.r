@@ -4,14 +4,7 @@
 # La idea es tomar un acv y mostrarlos de 20 a 20 horas asi aseguramos tener todos los d?as
 # Solo se superponen sue?o y vigilia, la idea es que sirva para editar el awd.
 create.actogram <- function(semiper, fy = 1){
-
-    # Cargar semiperiodos, se supone estamos en el working directory de los awd
-    # lefiles <- dir()
-    # acv.edit <- grep(sub(".[Aa][Ww][Dd]$", "_acv.edit.RDS", awdfile), lefiles)
-    # acv.edit <- lefiles[acv.edit]
-    # acv.edit <- readRDS(acv.edit)
-    # semiper <- create.semiper(awdfile, acv.edit)
-    
+   
     # Combinar noche->dia mismo periodo
     per <- unique(str_sub(names(semiper), 2, 2))
     perlist <- list()

@@ -99,9 +99,9 @@ server <- function(input, output, session){
 
 
 
-    # Panel - ACTOGRAMA -----------------------------------------------------------------------
-
-    # | -- UI selectInput de sujetos ------------------------------------------  renderUI
+    # Panel - ACTOGRAMA -------------------------------------------------------
+    
+    # | -- renderUI selectInput de sujetos ------------------------------------
     output$subjInput <- renderUI({
         lechoices <- c("Seleccionar", as.character(subjectDF()$Sujeto))
         selectInput(inputId="awd_select", label=NULL, choices=lechoices)
@@ -177,7 +177,7 @@ server <- function(input, output, session){
             cat("---ERROR--- El sujeto no tiene archivos...")
         # Si tiene solo 1 archivo
         } else if (nfiles == 1){
-            cat("Sujeto sin procesar, se debe hacer el análisis inicial...")
+            cat("Sujeto sin procesar, se debe hacer el análisis preliminar, seleccionar 'Analizar' en 'Acciones'")
         # Si tiene más de 1 archivo
         } else if (nfiles > 1){
             cat("Sujeto en edición, puede finalizarlo o seguir editando...")
@@ -186,14 +186,11 @@ server <- function(input, output, session){
         }
     })
     
-    
-    
-    
     # | Acciones a tomar ------------------------------------------------------
     # Crear un reactive cada vez que se apriete el boton
     actSelection <- eventReactive(input$accion_button, {
         
-        # | ---- Analisis inicial -------------------------------------------------
+        # | ---- Accion: Analizar ---------------------------------------------
         if (input$accion_choice == "Analizar"){
             # Si aprieta y no se ha seleccionado un sujeto
             if (awdfile() == "Debe ingresar un sujeto"){
@@ -225,17 +222,21 @@ server <- function(input, output, session){
                     semiper <- create.semiper(sujeto, acv)
                     filter.stats <- create.firstfilter(sujeto, semiper)
                     acv.edit <- create.acvedit(sujeto, acv, filter.stats)
+                    
+                    # Volver a la pestaña de archivos
+                    updateNavbarPage(session, inputId = "TablasApp", selected = "Archivos")
+                    
                     FALSE
                 }
             }
             
-        # Si es que selecciona el actograma
+        # | ---- Accion: Cargar actograma -----------------------------------------------
         } else if (input$accion_choice == "Cargar Actograma"){
             # Si aprieta y no se ha seleccionado un sujeto
             if (awdfile() == "Debe ingresar un sujeto"){
                 showNotification("Error, no hay sujeto")
                 FALSE
-                
+
             # Si hay sujeto proseguir
             } else {
                 subj.status <- filter(subjectDF(), Sujeto == awdfile()) %>% select(Status)
@@ -248,20 +249,40 @@ server <- function(input, output, session){
                     # no se hace el actograma para otro sujeto.
                     awdfile()
                 } else {
+                    showNotification("El sujeto no ha sido analizado")
                     FALSE
                 }
             }
          
-        # Si es que seleccionó EDITAR  
-        } else {
+        # | ---- Accion: Editar -----------------------------------------------
+        } else if (input$accion_choice == "Editar"){
             # La idea es que nos mande para la pestaña siguiente.
+            semiperEdit <- getSemiper()
+            updateNavbarPage(session, inputId = "TablasApp", selected = "Edición")
+            
+            # Marca false para hacer el actograma.
             FALSE
+        } else {
+            stop("Error en la selección de la acción")
         }
     })
     
     
-    # | ---- Actograma ----------------------------------------------------------
-    # La lógica depende del botón, cuando se aprieta, el output es o FALSE o el 
+    # FUncion para cargar los semiperiodos, se usa en el edit boton y en edicion
+    getSemiper <- function(){
+        # Asegurar el WD
+        if (length(input$dir) != 1 | (length(saved.folder()) == 1)){
+            setwd(awdfolder())
+        }
+        
+        return(check.acvfilter(awdfile()))
+        
+    }
+    
+    
+    
+    # | Actograma ----------------------------------------------------------
+    # La lógica depende del botón, cuando se aprieta, el output es: FALSE o el 
     # awdfile() y como es eventReactive no lo cambia de valor al cambiar el sujeto
     output$actograma <- renderPlot({
         if (actSelection() == awdfile()){
@@ -271,22 +292,56 @@ server <- function(input, output, session){
             acv.edit <- readRDS(sujeto)
             
             # Y hace el actograma
-            semiper <- create.semiper(awdfile(), acv.edit)
+            semiper <- create.semiper(acv.edit)
             create.actogram(semiper)
         }
     })
 
+
     
     # Panel - EDICION ---------------------------------------------------------
+    
+    
+    
+    
+    # | Reactive para los datos
+    semiperData <- reactive({
+        sujeto <- paste(awdfile(), ".AWD", sep = "")
+        acv <- create.acv(sujeto, set$sensivar)
+        acv.edit <- create.acvedit(sujeto, acv, filter.stats)
+        semiper <- create.semiper(awdfile(), acv.edit)
+        
+    })
+    
+    
+    # | Sujeto y selección de periodo a editar --------------------------------
+    # Dijimos que cada vez se carga el awdfile, asi que primero checar si quedó 
+    # seleccionado
+    output$SubjEdicion <- renderPrint({
+        cat(awdfile())
+    })
+    
+    # renderUI para selección de periodos
+    output$perSelection <- renderUI({
+        periodos <- c(1, 2, 3)    
+        selectInput(inputId = "perChoose", label = NULL, choices = periodos)
+    })
+    
+    
+    # | ---- Botón de carga del semi periodo ----------------------------------
+    
+    
+    
+    
+    
+    
+    
     output$editFile <- renderPrint({
         asdf <- readLines("D:/OneDrive/INTA/Actigrafia/testfolder/test_kansas/2058-001-368 JRG Baseline.edit")
         cat(paste(asdf, collapse = "\n"))
     })
     
     
-    output$SubjEdicion <- renderPrint({
-        cat("Oliver Rojas de las Pampas")
-    })
     
     
     output$periodoenedicion <- renderPrint({

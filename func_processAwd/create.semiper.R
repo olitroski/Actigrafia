@@ -6,8 +6,8 @@
 #       Crea una lista con cada semi periodo, no son puntos de corte, es el acv trozado
 # Sugerencia sacar entre 20:00 y 06:00 porque el proceso del epi seri­a entre esas horas
 # noc = set$ininoc; dia = set$inidia
-create.semiper <- function(awdfile, acv, noc = set$ininoc, dia = set$inidia){
-    head(acv)
+create.semiper <- function(acv, noc = set$ininoc, dia = set$inidia){
+    # head(acv)
     
     # Construir los lugares de corte & asegurar el time zone para evitar error.
     noche <- paste(hour(noc),":",minute(noc), ":00", sep = "")
