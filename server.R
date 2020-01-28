@@ -219,7 +219,7 @@ server <- function(input, output, session){
                     # La vuelta completa está en el powerpoint
                     sujeto <- paste(awdfile(), ".AWD", sep = "")
                     acv <- create.acv(sujeto, set$sensivar)
-                    semiper <- create.semiper(sujeto, acv)
+                    semiper <- create.semiper(acv)
                     filter.stats <- create.firstfilter(sujeto, semiper)
                     acv.edit <- create.acvedit(sujeto, acv, filter.stats)
                     
@@ -231,7 +231,7 @@ server <- function(input, output, session){
             }
             
         # | ---- Accion: Cargar actograma -----------------------------------------------
-        } else if (input$accion_choice == "Cargar Actograma"){
+        } else if (input$accion_choice == "Actograma"){
             # Si aprieta y no se ha seleccionado un sujeto
             if (awdfile() == "Debe ingresar un sujeto"){
                 showNotification("Error, no hay sujeto")
@@ -256,13 +256,40 @@ server <- function(input, output, session){
          
         # | ---- Accion: Editar -----------------------------------------------
         } else if (input$accion_choice == "Editar"){
-            # La idea es que nos mande para la pestaña siguiente.
-            updateNavbarPage(session, inputId = "TablasApp", selected = "Edición")
+            # Si aprieta y no se ha seleccionado un sujeto
+            if (awdfile() == "Debe ingresar un sujeto"){
+                showNotification("Error, no hay sujeto")
+                FALSE            
             
-            # Marca false para hacer el actograma.
-            # TRUE   <- Este es el original, dejo el awdfile() para que se haga
-            # el histograma y se pueda consultar
-            awdfile()
+            # Hay sujeto... se sigue
+            } else {
+                subj.status <- filter(subjectDF(), Sujeto == awdfile()) %>% select(Status)
+                subj.status <- subj.status[1,1]
+                
+                # Hay sujeto, pero con status Sin editar
+                if (subj.status == "No procesado"){
+                    showNotification("Error, Sujeto no tiene análisis inicial")
+                    FALSE
+                    
+                # Hay sujeto pero está terminado
+                } else if (subj.status == "Terminado"){
+                    showNotification("Error, Sujeto terminado")
+                    FALSE
+                
+                 # Ahora si procesar el sujeto 
+                } else if (subj.status == "En edicion"){
+                    showNotification("Procesando...")
+                
+                    # La idea es que nos mande para la pestaña siguiente.
+                    updateNavbarPage(session, inputId = "TablasApp", selected = "Edición")
+                    
+                    # Marca false para hacer el actograma.
+                    # TRUE   <- Este es el original, dejo el awdfile() para que se haga
+                    # el histograma y se pueda consultar
+                    awdfile()
+                }
+            }
+            
         
         # Algo extraño pasó
         } else {
@@ -272,43 +299,63 @@ server <- function(input, output, session){
 
     
     # | Cargar el check.acvfilter ---------------------------------------------
+    # Para usar de inicio estas periodos antes de editar
     semiperEdit0 <- eventReactive(input$accion_button,{
-        if (input$accion_choice == "Editar"){
+        subj.status <- filter(subjectDF(), Sujeto == awdfile()) %>% select(Status)
+        subj.status <- subj.status[1,1]
+        
+        if (input$accion_choice == "Editar" & subj.status == "En edicion"){
             check.acvfilter(awdfile())
         }
     })
     
     
     # | Actograma -------------------------------------------------------------
-    # La lógica depende del botón, cuando se aprieta, el output es: FALSE o el 
-    # awdfile() y como es eventReactive no lo cambia de valor al cambiar el sujeto
-    output$actograma <- renderPlot({
+    # La lógica depende del botón de accion a tomar, cuando se aprieta, el output
+    # es: FALSE o el awdfile() y como es eventReactive no lo cambia de valor al 
+    # actSelection() cambiar el sujeto
+
+    # reactive para crea el semiper, pero depende del botón por el primer if
+    semiper <- reactive({
         if (actSelection() == awdfile()){
             # Lee el archivo primero
             sujeto <- paste(awdfile(), ".AWD", sep = "")
             sujeto <- str_replace(sujeto, ".[Aa][Ww][Dd]$", "_acv.edit.RDS")
             acv.edit <- readRDS(sujeto)
-            
-            # Y hace el actograma
             semiper <- create.semiper(acv.edit)
-            create.actogram(semiper)
+        } else {
+            list()
         }
     })
-
     
+    # El ui render, el height se setea grande para que no de error de margins
+    output$actoUI <- renderUI({
+        if (length(semiper()) == 0){
+            h <- 1800
+            plotOutput("actograma", width = "100%", height = h)
+        } else {
+            h <- length(semiper()) * 80
+            plotOutput("actograma", width = "100%", height = h)
+        }
+    })
     
+    output$actograma <- renderPlot({
+        # Si no hay semiper pone algo igual
+        if (length(semiper()) == 0){
+            plot(0,type='n',axes=FALSE,ann=FALSE)
+        } else if (length(semiper()) > 0){
+            create.actogram(semiper())
+        } else {
+            stop("Algo paso con el grafico")
+        }
+    })
 
     
     # Panel - EDICION ---------------------------------------------------------
     # Le test de este panel
     output$test <- renderPrint({
-        # names(semiperEdit0())
-        # semiperEdit0()$timelist
-        # names(semiperEdit0()$semiper)
-        # head(gdata())
     })
 
-    
     # | -- Sujeto en edición --------------------------------------------------
     # Dijimos que cada vez se carga el awdfile, asi que primero checar si quedó 
     # seleccionado
@@ -320,9 +367,9 @@ server <- function(input, output, session){
     output$perSelection <- renderUI({
         periodos <- semiperEdit0()$timelist
         periodos <- paste(periodos$period, "-", periodos$tlist)
-        selectInput(inputId = "perChoose", label = NULL, choices = periodos)
+        selectInput(inputId = "perChoose", label = NULL, 
+                    choices = periodos, width = "100%")
     })
-    
     
     # | -- Botón de carga -----------------------------------------------------
     # El botón de carga no interviene en nada mas que hacer el gráfico, pero 
@@ -338,11 +385,12 @@ server <- function(input, output, session){
     })
     
     
-    # | Reset Range btn -----------------------------------------------------
+    # | -- Reset Range btn -----------------------------------------------------
     observeEvent(input$resetBtn, {
         # El reset debiera calzar con el del grafico
         xscale <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
         updateSliderInput(session, "rangoX", value = c(min(xscale), max(xscale)))
+        updateNumericInput(session, "ldNum", value = 1)
     })
 
     # | Render ui del slider -----------------------------------------------
@@ -379,10 +427,12 @@ server <- function(input, output, session){
     
     
     output$periodoenedicion <- renderPrint({
-        cat("martes, 25 de julio de 1981")
+        cat("miercoles, 25 Septiembre 1981")
     })
     
-    
+        output$periodoenedicion2 <- renderPrint({
+        cat("miercoles, 25 Septiembre 1981")
+    })
     
 }
 

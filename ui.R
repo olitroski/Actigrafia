@@ -85,8 +85,8 @@ ui <- navbarPage(
             column(6, 
                 h4("Acciones"),
                 radioButtons("accion_choice", label = NULL, 
-                            choices = c("Analizar", "Editar", "Cargar Actograma"),
-                            selected = NA),
+                            choices = c("Analizar", "Editar", "Actograma", "Terminar Sujeto"),
+                            selected = "Editar", inline = TRUE),
                 actionButton("accion_button", "Proceder")
             )
         ),
@@ -97,7 +97,7 @@ ui <- navbarPage(
         fluidRow(
             column(1),
             column(10,
-                plotOutput("actograma", width = "100%")
+                uiOutput("actoUI")
             ),
             column(1)
             
@@ -107,20 +107,18 @@ ui <- navbarPage(
     
     # Panel 3 - EDICION DE ARCHIVOS -------------------------------------------
     tabPanel("Edición",
-        
-        verbatimTextOutput("test"),
-             
-             
-        # | Fila para el selector de periodo ----------------------------------
+
+        # | Fila para sujeto + periodo + linea + reset  -----------------------
         fluidRow(
-            # Mostrar el sujeto
-            column(4, 
+            
+            # | -- Col4: Sujeto -----------------------------------------------
+            column(3, 
                 h4("Sujeto en edición"),
-                verbatimTextOutput("SubjEdicion")       
+                verbatimTextOutput("SubjEdicion", )       
             ),
             
-            # Mostar un select input (deberá ser outputUI)
-            column(8,
+            # | -- Col4: selectInput (outputUI) + Boton -----------------------
+            column(4, 
                 fluidRow(
                     column(12,
                         h4("Seleccionar el período a editar")
@@ -129,107 +127,129 @@ ui <- navbarPage(
                 
                 # Fila para el input y el botón
                 fluidRow(
-                    column(4,
-                        # selectInput("periodEdicion", label = NA, choices = c("A", "B", "C"))
+                    column(8,  
+                        # selectInput
                         uiOutput("perSelection")
                     ),
                     
-                    column(8, align = "left",
+                    column(3, style = "text-align: center;",
                         # Y un botón
                         actionButton("cargaSemip", label = "Cargar")
-                    )
+                    ),
+                    column(1, p(" "))
+                )
+            ),
+            
+            # | -- Col4: Tamaño Linea + Reset ---------------------------------
+            column(5, 
+                # Selector de lw
+                column(4, 
+                   h4("Ancho Linea"),
+                   numericInput("ldNum", value = 1, min = 1, max = 10, step = 1, 
+                                label = NULL, width = "80px")
+                ),
+                
+                # Botón de reset
+                column(8, 
+                   h4("Resetear el gráfico"),
+                   actionButton("resetBtn", label = "Reset", icon = NULL)
                 )
             )
         ),
-        
+
         
         # | Fila para el plot y slider ----------------------------------------
         fluidRow(
             column(12, align = "center",
                 # El grafico primero
-                plotOutput("periodPlot", height = 200, width = "90%"),
+                plotOutput("periodPlot", height = 140, width = "90%"),
                 
                 # Input: Slider for the number of bins
                 uiOutput("sliderEdicion")
             )
         ),
-        
-        # | Fila para el reset y lwd
-        fluidRow(
-            # Selector de lw
-            column(2,
-               h4("Tamaño de linea"),
-               numericInput("ldNum", value = 1, min = 1, max = 10, step = 1, label = NULL)
-            ),
-            
-            # Botón de reset
-            column(10, 
-               h4("Resetear el rango del gráfico"),
-               actionButton("resetBtn", label = "Reset", icon = NULL)
-            )
-        ),
-        
+
         
         # | Fila para el panel edicion ----------------------------------------
         fluidRow(
             # | -- Archivo de edición -----------------------------------------
             # << Hay que crear una funcion que haga solo eso >>
             column(4,
-                h4("Archivo de edición"),
+                h4("El período en edición es:"),
                 verbatimTextOutput("editFile")
             ),
             
+            # Las ediciones con paneles
             column(8,
-                # La fecha del grafico
-                fluidRow(
-                    column(12,
-                        h4("El período en edición es:"),
-                        verbatimTextOutput("periodoenedicion")
-                    )
-                ),
-                
-                # Los segmentos de edición
-                fluidRow(
-                    # | -- Edición de períodos ----------------------------------------
-                    column(4,
-                        h4("Edición de periodos"),
-                        p("Seleccionar dia, noche o ambos"),
-                        checkboxGroupInput("dianoc", label=NA, 
-                                          choices = c("Día", "Noche"), 
-                                          inline = TRUE),
-                        actionButton("cambia_periodo", label = "Filtrar", icon = icon("refresh"))
+                tabsetPanel(
+                    # | -- Edición de períodos --------------------------------
+                    tabPanel("Edición de periodos",
+                        fluidRow(
+                            column(12, style = "padding-left: 25px; padding-top: 15px;",
+                                h4("Seleccionar dia, noche o ambos"),
+                                p("Se está editando la siguiente fecha:"),
+                                splitLayout(cellWidths = c("28%", "2%", "20%", "50%"),
+                                    # Fecha
+                                    verbatimTextOutput("periodoenedicion"),
+                                    p(" "),
+                                    # Selector
+                                    checkboxGroupInput("dianoc", label=NA, 
+                                                    choices = c("Día", "Noche"), 
+                                                    inline = TRUE),
+                                    # Boton
+                                    actionButton("cambia_periodo", label = "Filtrar", 
+                                                 icon = icon("filter"))
+                                )
+                            )
+                        )
                     ),
                     
-                    
                     # | -- Edicion de actividad ---------------------------------------
-                    column(8,
-                        h4("Edición de actividad"),
-                        p("Seleccionar hora de inicio, hora de fin y el tipo de edición"),
-                        
+                    tabPanel("Edición de actividad",
                         fluidRow(
-                            column(3,
-                                # p("fin"),
-                                textInput("ini", value = "hh:mm", label = "Inicio"),
-                                actionButton("cambia_actividad", label = "Editar", icon = icon("refresh"))
-                            ),
-                            
-                            column(3,
-                                # p("fin"),
-                                textInput("fin", value = "hh:mm", label = "Fin")
-                            ),
-                            
-                            column(6,
-                                selectInput("editActiv", label = "Seleccionar tipo de edición", 
-                                           choices = c("Seleccionar", "Agregar actividad", "Convertir en Sueño"))
+                            column(12, style = "padding-left: 25px; padding-top: 15px;",
+                                h4("Escribir hora de inicio y fin para la corrección"),
+                                p("Se está editando la siguiente fecha:"),
                                 
+                                # La fila de cosas
+                                splitLayout(cellWidths = c("28%", "2%", "10%", "10%", "2%", "48%"),
+                                    # Fecha
+                                    verbatimTextOutput("periodoenedicion2"),
+                                    p(" "),
+                                    # Inputs
+                                    textInput("ini", value = "hh:mm", label = NULL),
+                                    textInput("fin", value = "hh:mm", label = NULL),
+                                    p(" "),
+                                    # Botón
+                                    actionButton("cambia_actividad", label = "Editar", 
+                                                 icon = icon("filter"))
+                                ),
+                                
+                                splitLayout(cellWidths = c("28%", "2%", "10%", "10%", "2%", "48%"),
+                                    style = "text-align: center; margin-top: -15px;",
+                                    p(" "), p(" "), strong("Inicio"), strong("Final"), p(" "), p(" ")),
+                                
+                                # Pie de página
+                                br(),
+                                shiny::HTML("Las horas deben tener 4 digitos, por ejemplo: 
+                                            <code>08:57</code> o <code>23:17</code>")
                             )
-                            
                         )
+                    ),
+                    
+                    # | -- Mover la noche -------------------------------------
+                    tabPanel("Mover la noche",
+                        "contents"
+                        
 
+                        
+                    ),
+                    
+                    # | -- Borrar filtro --------------------------------------
+                    tabPanel("Borrar filtro",
+                        "holi"
                     )
-
                 )
-
             )
         )
     ),
