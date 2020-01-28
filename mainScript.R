@@ -18,46 +18,19 @@ set <- getset()         # <<<<"configuracion.set">>>>
 # Cargar App
 # runApp(launch.browser = TRUE)
 
-# stop()
-# 
-# 
-# # ----- Para pruebas -------------------------------------------------- 
-# sensi <- 40
+
+
+
+# --- Pruebas --------------------------------------------------------------------
+# # Cargar un sujeto valido
 # awdfolder <- "D:/OneDrive/INTA/Actigrafia/testfolder/test_kansas"
 # setwd(awdfolder)
 # archivos <- dir()
 # archivos <- archivos[grep(".[Aa][Ww][Dd]$", archivos)]
 # awdfile <- archivos[1]
 # awdfile <- str_replace(awdfile, ".AWD", "")
-
-# Prueba para el plot con slider
-
-
 # 
-# # Toda la vuelta del primer procesado
-# acv <- create.acv(awdfile, set$sensivar)
-# semiper <- create.semiper(awdfile, acv)
-# filter.stats <- create.firstfilter(awdfile, semiper)
-# acv.edit <- create.acvedit(awdfile, acv, filter.stats)
-# 
-# semiper2 <- create.semiper(awdfile, acv.edit)
-# create.actogram(semiper2)
-# 
-# 
-# # Jugar con los tama?os
-# setwd(mainfolder)
-# png("ola k ase.png", width = 1000, height = 1320)
-# create.actogram(semiper2)
-# dev.off()
-# 
-# 
-# 1320/11
-# 
-# # Cada plot suma 120 pixeles al actograma.
-# 
-# 
-
-
-
-
-
+# # Cargar data para un grafico
+# gdata <- check.acvfilter(awdfile)
+# gdata <- gdata$semiper
+# gdata <- gdata$per01

@@ -1,17 +1,3 @@
-# Cargar un sujeto valido
-awdfolder <- "D:/OneDrive/INTA/Actigrafia/testfolder/test_kansas"
-setwd(awdfolder)
-archivos <- dir()
-archivos <- archivos[grep(".[Aa][Ww][Dd]$", archivos)]
-awdfile <- archivos[1]
-awdfile <- str_replace(awdfile, ".AWD", "")
-
-# Cargar data para un grafico
-gdata <- check.acvfilter(awdfile)
-gdata <- gdata$semiper
-gdata <- gdata$per01
-
-
 # ---- Define UI for app --------------------------------------------
 ui <- fluidPage(
     # Titulo
@@ -20,40 +6,39 @@ ui <- fluidPage(
     # En una row
     fluidRow(
         column(12, align = "center",
-        # # El plot
-        # plotOutput("periodPlot", height = 200, width = "90%"),
-        # 
-        # # El Slider
-        # sliderInput("sliderEdicion", label = NA,
-        #            min = 0, max = 100, value = c(0,100), width = "90%")
-        
-        # El grafico primero
-        plotOutput("periodPlot", height = 200, width = "90%"),
-        
-        # Input: Slider for the number of bins
-        uiOutput("sliderEdicion")
+            # El grafico primero
+            plotOutput("periodPlot", height = 200, width = "90%"),
+            
+            # Input: Slider for the number of bins
+            uiOutput("sliderEdicion")
         )
     ),
-    
+
     fluidRow(
-        column(12, 
-            # Botón de reset
-            actionButton("resetBtn", "Resetear"),
-            verbatimTextOutput("test")
+        # Selector de lw
+        column(2,
+            h4("Tamaño de linea"),
+            numericInput("ldNum", value = 1, min = 1, max = 10, step = 1, label = NULL)
+        ),
+
+        # Botón de reset
+        column(10, 
+            h4("Resetear el rango del gráfico"),
+            actionButton("resetBtn", label = "Reset"),
         )
     )
 )
 
 # ---- Define server logic ------------------------------------------
 server <- function(input, output, session){
-    # Un botón de reset update el eslaider
+    # | Reset Range btn -----------------------------------------------------
     observeEvent(input$resetBtn, {
         # El reset debiera calzar con el del grafico
         xscale <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
         updateSliderInput(session, "rangoX", value = c(min(xscale), max(xscale)))
     })
 
-    # Render ui del slider porque necesito que el min y max no sea fijo
+    # | Render ui del slider -----------------------------------------------
     output$sliderEdicion <- renderUI({
         xscale <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
         minui <- min(xscale)
@@ -61,47 +46,21 @@ server <- function(input, output, session){
 
         sliderInput("rangoX", label = NA,
                     min = minui, max = maxui, value = c(minui, maxui),
-                    width = "95%")
+                    width = "95%", step = 1)
     })
 
-    # El mono
-    output$distPlot <- renderPlot({
-        xscale <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
-        xscale <- c(min(xscale), max(xscale))
-        
-        if (sum(xscale == input$rangoX) == 2){
-            lim.x <- NULL
-        } else {
-            lim.x <- input$rangoX
-        }
-        
-
-        create.plotSimple(gdata)
+    # | El mono -----------------------------------------------------------
+    output$periodPlot <- renderPlot({
+        create.plotSimple(gdata, limites = input$rangoX, lw = input$ldNum)
     })
     
     output$test <- renderPrint({
-        xscale <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
-        xscale <- c(min(xscale), max(xscale))
-        
-        if (sum(xscale == input$rangoX) == 2){
-            lim.x <- NULL
-        } else {
-            lim.x <- input$rangoX
-        }
-        
-        paste(lim.x)
+        cat("")
     })
 }
 
 # Run the application 
 shinyApp(ui = ui, server = server)
-
-
-
-# create.plotSimple(gdata, limites = c(32,40))
-create.plotSimple(gdata)
-
-
 
 
 

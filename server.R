@@ -338,9 +338,27 @@ server <- function(input, output, session){
     })
     
     
-    # | -- El plot ------------------------------------------------------------
+    # | Reset Range btn -----------------------------------------------------
+    observeEvent(input$resetBtn, {
+        # El reset debiera calzar con el del grafico
+        xscale <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
+        updateSliderInput(session, "rangoX", value = c(min(xscale), max(xscale)))
+    })
+
+    # | Render ui del slider -----------------------------------------------
+    output$sliderEdicion <- renderUI({
+        xscale <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
+        minui <- min(xscale)
+        maxui <- max(xscale)
+
+        sliderInput("rangoX", label = NA,
+                    min = minui, max = maxui, value = c(minui, maxui),
+                    width = "95%", step = 1)
+    })
+
+    # | El mono -----------------------------------------------------------
     output$periodPlot <- renderPlot({
-        create.plotSimple(gdata())
+        create.plotSimple(gdata, limites = input$rangoX, lw = input$ldNum)
     })
     
     

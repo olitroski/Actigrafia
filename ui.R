@@ -146,14 +146,26 @@ ui <- navbarPage(
         # | Fila para el plot y slider ----------------------------------------
         fluidRow(
             column(12, align = "center",
-            
-                # El plot
+                # El grafico primero
                 plotOutput("periodPlot", height = 200, width = "90%"),
                 
-                # El Slider
-                sliderInput("sliderEdicion", label = NA,
-                            min = 0, max = 100, value = c(0,100), width = "90%")
-
+                # Input: Slider for the number of bins
+                uiOutput("sliderEdicion")
+            )
+        ),
+        
+        # | Fila para el reset y lwd
+        fluidRow(
+            # Selector de lw
+            column(2,
+               h4("Tamaño de linea"),
+               numericInput("ldNum", value = 1, min = 1, max = 10, step = 1, label = NULL)
+            ),
+            
+            # Botón de reset
+            column(10, 
+               h4("Resetear el rango del gráfico"),
+               actionButton("resetBtn", label = "Reset", icon = NULL)
             )
         ),
         

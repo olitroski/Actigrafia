@@ -56,7 +56,7 @@ check.acvfilter <- function(awdfile){
     semiper <- create.semiper(acvfile)
     
     # Redistirbuir los trozos con codigo del create.actogram()
-    # Combinar noche -> dia mismo periodo    p <- "1"
+    # Combinar noche -> dia mismo periodo    p <- "1" ------
     per <- unique(str_sub(names(semiper), 2, 2))
     perlist <- list()
     for (p in per){
@@ -73,12 +73,21 @@ check.acvfilter <- function(awdfile){
         cmd <- paste("perlist <- append(perlist, list(per", p, " = temp))", sep = "")
         eval(parse(text=cmd))
     }
-    semiper <- perlist
+    # semiper <- perlist
     
     
+    
+    # Corregir la hora continua decimal acá porque en la función del grafico da problema
+    # Hora decimal continua ------
+    lim <- as.numeric(set$ininoc)/3600
+    perlist <- base::lapply(X = perlist, 
+                            function(x) mutate(x, xscale = ifelse(hrdec < lim, 
+                                                                  hrdec + 24, 
+                                                                  hrdec)))
+
     # Capturar el valor inicial de cada lista para usarla en el selectInput
     timelist <- function(df){ return(min(df$time)) }
-    timelist <- sapply(X = semiper, FUN = timelist)
+    timelist <- sapply(X = perlist, FUN = timelist)
     timelist <- data.frame(time = timelist)
     
     timelist <- timelist %>% mutate(period = row.names(timelist), 
@@ -87,7 +96,7 @@ check.acvfilter <- function(awdfile){
     
 
     # Y listo... tenemos el filtroNA, filtroERROR, el semiper, y el timelist
-    return(list(semiper = semiper,
+    return(list(semiper = perlist,
                 filtroNA = filtroNA,
                 filtroERROR = filtroERROR,
                 timelist = timelist))
