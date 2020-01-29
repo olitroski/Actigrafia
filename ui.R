@@ -175,8 +175,8 @@ ui <- navbarPage(
             # | -- Archivo de edición -----------------------------------------
             # << Hay que crear una funcion que haga solo eso >>
             column(4,
-                h4("El período en edición es:"),
-                verbatimTextOutput("editFile")
+                verbatimTextOutput("filtroH"),
+                tableOutput("filtroDF")
             ),
             
             # Las ediciones con paneles

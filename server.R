@@ -50,7 +50,7 @@ server <- function(input, output, session){
     # Tiene un reactivePoll para ver si cambian los archivos del folder. Solo en nombres OJO.
     new.files <- function() {dir()}
     get.files <- function() {dir()}
-    my_files <- reactivePoll(100, session, checkFunc = new.files,valueFunc = get.files)
+    my_files <- reactivePoll(100, session, checkFunc = new.files, valueFunc = get.files)
     
     # Cargar el directorio de acuerdo a lo que diga el reactivePoll
     subjectDF <- reactive({
@@ -298,7 +298,7 @@ server <- function(input, output, session){
     })
 
     
-    # | Cargar el check.acvfilter ---------------------------------------------
+    # | ---- Cargar el check.acvfilter ---------------------------------------------
     # Para usar de inicio estas periodos antes de editar
     semiperEdit0 <- eventReactive(input$accion_button,{
         subj.status <- filter(subjectDF(), Sujeto == awdfile()) %>% select(Status)
@@ -308,6 +308,23 @@ server <- function(input, output, session){
             check.acvfilter(awdfile())
         }
     })
+    
+    # Lo mismo pero para el archivo de filtro, la primera carga
+    # filtroInicial <- eventReactive(input$accion_button,{
+    #     subj.status <- filter(subjectDF(), Sujeto == awdfile()) %>% select(Status)
+    #     subj.status <- subj.status[1,1]
+    #     
+    #     if (input$accion_choice == "Editar" & subj.status == "En edicion"){
+    #         sujeto <- str_c(awdfile(), ".edit.RDS")
+    #         filtro <- readRDS(sujeto)
+    #     }        
+    #     
+    # })
+
+    
+    
+    
+    
     
     
     # | Actograma -------------------------------------------------------------
@@ -393,7 +410,7 @@ server <- function(input, output, session){
         updateNumericInput(session, "ldNum", value = 1)
     })
 
-    # | Render ui del slider -----------------------------------------------
+    # | -- Render ui del slider -----------------------------------------------
     output$sliderEdicion <- renderUI({
         xscale <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
         minui <- min(xscale)
@@ -404,24 +421,62 @@ server <- function(input, output, session){
                     width = "95%", step = 1)
     })
 
-    # | El mono -----------------------------------------------------------
+    # | -- El mono -----------------------------------------------------------
     output$periodPlot <- renderPlot({
         create.plotSimple(gdata, limites = input$rangoX, lw = input$ldNum)
     })
     
+    # | -- Leer el Filtro --------------------------------------------------------
+    # Funcion leer el file mtime para checar
+    filter.check <- function(){
+        fichero <- str_c(awdfile(), ".edit.RDS")
+        if (file.exists(fichero)){
+            info <- base::file.info(fichero, ".edit.RDS")
+            info <- info$mtime[1]
+            return(info)
+        } else {
+            return(1)
+        }
+    }
     
+    # Si cambió usar esta funcion para un get
+    filter.get <- function(){
+        fichero <- str_c(awdfile(), ".edit.RDS")
+        if (file.exists(fichero)){
+            return(readRDS(fichero))
+        } else {
+            return(1)
+        }
+    }
     
+    filterRDS <- reactivePoll(100, session, checkFunc = filter.check, valueFunc = filter.get)
     
-    
-    
-    
-    
-    
-    
-    output$editFile <- renderPrint({
-        asdf <- readLines("D:/OneDrive/INTA/Actigrafia/testfolder/test_kansas/2058-001-368 JRG Baseline.edit")
-        cat(paste(asdf, collapse = "\n"))
+    # | ---- Mostrar el header ------------------------------------------------
+    output$filtroH <- renderPrint({
+        # Si el filtroFinal no tiene length=2 es que no existe y carga el inicial
+        if (length(filterRDS()) != 2){
+            cat("No se ha seleccionado un sujeto")
+        } else {
+            cat(paste(filterRDS()$header[1:3], collapse = "\n"))
+        }
     })
+    
+    
+    # | ---- Mostrar el filtro ------------------------------------------------
+    output$filtroDF <- renderTable({
+        # Si el filtroFinal no tiene length=2 es que no existe y carga el inicial
+        if (length(filterRDS()) == 2){
+            df <- filterRDS()$filter
+            df$ini <- format(df$ini, format = "%d/%m/%Y %H:%M:%S")
+            df$fin <- format(df$fin, format = "%d/%m/%Y %H:%M:%S")
+            df
+        }
+    }, digits = 0, align = "c")
+    
+    
+    
+    
+    
     
     
     

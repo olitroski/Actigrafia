@@ -15,20 +15,22 @@ check.acvfilter <- function(awdfile){
     acvfile <- paste(awdfile, "_acv.edit.RDS", sep = "")
     acvfile <- readRDS(acvfile)
     
-    filterfile <- paste(awdfile, ".edit", sep = "")
-    filterfile <- readLines(filterfile)
-    filterfile <- filterfile[6:length(filterfile)]
-    filterfile <- str_split(filterfile, ": ", simplify = TRUE)[,2]
-    filterfile <- as.data.frame(str_split(filterfile, " - ", simplify = TRUE), stringsAsFactors = FALSE)
-    names(filterfile) <- c("ini", "fin")
-    filterfile <- filterfile %>% mutate(ini = ymd_hm(ini), fin = ymd_hm(fin)) %>% arrange(ini)
+    filterfile <- paste(awdfile, ".edit.RDS", sep = "")
+    filterfile <- readRDS(filterfile)
+    filterfile <- filterfile[["filter"]]
     
-    # Que sean diferentes que NA, con eso me basta... a futuro checar el tipo de filtro
-    # i <- 1
+    # filterfile <- filterfile[6:length(filterfile)]
+    # filterfile <- str_split(filterfile, ": ", simplify = TRUE)[,2]
+    # filterfile <- as.data.frame(str_split(filterfile, " - ", simplify = TRUE), stringsAsFactors = FALSE)
+    # names(filterfile) <- c("ini", "fin")
+    # filterfile <- filterfile %>% mutate(ini = ymd_hm(ini), fin = ymd_hm(fin)) %>% arrange(ini)
+    
+    # Chequeo que en acv$filter haya algo diferente de NA  # i <- 1
     time <- acvfile$time
     filtro <- acvfile$filter
     filtroERROR <- rep(NA, nrow(filterfile))
     filtroNA <- NULL
+    
     for (i in 1:nrow(filterfile)){
         indx <- which(time >= filterfile$ini[i] & time <= filterfile$fin[i])
         
@@ -41,7 +43,7 @@ check.acvfilter <- function(awdfile){
         filtroNA <- c(filtroNA, indx)
     }
     
-    # Testear lo de afuera del filtro
+    # Testear lo de afuera del filtro, que sea == NA
     NAtest <- 1:nrow(acvfile)
     NAtest <- NAtest[-filtroNA]
     NAtest <- sum(!is.na(filtro[NAtest]))
@@ -55,8 +57,8 @@ check.acvfilter <- function(awdfile){
     # Usar el acv.edit para crear los semiperiodos con la función ---------
     semiper <- create.semiper(acvfile)
     
-    # Redistirbuir los trozos con codigo del create.actogram()
-    # Combinar noche -> dia mismo periodo    p <- "1" ------
+    # Redistirbuir los semiperiodos (con codigo del create.actogram())
+    # Combinar [noche -> dia] mismo periodo    p <- "1" ------
     per <- unique(str_sub(names(semiper), 2, 2))
     perlist <- list()
     for (p in per){
@@ -73,10 +75,7 @@ check.acvfilter <- function(awdfile){
         cmd <- paste("perlist <- append(perlist, list(per", p, " = temp))", sep = "")
         eval(parse(text=cmd))
     }
-    # semiper <- perlist
-    
-    
-    
+
     # Corregir la hora continua decimal acá porque en la función del grafico da problema
     # Hora decimal continua ------
     lim <- as.numeric(set$ininoc)/3600
@@ -101,7 +100,3 @@ check.acvfilter <- function(awdfile){
                 filtroERROR = filtroERROR,
                 timelist = timelist))
 }
-
-
-# test <- check.acvfilter(awdfile)
-
