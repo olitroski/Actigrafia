@@ -50,13 +50,13 @@ create.plotActo <- function(semiperdf, pct.y = 1){
     # semiperdf$filter[ 300:400] <- 2
     # semiperdf$filter[1000:1150] <- 3
     
-    # El filtro que retira semi.periodos completos
+    # El filtro de inicio
     fdata <- find.segment(semiperdf, filter, 1)
     if (nrow(fdata) > 0){
         fdata <- mutate(fdata, ini = semiperdf$xscale[ini], fin = semiperdf$xscale[fin])
     }
     
-    # Filtro para wake to sleep = 2
+    # Filtro para periodos desde la app
     f2sleep <- find.segment(semiperdf, filter, 2)
     if (nrow(f2sleep) > 0){
         f2sleep <- mutate(f2sleep, ini = semiperdf$xscale[ini], fin = semiperdf$xscale[fin])
@@ -102,7 +102,8 @@ create.plotActo <- function(semiperdf, pct.y = 1){
     # 2 SLEEP --- Muestral los modificaciones desde vigilia a sueño
     if (nrow(f2sleep) > 0){
         for (i in 1:nrow(f2sleep)){
-            rect(f2sleep$ini[i], limY[2] - 5, f2sleep$fin[i], limY[2], col = rgb(0.4235,0.6510,0.8039,1), border = "black")
+            rect(f2sleep$ini[i], 0, f2sleep$fin[i], limY[2], col = "orchid", border = "red")
+            #rect(f2sleep$ini[i], limY[2] - 5, f2sleep$fin[i], limY[2], col = rgb(0.4235,0.6510,0.8039,1), border = "black")
         }
     }    
     

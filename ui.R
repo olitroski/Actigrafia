@@ -2,13 +2,13 @@
 ui <- navbarPage(
     "OlitoSleep", id = "TablasApp",
 
-    # Panel 1 - ARCHIVOS --------------------------------------------------
+    # Panel 1 - ARCHIVOS ----------------------------------------------- ------
     tabPanel("Archivos",
-        # | Seccion: Seleccion y visualizacion archivos -------------------
+        # | Seccion: Seleccion y visualizacion archivos -----------------------
         fluidRow(
             column(9, align="left", 
     
-                # | --- Seleccionar archivo -------------------------------
+                # | --- Seleccionar archivo -----------------------------------
                 # Seccion para buscar el directorio
                 h4("Seleciona el directorio de trabajo"),
                 
@@ -26,16 +26,16 @@ ui <- navbarPage(
 
                 hr(),
 
-                # | --- Contenido del directorio --------------------------
+                # | --- Contenido del directorio ------------------------------
                 fluidRow(
                     
-                    # | ------ Status de los archivos ---------------------
+                    # | ------ Status de los archivos -------------------------
                     column(7, align = "left", offset = 1,
                         h4("Estado de los archivos"),
                         tableOutput("dfdir")
                     ),
                     
-                    # | ------ Filtrado de archivos -----------------------
+                    # | ------ Filtrado de archivos ---------------------------
                     column(4, align = "left",
                            # Seleccion de filtro
                            h4("Filtrar según Status"),
@@ -61,7 +61,7 @@ ui <- navbarPage(
 
 
 
-    # Panel 2 - ACTOGRAMA -----------------------------------------------------
+    # Panel 2 - ACTOGRAMA -------------------------------------------- --------
     tabPanel("Actograma",
         
         # | Seccion: Seleccion de Sujetos -------------------------------------
@@ -105,13 +105,13 @@ ui <- navbarPage(
     ),
     
     
-    # Panel 3 - EDICION DE ARCHIVOS -------------------------------------------
+    # Panel 3 - EDICION DE ARCHIVOS ----------------------------- -----------
     tabPanel("Edición",
 
         # | Fila para sujeto + periodo + linea + reset  -----------------------
         fluidRow(
             
-            # | -- Col4: Sujeto -----------------------------------------------
+            # | -- Col3: Sujeto -----------------------------------------------
             column(3, 
                 h4("Sujeto en edición"),
                 verbatimTextOutput("SubjEdicion", )       
@@ -140,7 +140,7 @@ ui <- navbarPage(
                 )
             ),
             
-            # | -- Col4: Tamaño Linea + Reset ---------------------------------
+            # | -- Col5: Tamaño Linea + Reset ---------------------------------
             column(5, 
                 # Selector de lw
                 column(4, 
@@ -172,17 +172,17 @@ ui <- navbarPage(
         
         # | Fila para el panel edicion ----------------------------------------
         fluidRow(
-            # | -- Archivo de edición -----------------------------------------
+            # | -- Archivo de filtro ------------------------------------------
             # << Hay que crear una funcion que haga solo eso >>
             column(4,
                 verbatimTextOutput("filtroH"),
                 tableOutput("filtroDF")
             ),
             
-            # Las ediciones con paneles
+            # | -- Pestaña de edición -----------------------------------------
             column(8,
                 tabsetPanel(
-                    # | -- Edición de períodos --------------------------------
+                    # | ---- 1. Edición de períodos ---------------------------
                     tabPanel("Edición de periodos",
                         fluidRow(
                             column(12, style = "padding-left: 25px; padding-top: 15px;",
@@ -190,21 +190,30 @@ ui <- navbarPage(
                                 p("Se está editando la siguiente fecha:"),
                                 splitLayout(cellWidths = c("28%", "2%", "20%", "50%"),
                                     # Fecha
-                                    verbatimTextOutput("periodoenedicion"),
+                                    verbatimTextOutput("selectedPer1", placeholder = TRUE),
                                     p(" "),
                                     # Selector
                                     checkboxGroupInput("dianoc", label=NA, 
-                                                    choices = c("Día", "Noche"), 
+                                                    choices = c("Dia", "Noche"), 
                                                     inline = TRUE),
                                     # Boton
                                     actionButton("cambia_periodo", label = "Filtrar", 
                                                  icon = icon("filter"))
                                 )
                             )
+                        ),
+                        
+                        fluidRow(
+                            column(2, style = "padding-left: 25px; padding-top: 10px;" ,
+                                strong("Periodo a filtrar")
+                            ),
+                            column(6, style = "padding-top: 10px;",
+                                verbatimTextOutput("toFilter1", placeholder = TRUE)
+                            )
                         )
                     ),
                     
-                    # | -- Edicion de actividad ---------------------------------------
+                    # | ---- 2. Edicion de actividad --------------------------
                     tabPanel("Edición de actividad",
                         fluidRow(
                             column(12, style = "padding-left: 25px; padding-top: 15px;",
@@ -214,7 +223,7 @@ ui <- navbarPage(
                                 # La fila de cosas
                                 splitLayout(cellWidths = c("28%", "2%", "10%", "10%", "2%", "48%"),
                                     # Fecha
-                                    verbatimTextOutput("periodoenedicion2"),
+                                    verbatimTextOutput("selectedPer2"),
                                     p(" "),
                                     # Inputs
                                     textInput("ini", value = "hh:mm", label = NULL),
@@ -237,15 +246,16 @@ ui <- navbarPage(
                         )
                     ),
                     
-                    # | -- Mover la noche -------------------------------------
+                    # | ---- 3. Mover la noche -------------------------------------
                     tabPanel("Mover la noche",
-                        "contents"
+                        "contents",
+                        verbatimTextOutput("selectedPer3")
                         
 
                         
                     ),
                     
-                    # | -- Borrar filtro --------------------------------------
+                    # | ---- 4. Borrar filtro --------------------------------------
                     tabPanel("Borrar filtro",
                         "holi"
                     )
@@ -261,4 +271,7 @@ ui <- navbarPage(
         
         
     )
+    
+    # Pa los mensajes
+    #useShinyalert()
 )

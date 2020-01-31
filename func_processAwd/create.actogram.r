@@ -6,21 +6,23 @@
 create.actogram <- function(semiper, fy = 1){
    
     # Combinar noche->dia mismo periodo
-    per <- unique(str_sub(names(semiper), 2, 2))
-    perlist <- list()
-    for (p in per){
-        i <- grep(paste(p, "$", sep = ""), names(semiper))
-        if (length(i) == 2){
-            temp <- bind_rows(semiper[[i[2]]], semiper[[i[1]]]) %>% arrange()
-        } else {
-            temp <- semiper[[i[1]]]
-        }
-        
-        if (as.numeric(p) < 10){p <- paste("0", p, sep ="")}
-        cmd <- paste("perlist <- append(perlist, list(per", p, " = temp))", sep = "")
-        eval(parse(text=cmd))
-    }
-    semiper <- perlist
+    
+    # según yo el semiper del acveditRDS() ya trae combinado el dia y la noche
+    # per <- unique(str_sub(names(semiper), 2, 2))
+    # perlist <- list()
+    # for (p in per){
+    #     i <- grep(paste(p, "$", sep = ""), names(semiper))
+    #     if (length(i) == 2){
+    #         temp <- bind_rows(semiper[[i[2]]], semiper[[i[1]]]) %>% arrange()
+    #     } else {
+    #         temp <- semiper[[i[1]]]
+    #     }
+    #     
+    #     if (as.numeric(p) < 10){p <- paste("0", p, sep ="")}
+    #     cmd <- paste("perlist <- append(perlist, list(per", p, " = temp))", sep = "")
+    #     eval(parse(text=cmd))
+    # }
+    # semiper <- perlist
     # rm(per, perlist, p, cmd, i, temp, acv.edit)
     
     ## ---- Hace el actograma -----------------------------------------------------------------------

@@ -1,5 +1,5 @@
 server <- function(input, output, session){
-    # Panel - VISUALIZAR ARCHIVOS ---------------------------------------------
+    # Panel - VISUALIZAR ARCHIVOS -----------------  -------------------------
     # | -- Seleccionar directorio ---------------------------------------------
     # Cargar el valor del save dir
     saved.folder <- reactive({
@@ -99,7 +99,7 @@ server <- function(input, output, session){
 
 
 
-    # Panel - ACTOGRAMA -------------------------------------------------------
+    # Panel - ACTOGRAMA --------------------------------  ---------------------
     
     # | -- renderUI selectInput de sujetos ------------------------------------
     output$subjInput <- renderUI({
@@ -186,11 +186,11 @@ server <- function(input, output, session){
         }
     })
     
-    # | Acciones a tomar ------------------------------------------------------
+    # | Boton Acciones a tomar ------------------------------------------------------
     # Crear un reactive cada vez que se apriete el boton
     actSelection <- eventReactive(input$accion_button, {
         
-        # | ---- Accion: Analizar ---------------------------------------------
+        # | ---- Accion 1: Analizar -------------------------------------------
         if (input$accion_choice == "Analizar"){
             # Si aprieta y no se ha seleccionado un sujeto
             if (awdfile() == "Debe ingresar un sujeto"){
@@ -230,7 +230,7 @@ server <- function(input, output, session){
                 }
             }
             
-        # | ---- Accion: Cargar actograma -----------------------------------------------
+        # | ---- Accion 2: Cargar actograma -----------------------------------
         } else if (input$accion_choice == "Actograma"){
             # Si aprieta y no se ha seleccionado un sujeto
             if (awdfile() == "Debe ingresar un sujeto"){
@@ -254,7 +254,7 @@ server <- function(input, output, session){
                 }
             }
          
-        # | ---- Accion: Editar -----------------------------------------------
+        # | ---- Accion 3: Editar -----------------------------------------------
         } else if (input$accion_choice == "Editar"){
             # Si aprieta y no se ha seleccionado un sujeto
             if (awdfile() == "Debe ingresar un sujeto"){
@@ -279,18 +279,13 @@ server <- function(input, output, session){
                  # Ahora si procesar el sujeto 
                 } else if (subj.status == "En edicion"){
                     showNotification("Procesando...")
-                
                     # La idea es que nos mande para la pestaña siguiente.
                     updateNavbarPage(session, inputId = "TablasApp", selected = "Edición")
-                    
-                    # Marca false para hacer el actograma.
-                    # TRUE   <- Este es el original, dejo el awdfile() para que se haga
-                    # el histograma y se pueda consultar
+                    # Dejo el awdfile() para que se haga actograma y se pueda consultar
                     awdfile()
                 }
             }
-            
-        
+
         # Algo extraño pasó
         } else {
             stop("Error en la selección de la acción")
@@ -298,141 +293,54 @@ server <- function(input, output, session){
     })
 
     
-    # | ---- Cargar el check.acvfilter ---------------------------------------------
-    # Para usar de inicio estas periodos antes de editar
-    semiperEdit0 <- eventReactive(input$accion_button,{
-        subj.status <- filter(subjectDF(), Sujeto == awdfile()) %>% select(Status)
-        subj.status <- subj.status[1,1]
-        
-        if (input$accion_choice == "Editar" & subj.status == "En edicion"){
-            check.acvfilter(awdfile())
-        }
-    })
-    
-    # Lo mismo pero para el archivo de filtro, la primera carga
-    # filtroInicial <- eventReactive(input$accion_button,{
-    #     subj.status <- filter(subjectDF(), Sujeto == awdfile()) %>% select(Status)
-    #     subj.status <- subj.status[1,1]
-    #     
-    #     if (input$accion_choice == "Editar" & subj.status == "En edicion"){
-    #         sujeto <- str_c(awdfile(), ".edit.RDS")
-    #         filtro <- readRDS(sujeto)
-    #     }        
-    #     
-    # })
-
-    
-    
-    
-    
-    
-    
     # | Actograma -------------------------------------------------------------
     # La lógica depende del botón de accion a tomar, cuando se aprieta, el output
-    # es: FALSE o el awdfile() y como es eventReactive no lo cambia de valor al 
-    # actSelection() cambiar el sujeto
+    # es: FALSE o el awdfile(), se cargan los datos y se pasan al actograma con el
+    # actSelection() al igualarse a awdfile() 
 
-    # reactive para crea el semiper, pero depende del botón por el primer if
-    semiper <- reactive({
-        if (actSelection() == awdfile()){
-            # Lee el archivo primero
-            sujeto <- paste(awdfile(), ".AWD", sep = "")
-            sujeto <- str_replace(sujeto, ".[Aa][Ww][Dd]$", "_acv.edit.RDS")
-            acv.edit <- readRDS(sujeto)
-            semiper <- create.semiper(acv.edit)
-        } else {
-            list()
-        }
-    })
-    
     # El ui render, el height se setea grande para que no de error de margins
     output$actoUI <- renderUI({
-        if (length(semiper()) == 0){
-            h <- 1800
-            plotOutput("actograma", width = "100%", height = h)
-        } else {
-            h <- length(semiper()) * 80
-            plotOutput("actograma", width = "100%", height = h)
-        }
-    })
-    
-    output$actograma <- renderPlot({
-        # Si no hay semiper pone algo igual
-        if (length(semiper()) == 0){
-            plot(0,type='n',axes=FALSE,ann=FALSE)
-        } else if (length(semiper()) > 0){
-            create.actogram(semiper())
-        } else {
-            stop("Algo paso con el grafico")
-        }
-    })
-
-    
-    # Panel - EDICION ---------------------------------------------------------
-    # Le test de este panel
-    output$test <- renderPrint({
-    })
-
-    # | -- Sujeto en edición --------------------------------------------------
-    # Dijimos que cada vez se carga el awdfile, asi que primero checar si quedó 
-    # seleccionado
-    output$SubjEdicion <- renderPrint({
-        cat(awdfile())
-    })
-    
-    # | -- Seleccionar el período a editar ------------------------------------
-    output$perSelection <- renderUI({
-        periodos <- semiperEdit0()$timelist
-        periodos <- paste(periodos$period, "-", periodos$tlist)
-        selectInput(inputId = "perChoose", label = NULL, 
-                    choices = periodos, width = "100%")
-    })
-    
-    # | -- Botón de carga -----------------------------------------------------
-    # El botón de carga no interviene en nada mas que hacer el gráfico, pero 
-    # como tiene que estar actualizado al status del txt de filtro carga la data
-    gdata <- eventReactive(input$cargaSemip, {
-        # Capturar datos
-        data <- check.acvfilter(awdfile())
-        data <- data$semiper
+        # Darle al toque un tamaño
+        if (actSelection() != awdfile()){
+            plotOutput("actograma", width = "100%", height = 1800)
         
-        # Capturar el nombre del elemnto en la lista
-        periodo <- str_sub(input$perChoose, 1, 5)
-        periodo <- data[[periodo]]
+        # Cambiarlo si es que hay datos cargados
+        } else if (actSelection() == awdfile()){
+            h <- length(acveditRDS()[["semiper"]]) * 120
+            plotOutput("actograma", width = "100%", height = h)
+            
+        # algo raro paso
+        } else {
+            stop("Algo paso con el render ui del plot")
+        }
     })
     
+    # El actograma dependiente del botón y el awdfile
+    output$actograma <- renderPlot({
+        validate(
+            need(acveditRDS(), "Esperando datos!")
+        )
+        
+        if (actSelection() == awdfile()){
+            # Si no hay semiper pone algo igual
+            if (length(acveditRDS()[["semiper"]]) == 0){
+                plot(0,type='n',axes=FALSE,ann=FALSE)
+            } else if (length(acveditRDS()[["semiper"]]) > 0){
+                create.actogram(acveditRDS()[["semiper"]])
+            } else {
+                stop("Algo pasó con el grafico")
+            }
+        }
+    })
+
     
-    # | -- Reset Range btn -----------------------------------------------------
-    observeEvent(input$resetBtn, {
-        # El reset debiera calzar con el del grafico
-        xscale <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
-        updateSliderInput(session, "rangoX", value = c(min(xscale), max(xscale)))
-        updateNumericInput(session, "ldNum", value = 1)
-    })
-
-    # | -- Render ui del slider -----------------------------------------------
-    output$sliderEdicion <- renderUI({
-        xscale <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
-        minui <- min(xscale)
-        maxui <- max(xscale)
-
-        sliderInput("rangoX", label = NA,
-                    min = minui, max = maxui, value = c(minui, maxui),
-                    width = "95%", step = 1)
-    })
-
-    # | -- El mono -----------------------------------------------------------
-    output$periodPlot <- renderPlot({
-        create.plotSimple(gdata, limites = input$rangoX, lw = input$ldNum)
-    })
-    
-    # | -- Leer el Filtro --------------------------------------------------------
-    # Funcion leer el file mtime para checar
+    # | -- POLL: Filtro RDS ---------------------------------------------------
+    # Funcion leer el file mtime 
     filter.check <- function(){
         fichero <- str_c(awdfile(), ".edit.RDS")
         if (file.exists(fichero)){
-            info <- base::file.info(fichero, ".edit.RDS")
-            info <- info$mtime[1]
+            info <- base::file.info(fichero)
+            info <- info$mtime
             return(info)
         } else {
             return(1)
@@ -449,9 +357,111 @@ server <- function(input, output, session){
         }
     }
     
-    filterRDS <- reactivePoll(100, session, checkFunc = filter.check, valueFunc = filter.get)
+    # La magia del check
+    filterRDS <- reactivePoll(200, session, checkFunc = filter.check, valueFunc = filter.get)
     
-    # | ---- Mostrar el header ------------------------------------------------
+    
+    # | -- POLL: AcvEdit RDS --------------------------------------------------
+    # Función leer el mtime del acvedit
+    acvedit.check <- function(){
+        fichero <- str_c(awdfile(), "_acv.edit.RDS")
+        if (file.exists(fichero)){
+            info <- base::file.info(fichero)
+            info <- info$mtime
+            return(info)
+        } else {
+            return(1)
+        }
+    }
+    
+    # Si cambia cargar el acv.edit
+    acvedit.get <- function(){
+        validate(need(awdfile(), "Esperando awdfile!"))
+        fichero <- str_c(awdfile(), "_acv.edit.RDS")
+        if (file.exists(fichero)){
+            return(check.acvfilter(awdfile()))
+        } else {
+            return(1)
+        }
+    }
+    
+    # El poll
+    acveditRDS <- reactivePoll(200, session, checkFunc = acvedit.check, valueFunc = acvedit.get)
+    
+    
+    
+    
+    # Panel - EDICION ---------------------------------------- ----------------
+    # Le test de este panel
+    output$testE <- renderPrint({
+    })
+
+    # | -- Sujeto en edición --------------------------------------------------
+    # Dijimos que cada vez se carga el awdfile, asi que primero checar si quedó 
+    # seleccionado
+    output$SubjEdicion <- renderPrint({
+        cat(awdfile())
+    })
+    
+    # | -- Seleccionar el período a editar ------------------------------------
+    # Los periodos no cambian, asi que se cargan una vez y alimentan al botón 
+    # para seleccionar la data adecuada.
+    output$perSelection <- renderUI({
+        
+        # Si aun no se selecciona nada da error, asi que a probar
+        if (length(acveditRDS()) == 1){
+            periodos <- NULL
+        } else {
+            periodos <- acveditRDS()$timelist
+            periodos <- paste(periodos$period, "-", periodos$tlist)
+        }
+        
+        selectInput(inputId = "perChoose", label = NULL, 
+                    choices = periodos, width = "100%")
+    })
+
+    # | -- El mono ;) -----------------------------------------------------------
+    output$periodPlot <- renderPlot({
+        # Espera el choose
+        validate(
+            need(input$perChoose, "Esperando input!")
+        )
+        # gdata <- acveditRDS()$semiper
+        # periodo <- str_sub(input$perChoose, 1, 5)
+        # gdata <- gdata[[periodo]]
+        # create.plotSimple(gdata, limites = input$rangoX, lw = input$ldNum)
+        create.plotSimple(gdata = acveditRDS()$semiper[[str_sub(input$perChoose, 1, 5)]],
+                          limites = input$rangoX, lw = input$ldNum)
+    })
+    
+    
+    # | -- Slider del gráfico -------------------------------------------------
+    # Reset Range btn
+    observeEvent(input$resetBtn, {
+        # El reset debiera calzar con el del grafico
+        xscale <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
+        updateSliderInput(session, "rangoX", value = c(min(xscale), max(xscale)))
+        updateNumericInput(session, "ldNum", value = 1)
+    })
+
+    # Render ui del slider
+    output$sliderEdicion <- renderUI({
+        xscale <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
+        minui <- min(xscale)
+        maxui <- max(xscale)
+
+        sliderInput("rangoX", label = NA,
+                    min = minui, max = maxui, value = c(minui, maxui),
+                    width = "95%", step = 1)
+    })
+
+    # | -- Mostrar el filtro --------------------------------------------------
+    output$testF <- renderPrint({
+        input$ok
+    })
+    
+    # Esto es reactivo dependiendo de cambios en el filtro asi que no cambia
+    # | Mostrar el header 
     output$filtroH <- renderPrint({
         # Si el filtroFinal no tiene length=2 es que no existe y carga el inicial
         if (length(filterRDS()) != 2){
@@ -462,7 +472,7 @@ server <- function(input, output, session){
     })
     
     
-    # | ---- Mostrar el filtro ------------------------------------------------
+    # | Mostrar el filtro 
     output$filtroDF <- renderTable({
         # Si el filtroFinal no tiene length=2 es que no existe y carga el inicial
         if (length(filterRDS()) == 2){
@@ -474,20 +484,198 @@ server <- function(input, output, session){
     }, digits = 0, align = "c")
     
     
-    
-    
-    
-    
-    
-    
-    
-    output$periodoenedicion <- renderPrint({
-        cat("miercoles, 25 Septiembre 1981")
+    # | -- Pestañas de ediciones ----------------------------------------------
+    # Reactive del perChoose en formato POSIXct, para usar en las ediciones
+    selectedPer <- reactive({
+        validate(need(input$perChoose, "Esperando input!"))
+        
+        fec <- str_sub(input$perChoose, 9, str_length(input$perChoose))
+        fec <- str_sub(fec, str_locate(fec, " ")[1]+1, str_length(fec))
+        fec <- dmy(fec)
+        fec <- format(fec, "%A %d/%m/%Y")
+        fec
     })
     
-        output$periodoenedicion2 <- renderPrint({
-        cat("miercoles, 25 Septiembre 1981")
+    # | ---- 1. Editar periodo ------------------------------------------------
+    # Fecha en curso
+    output$selectedPer1 <- renderPrint({
+        cat(selectedPer())
     })
+    
+    # | ------ Crear un reactive filterPeriod() -------------------------------
+    filterPeriod <- reactive({
+        # Esperar esto y ver si el periodo tiene dia, noche o ambos
+        validate(need(input$perChoose, "Esperando input!"))
+        
+        gdata <- acveditRDS()$semiper[[str_sub(input$perChoose, 1, 5)]]
+        
+        time <- gdata$xscale
+        corte <- 24 + as.numeric(set$inidia)/3600
+        nnoc <- sum(time < corte)
+        ndia <- sum(time >= corte)
+        
+        if (nnoc == 0 & ndia > 0){
+            dn <-"d"
+        } else if (nnoc > 0 & ndia == 0){
+            dn <-"n"
+        } else {
+            dn <- "a"
+        }
+
+        # Checar que existan periodos a editar
+        if (class(input$perChoose) == "NULL"){
+            list(msg = "Debe existir un sujeto en edición", action = 0)
+        
+        # Hay para editar
+        } else {
+        
+            # Si aprieta y no hay selección
+            if (class(input$dianoc) == "NULL"){
+                list(msg = "Debe seleccionar día, noche o ambos", action = 0)
+    
+            # Si selecciona Ambos
+            } else if (sum(input$dianoc == c("Dia", "Noche")) == 2){
+                
+                # Si solo tiene 1 avisar y action 0
+                if (dn != "a"){
+                    list(msg = "El periodo solo tiene dia o noche", action = 0)
+                    
+                # Tiene ambos días tons action 2 (para el n del vector luego)
+                } else {
+                    noc1 <- min(gdata$time)
+                    noc2 <- gdata$time[which(gdata$xscale == corte)-1]
+                    nocF <- data.frame(id = NA, ini = noc1, fin = noc2, tipo = 2)
+                    
+                    dia1 <- gdata$time[which(gdata$xscale == corte)]
+                    dia2 <- max(gdata$time)
+                    diaF <- data.frame(id = NA, ini = dia1, fin = dia2, tipo = 2)
+                    
+                    msg <- c(paste0("Noc: ", noc1, " a ", noc2), 
+                             paste0("Dia: ", dia1, " a ", dia2))
+                    list(msg = msg, action = 1, filtro = bind_rows(nocF, diaF))
+                }
+            
+            # Si selecciona Noche
+            } else if (input$dianoc == "Noche"){
+                if (dn == "d"){
+                    list(msg = "El periodo solo tiene día", action = 0)
+                } else {
+                    noc1 <- min(gdata$time)
+                    noc2 <- gdata$time[which(gdata$xscale == corte)-1]
+                    nocF <- data.frame(id = NA, ini = noc1, fin = noc2, tipo = 2)
+                    
+                    msg <- paste0("Noc: ", noc1, " a ", noc2)
+                    list(msg = msg, action = 1, filtro = nocF)
+                }
+
+            # Si selecciona Dia
+            } else if (input$dianoc == "Dia"){
+                if (dn == "n"){
+                    list(msg = "El periodo solo tiene dia", action = 0)
+                } else {
+                    # Si es el primer dia puede que no comience en el corte
+                    if (length(gdata$time[which(gdata$xscale == corte)]) == 0){
+                        dia1 <- min(gdata$time)
+                    } else {
+                        dia1 <- gdata$time[which(gdata$xscale == corte)]
+                    }
+                    
+                    dia2 <- max(gdata$time)
+                    diaF <- data.frame(id = NA, ini = dia1, fin = dia2, tipo = 2)
+
+                    msg <- paste0("Dia:   ", dia1, " a ", dia2)
+                    list(msg = msg, action = 1, filtro = diaF)
+                }
+    
+            # Si algo pasa rarisimo
+            } else {
+                stop("Full de error")
+            }
+            
+        }
+    })
+
+    # | ------ Mostrar el filtro a aplicar -----------------------------------
+    output$toFilter1 <- renderPrint({
+        validate(need(input$perChoose, "Esperando input!"))
+        cat(paste(filterPeriod()$msg, collapse = "\n"))
+    })
+    
+    
+    # | ------ Modal de confirmación ------------------------------------------
+    warnModal <- function(){
+        # Configurar el mensaje
+        if (length(filterPeriod()$msg) == 2){
+            show <- filterPeriod()$msg
+        } else {
+            show <- c(filterPeriod()$msg, " ")
+        }
+        
+        modalDialog(
+            title = "Confirmar filtros",
+            size = "m",
+            easyClose = TRUE,
+            
+            div(span(code(show[1])), br(), span(code(show[2]))),
+
+            footer = tagList(
+                modalButton("Cancelar"),
+                actionButton("ok", "Confirmar")
+            )
+        )
+    }
+    
+    # Mostrar el modal cuando se aprieta el modificiar filtro
+    observeEvent(input$cambia_periodo,{
+        if (filterPeriod()$action == 1){
+            showModal(warnModal())
+        }
+    })
+
+    # | ------ Decidir que hacer cuando es ok el modal ------
+    observeEvent(input$ok,{
+        showNotification("Procesando...")
+        # update a filtro y acvfilter
+        # update.filterPeriod()
+        
+        
+        # Primero checar que tenga action = 1
+        if (filterPeriod()$action == 1){
+            # Hacer update al filtro
+            filt <- bind_rows(filterRDS()$filter, filterPeriod()$filtro)
+            filt <- mutate(filt, id = 1:nrow(filt))
+            newfiltro <- list(header = filterRDS()$header, filter = filt)
+            
+            # Hacer el update del acvedit (codigo prestado de create.acvedit)
+            acvedit <- readRDS(paste0(awdfile(), "_acv.edit.RDS"))
+            acvedit$filter <-NA
+            for (f in 1:nrow(filt)){
+                ini <- filt$ini[f]
+                fin <- filt$fin[f]
+                
+                range <- which(acvedit$time >= ini & acvedit$time <= fin)
+                acvedit$filter[range] <- filt$tipo[f]
+            }
+            
+            # Guarda ahora los dos
+            saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
+            saveRDS(acvedit,  paste0(awdfile(), "_acv.edit.RDS"))
+        }
+        
+        
+        removeModal()
+    })
+    
+    
+    # | ---- 2. En editar actividad -------------------------------------------
+    output$selectedPer2 <- renderPrint({
+        selectedPer()
+    })
+    
+    # | ---- 3. En mover noche ------------------------------------------------
+    # output$selectedPer2 <- renderPrint({
+    #     cat(selectedPer())
+    # })
     
 }
 

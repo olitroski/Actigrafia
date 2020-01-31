@@ -31,22 +31,26 @@ archivos <- archivos[grep(".[Aa][Ww][Dd]$", archivos)]
 awdfile <- archivos[1]
 awdfile <- str_replace(awdfile, ".AWD", "")
 rm(archivos)
-# 
-# # Cargar data para un grafico
-# gdata <- check.acvfilter(awdfile)
-# gdata <- gdata$semiper
-# gdata <- gdata$per01
 
-# --- Pruebas 2 ----------------------------------------------------------------------
-acv <- create.acv(str_c(awdfile, ".AWD"), sensi = 40)
-semiper <- create.semiper(acv)
-filter.stats <- create.firstfilter(awdfile, semiper)
-acv.edit <- create.acvedit(awdfile, acv, filter.stats)
-# 
-# head(acv.edit)
-# unique(acv.edit$filter)
+# Cargar data para un grafico
+gdata <- check.acvfilter(awdfile)
+gdata <- gdata$semiper
+gdata <- gdata$per01
 
-View(acv.edit)
+
+names(gdata)
+lapply(gdata, function(x) min(x$time))
+otable("filter", data = gdata)
+
+
+windows()
+create.plotActo(gdata)
+
+
+
+
+
+        
 
 
 
