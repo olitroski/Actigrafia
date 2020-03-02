@@ -257,7 +257,26 @@ ui <- navbarPage(
                     
                     # | ---- 4. Borrar filtro --------------------------------------
                     tabPanel("Borrar filtro",
-                        "holi"
+                        fluidRow(
+                            column(12, style = "padding-left: 25px; padding-top: 15px;",
+                                h4("Indicar el id del filtro a borrar"),
+                                p("El registro será eliminado del archivo de filtros."),
+                                
+                                # Controles e inputs num-reactivenum-boton
+                                fluidRow(
+                                    column(2,
+                                        numericInput("borraFiltroNum", label=NULL, value=1, min=1, step=1, width="100%"),
+                                        actionButton("borraFiltroBtn", label = "Borrar", icon = icon("trash"))
+                                    ),
+                                    column(6,
+                                        tableOutput("borraFiltroTxt")
+                                    ),
+                                    column(4,
+                                        p(" ")
+                                    )
+                                )
+                            )
+                        )
                     )
                 )
             )
@@ -267,9 +286,16 @@ ui <- navbarPage(
     
     
     # Panel 4 - ESTADISTICAS --------------------------------------------------
-    tabPanel("Estadísticas"
+    tabPanel("Estadísticas",
         
-        
+        fluidRow(
+            column(12,
+                verbatimTextOutput("pruebas"),
+                verbatimTextOutput("pruebas2"),
+                verbatimTextOutput("pruebas3")
+            )
+        )
+             
     )
     
     # Pa los mensajes
