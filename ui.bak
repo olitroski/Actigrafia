@@ -61,7 +61,7 @@ ui <- navbarPage(
 
 
 
-    # Panel 2 - ACTOGRAMA ------------------------------------------- ---------
+    # Panel 2 - ACTOGRAMA -------------------------------------------- --------
     tabPanel("Actograma",
         
         # | Seccion: Seleccion de Sujetos -------------------------------------

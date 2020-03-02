@@ -38,14 +38,13 @@ server <- function(input, output, session){
         writeLines(awdfolder(), file.path(mainfolder, "savedir.lab"))        
         
         # Verificar que se guardó
-        if (awdfolder() == load.savedir(mainfolder)){
+        if (awdfolder() == load.savedir(mainfolder)) {
             showNotification("Se guardó correctamente el directorio")
         } else {
             showNotification("Apretar de nuevo para que se guarde")
-            
         }
     })
-
+    
     #| -- Cargar directorio en df ---------------------------------------------
     # Tiene un reactivePoll para ver si cambian los archivos del folder. Solo en nombres OJO.
     new.files <- function() {dir()}

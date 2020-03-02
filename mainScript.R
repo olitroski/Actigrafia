@@ -2,7 +2,7 @@
 # ----- Main Script para procesar archivos de actigrafia - Nov.2019 ----------- #
 # ----- Lab. Sueño - INTA - U.Chile - O.Rojas - oliver.rojas.b@gmail.com ------ #
 # ----------------------------------------------------------------------------- #
-rm(list=ls())
+rm(list = ls())
 
 # ----- Cargar funciones, settings --------------------------------------------
 # Folder del programa
@@ -11,12 +11,12 @@ setwd(mainfolder)
 
 # Cargar funciones y objetos
 source("function_loader.R")
-lapply(X=dir()[grep("func_", dir())], FUN=function_loader)
+lapply(X = dir()[grep("func_", dir())], FUN = function_loader)
 load.library()          # librerias
 set <- getset()         # <<<<"configuracion.set">>>>
 
 # Cargar App
-# runApp(launch.browser = TRUE)
+runApp(launch.browser = TRUE)
 stop()
 
 
