@@ -1,7 +1,7 @@
 server <- function(input, output, session){
     # Panel - VISUALIZAR ARCHIVOS -----------------  -------------------------
     # | -- Seleccionar directorio ---------------------------------------------
-    # Cargar el valor del save dir
+    # Cargar el valor del save dir    ñññ
     saved.folder <- reactive({
         load.savedir(mainfolder)
     })
@@ -95,9 +95,60 @@ server <- function(input, output, session){
                   "<br><br>", sep = "")
         )
     })
+    
+    # | -- -- Botón procesar en masa "massProc" ---------------------------------
+    # Modal de confirmación 
+    warnModal.mass <- function(){
+        modalDialog(
+            title = "Confirmar procesado en masa",
+            size = "m",
+            easyClose = TRUE,
+            
+            div(span(h4("Está a punto de procesar todos los ficheros en status"), 
+                     h4(strong("No procesado")),
+                     p("¿Desea continuar?"))),
+            
+            footer = tagList(
+                modalButton("Cancelar"),
+                actionButton("mass", "Confirmar")
+            )
+        )
+    }
 
+    # Mostrar modal al apretar boton y error si no hay pa procesar
+    observeEvent(input$massProc,{
+        nopro <- filter(subjectDF(), Status == "No procesado") %>% select(Sujeto)
+        
+        if (nrow(nopro) == 0){
+            showNotification("No existen sujetos para procesar", type = "error")
+        } else {
+            showModal(warnModal.mass())
+        }
+    })    
 
+    # Si se acepta el mass proc, proceder
+    observeEvent(input$mass, {
+        # Listado de sujetos
+        procAwd <- filter(subjectDF(), Status == "No procesado") %>% select(Sujeto)
+        procAwd <- paste0(procAwd$Sujeto, ".AWD")
 
+        # Procesar
+        for (sujeto in procAwd){
+            showNotification(paste("Cargando", sujeto))
+            acv <- create.acv(sujeto, set$sensivar)
+            semiper <- create.semiper(acv)
+            filter.stats <- create.firstfilter(sujeto, semiper)
+            acv.edit <- create.acvedit(sujeto, acv, filter.stats)
+            showNotification("Sujeto procesado", type = "message")
+            
+        }
+
+        removeModal()
+    })
+    
+    
+    
+    
     # Panel - ACTOGRAMA ----------------------------------- -------------------
     
     # | -- renderUI selectInput de sujetos ------------------------------------
@@ -446,7 +497,7 @@ server <- function(input, output, session){
         minui <- min(xscale)
         maxui <- max(xscale)
 
-        sliderInput("rangoX", label = NA,
+        sliderInput("rangoX", label = NULL,
                     min = minui, max = maxui, value = c(minui, maxui),
                     width = "95%", step = 1)
     })
@@ -498,7 +549,7 @@ server <- function(input, output, session){
         cat(selectedPer())
     })
     
-    # | ------ Crear un reactive filterPeriod() -------------------------------
+    # | ------ reactive filterPeriod() -------------------------------
     # Esto tiene la info del filtro a aplicar, es una lista con el id, filtro y tipo
     filterPeriod <- reactive({
         # Esperar esto y ver si el periodo tiene dia, noche o ambos
@@ -661,16 +712,131 @@ server <- function(input, output, session){
     })
     
     
-    # | ---- 2. En editar actividad -------------------------------------------
-    output$selectedPer2 <- renderPrint({
-        # Aca se pasa de cero actividad a un promedio (runiform)
-        selectedPer()
+    # | ---- 2. Editar actividad -------------------------------------------
+    # Mostrar la fecha
+    output$editAct.date <- renderPrint({
+        if (length(filterRDS()) != 2){
+            cat("Esperando input!")
+        } else {
+            cat(selectedPer())
+        }
     })
     
+    # Construir un reactive con el nuevo filtro porque de los update
+    editAct.react <- reactive({
+        # Esperar el periodo
+        validate(need(input$perChoose, "Esperando input!"))
+        date <- str_split_fixed(selectedPer(), " ", 2)
+        date <- date[2]
+        
+        # Componer la linea de filtro
+        try(dt1 <- dmy_hm(paste(date, input$editAct.ini)))
+        try(dt2 <- dmy_hm(paste(date, input$editAct.fin)))
+        try({
+            if ((dt2 - dt1) <= 0){
+                NULL
+            } else {
+                data.frame(id = NA, ini = dt1, fin = dt2 , tipo = 3)
+            } 
+        })
+    })
+    
+    # Modal de confirmación
+    warnModal.editAct <- function(){
+        # Configurar el mensaje
+        if (class(editAct.react()) == "data.frame"){
+            show <- c(editAct.react()$ini[1], editAct.react()$ini[1])
+        } 
+        
+        modalDialog(
+            title = "Modificar actividad",
+            size = "m",
+            easyClose = TRUE,
+            
+            div(span(p("Va a modificar la actividad entre:"), 
+                     code(editAct.react()$ini[1]), br(),
+                     code(editAct.react()$fin[1]))),
+            
+            footer = tagList(
+                modalButton("Cancelar"),
+                actionButton("editAct.mdl", "Confirmar")
+            )
+        )
+    }
+    
+    # Mostrar modal al apretar boton
+    observeEvent(input$editAct.btn, {
+        if(class(editAct.react()) == "data.frame"){
+            data <- acveditRDS()$semiper[[str_sub(input$perChoose, 1, 5)]]
+            
+            # Checar limites
+            if (min(data$time) > editAct.react()$ini[1]){
+                showNotification("Hora de inicio incorrecta", type = "error")
+            } else if (max(data$time) < editAct.react()$fin[1]) {
+                showNotification("Hora de fin incorrecta", type = "error")
+            } else {
+                showModal(warnModal.editAct())
+            }
+        }
+    })
+    
+    # Ejecutar si se confirma
+    observeEvent(input$editAct.mdl, {
+        # Update del filterRDS()
+        filt <- bind_rows(filterRDS()$filter, editAct.react())
+        filt <- arrange(filt, fin)
+        filt <- distinct(filt, id, ini, fin, tipo)
+        filt$id <- 1:nrow(filt)
+        newfiltro <- list(header = filterRDS()$header, filter = filt)
+        
+        # Update al acv.edit 
+        acvedit <- readRDS(paste0(awdfile(), "_acv.edit.RDS"))
+        acvedit$filter <-NA
+        for (f in 1:nrow(filt)){
+            # Edita la variable "filter"
+            ini <- filt$ini[f]
+            fin <- filt$fin[f]
+            range <- which(acvedit$time >= ini & acvedit$time <= fin)
+            acvedit$filter[range] <- filt$tipo[f]
+            
+            if (filt$tipo[f] == 3){
+                # Edita la actividad en variable "act.edit"
+                df <- filter(acvedit, act.edit > 0)
+                mu <- mean(df$act.edit, na.rm = TRUE)
+                de <- sd(df$act.edit, na.rm = TRUE)
+                
+                newActiv <- rnorm(n = length(range), mean = floor(mu), sd = floor(de*0.8))
+                newActiv <- ifelse(newActiv < 0, de, newActiv)
+                acvedit$act.edit[range] <- newActiv
+                
+                # Edita el estado en la variable "st.edit"
+                acvedit$st.edit[range] <- "W"
+            }
+        }
+        
+
+        # Guarda ahora los dos
+        saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
+        saveRDS(acvedit,  paste0(awdfile(), "_acv.edit.RDS"))
+        removeModal()
+    })
+    
+    
+    
+    
     # | ---- 3. En mover noche ------------------------------------------------
-    # output$selectedPer2 <- renderPrint({
-    #     cat(selectedPer())
-    # })
+    # Mostrar la fecha
+    output$moveNight.date <- renderPrint({
+        if (length(filterRDS()) != 2){
+            cat("Esperando input!")
+        } else {
+            cat(selectedPer())
+        }
+    })
+    
+    
+    
+    
     
     # | ---- 4. Borrar filtro -------------------------------------------------
     
@@ -713,6 +879,9 @@ server <- function(input, output, session){
     
     # Si confirma se borra filtro y actualiza el acv.edit()
     observeEvent(input$borraFiltroOk, {
+        # Hay que agregar que si el filtro a borrar es de tipo 3
+        # Debe restaurar la actividad y stage del acvedit
+        
         showNotification("Procesando...")
         # Que el archivo de filtro tenga al menos 1 registro
         if (nrow(filterRDS()$filter) >= 0){
@@ -748,24 +917,16 @@ server <- function(input, output, session){
     
     # Panel - ESTADISTICAS -------------------------------- -------------------
     output$pruebas <- renderPrint({
-        filt <- filterRDS()$filter[-input$borraFiltroNum,]
-        filt
-        
+        head(acveditRDS()$semiper[[str_sub(input$perChoose, 1, 5)]], 20)
     })
     
     output$pruebas2 <- renderPrint({
-        filterPeriod()
-        
+        filterRDS()
     })
     
     output$pruebas3 <- renderPrint({
-        filt <- bind_rows(filterRDS()$filter, filterPeriod()$filtro)
-        filt <- arrange(filt, fin)
-        filt <- distinct(filt, id, ini, fin, tipo)
-        filt$id <- 1:nrow(filt)
-        filt
-        # newfiltro <- list(header = filterRDS()$header, filter = filt)
-        # newfiltro
+
+        editAct.react()
         
     })
     

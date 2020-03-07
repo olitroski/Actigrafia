@@ -1,4 +1,4 @@
-# OlitoSleep UI - La mejor app del lab.
+# OlitoSleep UI - La mejor app del lab  ññññ.
 ui <- navbarPage(
     "OlitoSleep", id = "TablasApp",
 
@@ -53,7 +53,11 @@ ui <- navbarPage(
             # | Seccion: Lateral con info del settings --------------------
             column(3,
                 h4("Parámetros para detección"),
-                htmlOutput("showSet")
+                htmlOutput("showSet"),
+                hr(),
+                h4("Procesado masivo"),
+                p("Para ejecutar el análisis inicial de todos los ficheros AWD sin procesar."),
+                actionButton("massProc", label = "Procesar", icon = icon("warning"))
             )
         )
     ),
@@ -193,7 +197,7 @@ ui <- navbarPage(
                                     verbatimTextOutput("selectedPer1", placeholder = TRUE),
                                     p(" "),
                                     # Selector
-                                    checkboxGroupInput("dianoc", label=NA, 
+                                    checkboxGroupInput("dianoc", label= NULL, 
                                                     choices = c("Dia", "Noche"), 
                                                     inline = TRUE),
                                     # Boton
@@ -218,19 +222,19 @@ ui <- navbarPage(
                         fluidRow(
                             column(12, style = "padding-left: 25px; padding-top: 15px;",
                                 h4("Escribir hora de inicio y fin para la corrección"),
-                                p("Se está editando la siguiente fecha:"),
+                                p("El intervalo no debe cruzar las 00:00:"),
                                 
                                 # La fila de cosas
                                 splitLayout(cellWidths = c("28%", "2%", "10%", "10%", "2%", "48%"),
                                     # Fecha
-                                    verbatimTextOutput("selectedPer2"),
+                                    verbatimTextOutput("editAct.date"),
                                     p(" "),
                                     # Inputs
-                                    textInput("ini", value = "hh:mm", label = NULL),
-                                    textInput("fin", value = "hh:mm", label = NULL),
+                                    textInput("editAct.ini", label = NULL),
+                                    textInput("editAct.fin", label = NULL),
                                     p(" "),
                                     # Botón
-                                    actionButton("cambia_actividad", label = "Editar", 
+                                    actionButton("editAct.btn", label = "Editar", 
                                                  icon = icon("filter"))
                                 ),
                                 
@@ -248,11 +252,24 @@ ui <- navbarPage(
                     
                     # | ---- 3. Mover la noche -------------------------------------
                     tabPanel("Mover la noche",
-                        "contents",
-                        verbatimTextOutput("selectedPer3")
-                        
-
-                        
+                        fluidRow(
+                            column(12, style = "padding-left: 25px; padding-top: 15px;",
+                                h4("Indicar inicio de la noche"),
+                                p("Indicar una hora aproximada en la que comienza la noche"),
+                                
+                                # La fila de cosas
+                                splitLayout(cellWidths = c("28%", "2%", "10%", "2%", "58%"),
+                                    # Fecha
+                                    verbatimTextOutput("moveNight.date", placeholder = TRUE),
+                                    p(" "),
+                                    # Hora <edicion>
+                                    textInput("moveNight.hora", label = NULL, value = "hh:mm"),
+                                    p(" "),
+                                    # Boton
+                                    actionButton("moveNight.btn", "Mover Noche", icon = icon("moon"))
+                                )
+                            )
+                        )
                     ),
                     
                     # | ---- 4. Borrar filtro --------------------------------------

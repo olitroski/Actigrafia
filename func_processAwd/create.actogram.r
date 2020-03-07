@@ -1,33 +1,12 @@
-## ------------------------------------------------------------------------------------ #
-## ----- Actograma con ggplot --------------------------------------------------------- #
-## ------------------------------------------------------------------------------------ #
-# La idea es tomar un acv y mostrarlos de 20 a 20 horas asi aseguramos tener todos los d?as
-# Solo se superponen sue?o y vigilia, la idea es que sirva para editar el awd.
+## -------------------------------------------------------------------------------- #
+## ----- Actograma con ggplot not ------------------------------------------------- #
+## -------------------------------------------------------------------------------- #
+# La idea es tomar un acv y mostrarlos de 20 a 20 horas asi aseguramos todos los d?as
 create.actogram <- function(semiper, fy = 1){
-   
-    # Combinar noche->dia mismo periodo
-    
-    # según yo el semiper del acveditRDS() ya trae combinado el dia y la noche
-    # per <- unique(str_sub(names(semiper), 2, 2))
-    # perlist <- list()
-    # for (p in per){
-    #     i <- grep(paste(p, "$", sep = ""), names(semiper))
-    #     if (length(i) == 2){
-    #         temp <- bind_rows(semiper[[i[2]]], semiper[[i[1]]]) %>% arrange()
-    #     } else {
-    #         temp <- semiper[[i[1]]]
-    #     }
-    #     
-    #     if (as.numeric(p) < 10){p <- paste("0", p, sep ="")}
-    #     cmd <- paste("perlist <- append(perlist, list(per", p, " = temp))", sep = "")
-    #     eval(parse(text=cmd))
-    # }
-    # semiper <- perlist
-    # rm(per, perlist, p, cmd, i, temp, acv.edit)
-    
-    ## ---- Hace el actograma -----------------------------------------------------------------------
+    # Valores 
     xscale2 <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
-    xlabel2 <- ifelse(xscale2 >= 48, xscale2 - 48, ifelse(xscale2 >= 24, xscale2 - 24, xscale2))
+    xlabel2 <- ifelse(xscale2 >= 48, xscale2 - 48, 
+                      ifelse(xscale2 >= 24, xscale2 - 24, xscale2))
     limX2 <- c(min(xscale2), max(xscale2))
     
     # Se saca toda la info desde la lista <semiper> filtros todo...   :)
@@ -49,12 +28,3 @@ create.actogram <- function(semiper, fy = 1){
 }
 
 #create.actogram(awdfile)
-
-
-
-
-
-
-
-
-
