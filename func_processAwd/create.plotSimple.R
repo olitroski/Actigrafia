@@ -33,38 +33,38 @@ create.plotSimple <- function(gdata, pct.y = 1, limites = NULL, lw = 1){
     sdata <- find.segment(gdata, st.edit, "S")
     wdata <- find.segment(gdata, st.edit, "W")
     
-    # Solución por si no hay nada de sueño o vigilia 
+    # SoluciÃ³n por si no hay nada de sueÃ±o o vigilia 
     # (agrega 1 epoch falso al final) quitando un epoch al que tiene datos
     if (nrow(wdata) == 0){statusW <- FALSE} else {statusW <- TRUE}
     if (nrow(sdata) == 0){statusS <- FALSE} else {statusS <- TRUE}
     
-    if (statusW == FALSE){    # No hay vigilia, solo sueño
+    if (statusW == FALSE){    # No hay vigilia, solo sueÃ±o
         wdata[1,"ini"] <- sdata[nrow(sdata), "fin"]
         wdata[1,"fin"] <- sdata[nrow(sdata), "fin"]
         sdata[nrow(sdata), "fin"] <- sdata[nrow(sdata), 2] - 1
     } 
-    if (statusS == FALSE){    # No hay sueño, solo vigilia
+    if (statusS == FALSE){    # No hay sueÃ±o, solo vigilia
         sdata[1,"ini"] <- wdata[nrow(wdata), "fin"]
         sdata[1,"fin"] <- wdata[nrow(wdata), "fin"]    
         wdata[nrow(wdata), "fin"] <- wdata[nrow(wdata), "fin"] - 1
     }
     
-    # Queda un gap entre sueño y viglia porque queda 1 minuto (intervalo) blanco
+    # Queda un gap entre sueÃ±o y viglia porque queda 1 minuto (intervalo) blanco
     # se agrega un minuto al final
     n <- nrow(gdata)
     sdata <- mutate(sdata, fin = fin + 1)
     wdata <- mutate(wdata, fin = fin + 1)
     
-    # Dada la corrección se excede el último intervalo en S o W
+    # Dada la correcciÃ³n se excede el Ãºltimo intervalo en S o W
     if (sdata$fin[nrow(sdata)] == (n + 1)){
         sdata$fin[nrow(sdata)] <- nrow(gdata)
     } else if (wdata$fin[nrow(wdata)] == (n + 1)){
         wdata$fin[nrow(wdata)] <- nrow(gdata)
     } else {
-        stop("Error en la corrección intervalos adyacentes")
+        stop("Error en la correcciÃ³n intervalos adyacentes")
     }
     
-    # Sueño y wake data para el background (valores)
+    # SueÃ±o y wake data para el background (valores)
     sdata <- mutate(sdata, ini = gdata$xscale[ini], fin = gdata$xscale[fin])
     wdata <- mutate(wdata, ini = gdata$xscale[ini], fin = gdata$xscale[fin])
 
@@ -98,7 +98,7 @@ create.plotSimple <- function(gdata, pct.y = 1, limites = NULL, lw = 1){
     plot(gdata$xscale, gdata$act.edit, type='n', ylab='', axes=FALSE, 
          xlim=limX, ylim=limY)
     
-    # <<SLEEP>>: Los indicadores de sueño  <<col2rgb("skyblue3", alpha = 0.5)/255>>
+    # <<SLEEP>>: Los indicadores de sueÃ±o  <<col2rgb("skyblue3", alpha = 0.5)/255>>
     for (i in 1:nrow(sdata)){
         rect(sdata$ini[i], 0, sdata$fin[i], limY[2], 
              col = rgb(0.4235,0.6510,0.8039,0.5), border = "skyblue3")
@@ -118,7 +118,7 @@ create.plotSimple <- function(gdata, pct.y = 1, limites = NULL, lw = 1){
         }
     }
     
-    # 2 WAKE --- Muestra las modifiaciones desde sueño a vigilia
+    # 2 WAKE --- Muestra las modifiaciones desde sueÃ±o a vigilia
     if (nrow(f2wake) > 0){
         for (i in 1:nrow(f2wake)){
             rect(f2wake$ini[i], limY[2] - 10, f2wake$fin[i], limY[2], 
@@ -126,7 +126,7 @@ create.plotSimple <- function(gdata, pct.y = 1, limites = NULL, lw = 1){
         }
     }
     
-    # 2 SLEEP --- Muestral los modificaciones desde vigilia a sueño
+    # 2 SLEEP --- Muestral los modificaciones desde vigilia a sueÃ±o
     if (nrow(f2sleep) > 0){
         for (i in 1:nrow(f2sleep)){
             rect(f2sleep$ini[i], 0, f2sleep$fin[i], limY[2], 
@@ -134,7 +134,7 @@ create.plotSimple <- function(gdata, pct.y = 1, limites = NULL, lw = 1){
         }
     }    
     
-    # Añadir grafico nuevo encima
+    # AÃ±adir grafico nuevo encima
     par(new=TRUE)
     plot(gdata$xscale, gdata$act.edit, type='h', lwd = lw, col='grey20', 
          ylab='', axes=FALSE, xlim=limX, ylim=limY)

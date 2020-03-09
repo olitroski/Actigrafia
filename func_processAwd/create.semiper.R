@@ -1,10 +1,10 @@
 # ------------------------------------------------------------------------------------- #
 # ---- Script para crear semi periodos (dia o noche) a partir del "inidia" e "ininoc" - #
-# ---- Lab. Sueño - INTA - U.Chile - O.Rojas - oliver.rojas.b@gmail.com - 11.01.2020 -- #
+# ---- Lab. SueÃ±o - INTA - U.Chile - O.Rojas - oliver.rojas.b@gmail.com - 11.01.2020 -- #
 # ------------------------------------------------------------------------------------- #
 # Esto nace para los periodos donde se sacaron los actigrafos
 #       Crea una lista con cada semi periodo, no son puntos de corte, es el acv trozado
-# Sugerencia sacar entre 20:00 y 06:00 porque el proceso del epi seri­a entre esas horas
+# Sugerencia sacar entre 20:00 y 06:00 porque el proceso del epi seriÂ­a entre esas horas
 # noc = set$ininoc; dia = set$inidia
 create.semiper <- function(acv, noc = set$ininoc, dia = set$inidia){
 	cat(paste("exec(create.semiper) - noc", noc, "- dia", dia, "\n"))
@@ -31,7 +31,7 @@ create.semiper <- function(acv, noc = set$ininoc, dia = set$inidia){
         stop("dia y noche tienen diferente largo")
     }
 
-    # Si hay antes de las 20 del primer dia es "dia" p0, si no hay fue no más.
+    # Si hay antes de las 20 del primer dia es "dia" p0, si no hay fue no mÃ¡s.
     inicio <- filter(acv, time < noche[1])
     if (nrow(inicio) > 0){
         d0 <- inicio

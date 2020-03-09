@@ -1,11 +1,11 @@
 ## ------------------------------------------------------------------------------------ #
-## --- Create EPI - Detección los episodios de sueño y vigilia + noche o dia ---------- #
+## --- Create EPI - DetecciÃ³n los episodios de sueÃ±o y vigilia + noche o dia ---------- #
 ## ------------------------------------------------------------------------------------ #
 # La logica es como ahora tengo el stage actigrafico alisado, puedo contruir periodos y 
-# hacerlos consecutivos y hacerles un summarize y buscar la noche y el día.
+# hacerlos consecutivos y hacerles un summarize y buscar la noche y el dÃ­a.
 create.epi <- function(awd = NULL){
     # ----- Crear el pseudo epi ------------------------------------------------------------ #
-    # Como ya tenemos los estados para cada epoch numerados se puede hacer la detección
+    # Como ya tenemos los estados para cada epoch numerados se puede hacer la detecciÃ³n
     # de noche y dia
 
     # --- Crear un epi FTW ------- #
@@ -18,7 +18,7 @@ create.epi <- function(awd = NULL){
     epi <- arrange(epi, ini) %>% select(-fin)
     epi <- mutate(epi, duracion = as.numeric(duracion) + 1)   # Corrige la duracion
 
-    # dia o noche según las horas de ininoc e inidia y marca duracion <> durawake
+    # dia o noche segÃºn las horas de ininoc e inidia y marca duracion <> durawake
     hr <- function(x){hm(paste(hour(x),":",minute(x), sep=""))}
     epi <- mutate(epi, dino   = ifelse(hr(ini) >= hm("00:00") & hr(ini) < inidia, "Noche",
                                 ifelse(hr(ini) >= inidia & hr(ini) < ininoc, "Dia",
@@ -49,8 +49,8 @@ create.epi <- function(awd = NULL){
     maxdur <- group_by(epi, dianoc) %>% summarize(maxdur = max(dur), indx = min(indx), 
             dino = unique(dino)) %>% filter(maxdur == 0)
     
-    # Modifica el "dur" según esto, la idea es que no queden dias etiquetados como noche porque
-    # no se encontró un episodio que durara más de sleep dur.
+    # Modifica el "dur" segÃºn esto, la idea es que no queden dias etiquetados como noche porque
+    # no se encontrÃ³ un episodio que durara mÃ¡s de sleep dur.
     epi$dur2 <- 0
     if (nrow(maxdur) > 0){
         for (i in 1:nrow(maxdur)){
@@ -69,7 +69,7 @@ create.epi <- function(awd = NULL){
     }
 
 # Ya tenemos todos los dia noc con stage marcado con comienzo no importa si no tiene stage > 30    
-    # Ahora detectar el 1° stage mayora a durawake y dursleep
+    # Ahora detectar el 1Â° stage mayora a durawake y dursleep
     epi$dur3 <- 0
     st <- epi$dino[1]
     i <- 1
@@ -80,7 +80,7 @@ create.epi <- function(awd = NULL){
         stage <- epi$estado[i]
         # dino; dur; dur2; stage
         
-        # Si es dia que ponga el 1° cuando W y viseversa
+        # Si es dia que ponga el 1Â° cuando W y viseversa
         if ((dino == st & dur == 1) | (dino == st & dur2 == 1)){
             if (dino == "Dia" & stage == "W"){
                 epi$dur3[i] <- 1

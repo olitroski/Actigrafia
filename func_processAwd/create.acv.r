@@ -18,7 +18,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL, edit = FALSE){
     }
     awd.data <- as.numeric(awd.data)
    
-    # Revisar que solo hayan numeros desde la posición 8 en adelante
+    # Revisar que solo hayan numeros desde la posiciÃ³n 8 en adelante
     numtest <- as.numeric(awd.data)
     if (sum(is.na(numtest)) > 0){
         stop("Hay un valor no numerico en el AWD a partir linea 8")
@@ -46,7 +46,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL, edit = FALSE){
     } else if (epoch.len == 4){
         epoch.len <- 60
     } else {
-        stop("error, algo pasó con el epoch len")
+        stop("error, algo pasÃ³ con el epoch len")
     }
 	
 	cat(paste("|--- Sens = ", sensi, " - Samp = ", epoch.len, "secs \n", sep = ""))
@@ -58,7 +58,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL, edit = FALSE){
         stringsAsFactors = FALSE)
     mes <- filter(mes, esp == unlist(str_split(fec.ini, "-", 3))[2])
     
-    # Asume que está en español, se corrige si inglés.
+    # Asume que estÃ¡ en espaÃ±ol, se corrige si inglÃ©s.
     if (nrow(mes) > 0){
         fec.ini <- str_replace(fec.ini, mes[1,2], mes[1,1])
         fec.ini <- dmy_hm(fec.ini)
@@ -107,7 +107,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL, edit = FALSE){
         error("En la seleccion del multiplicador")
     }
     
-    # Algoritmo de detección
+    # Algoritmo de detecciÃ³n
     act <- awd$act3
     acti.st <- rep(NA, times = fin)
     for (i in 1:fin){                                                                           # xx
@@ -127,7 +127,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL, edit = FALSE){
         # Calculos, ponderados al multiplicador
         A <- sum(multi * epoch.data)
         
-        # Decisiones según la sensibilidad
+        # Decisiones segÃºn la sensibilidad
         if (sensi == 20){
             if (A > 20){acti.st[i] <- "W"} else {acti.st[i] <- "S"}
         } else if (sensi == 40){
@@ -162,7 +162,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL, edit = FALSE){
         nW <- length(which(stXmin == "W")) 
         nS <- length(which(stXmin == "S")) 
         
-        # Lógica para detener
+        # LÃ³gica para detener
         if (nW == tdiff){
             state <- "W"
             ws = "Ok"
@@ -209,10 +209,10 @@ create.acv <- function(awdfile = NULL, sensi = NULL, edit = FALSE){
 #     w <- which(epi == "W")
 #     s <- which(epi == "S")
 # 
-#     # Hacer diferencias al i+1 para ver dónde comienza W y S
+#     # Hacer diferencias al i+1 para ver dÃ³nde comienza W y S
 #     epiw <- data.frame(indx = w)
 #     epiw <- mutate(epiw, m = c(0, w[-length(w)]), d = m - indx)     # m = indx corrido un espacio
-#     epiw <- filter(epiw, d < -1)        # Si se salta el d será menor a un lugar (< -1)
+#     epiw <- filter(epiw, d < -1)        # Si se salta el d serÃ¡ menor a un lugar (< -1)
 #     epiw <- mutate(epiw, stage = paste("W-", row.names(epiw), sep = ""))
 # 
 #     epis <- data.frame(indx = s)
@@ -233,7 +233,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL, edit = FALSE){
 #     }
 #     awd$stage <- stage
 #     
-#     # Corregir el último y el primero
+#     # Corregir el Ãºltimo y el primero
 #     awd$stage[nrow(awd)] <- epi$stage[nrow(epi)-1]
 #     #awd <- filter(awd, acti2 != "NC")
 
