@@ -5,7 +5,7 @@
 # ------------------------------------------------------------------------------------- #
 
 create.acvedit <- function(awdfile, acv.filter, filter.stats){
-    cat(paste("exec(create.acvedit)", awdfile, "\n"))
+    # cat(paste("exec(create.acvedit)", awdfile, "\n"))
 	# str(filter.stats)
     # acv.filter <- acv
     # head(acv.filter)

@@ -11,7 +11,7 @@
 # El input es el reactive awdfile()
 # El output es el list del create.semiper
 check.acvfilter <- function(awdfile){
-	cat("exec(check.acvfilter)")
+	# cat("exec(check.acvfilter)")
     # Cargar acv y filter ----------------------------------------------------------
     acvfile <- paste(awdfile, "_acv.edit.RDS", sep = "")
     acvfile <- readRDS(acvfile)

@@ -67,44 +67,56 @@ ui <- navbarPage(
 
     # Panel 2 - ACTOGRAMA ------------------------------------------- ---------
     tabPanel("Actograma",
-        
-        # | Seccion: Seleccion de Sujetos -------------------------------------
         fluidRow(
-            # | --- Pegar o seleccionar sujeto --------------------------------
+            column(12,
+                h4("Seleccionar sujeto a editar")    
+            )
+        ),     
+             
+        fluidRow(
+            # | Seccion: Seleccion de Sujetos ---------------------------------
+            # column(3,
+            #     h4("Seleccionar sujeto"),
+            #     textOutput("statsSubj"),
+            #     br(),
+            #     uiOutput("subjInput")
+            # ),
+            
             column(3,
-                h4("Pegar o seleccionar sujeto"),
-                textInput("awd_paste", label = NULL, value = "Pegar"),
+                radioButtons("accion_choice", label = NULL, 
+                         choices = c("Editar", "Actograma", "Finalizar"),
+                         selected = "Actograma", inline = TRUE),
+                actionButton("accion_button", "Ejecutar"),
+                hr(),
                 uiOutput("subjInput")
             ),
             
-            # | --- Muestra seleccion y status  -------------------------------
-            column(3,
-                h4("Selección"),
-                textOutput("selectedSubj"),
-                br(),
-                textOutput("statsSubj")
-            ),
-            
-            # | --- Acciones a tomar para seguir ------------------------------
-            column(6, 
-                h4("Acciones"),
-                radioButtons("accion_choice", label = NULL, 
-                            choices = c("Analizar", "Editar", "Actograma", "Terminar Sujeto"),
-                            selected = "Editar", inline = TRUE),
-                actionButton("accion_button", "Proceder")
+            # | --- Acciones y actograma --------------------------------------
+            column(9,
+                # fluidRow(
+                #     div(style = "position:relative; z-index:2;", h4("Acciones a tomar")  )
+                # ),
+                # # Acciones a tomar
+                # fluidRow(
+                #     splitLayout(cellWidths = c("10%", "40%", "50%"),
+                #         # Boton de acción
+                #         div(style = "position:absolute; z-index:2;", 
+                #             actionButton("accion_button", "Proceder")),
+                #         # Seleccionar acction
+                #         div(style = "position:absolute; z-index:2;",                        
+                #             radioButtons("accion_choice", label = NULL, 
+                #                          choices = c("Analizar", "Editar", "Actograma", "Terminar Sujeto"),
+                #                          selected = "Editar", inline = TRUE), p(" "))
+                #     )
+                #     
+                # ),
+                
+                # | --- Sección: Actograma ------------------------------------------------
+                fluidRow(
+                    div(style = "margin-top:-100px; position:relative; z-index:1; ",
+                    uiOutput("actoUI"))
+                )
             )
-        ),
-        
-
-        
-        # | Sección: Actograma ------------------------------------------------
-        fluidRow(
-            column(1),
-            column(10,
-                uiOutput("actoUI")
-            ),
-            column(1)
-            
         )
     ),
     
@@ -181,6 +193,7 @@ ui <- navbarPage(
             column(4,
                 verbatimTextOutput("filtroH"),
                 tableOutput("filtroDF")
+                # verbatimTextOutput("filtroDF")
             ),
             
             # | -- Pestaña de edición -----------------------------------------
@@ -302,19 +315,40 @@ ui <- navbarPage(
     
     
     
-    # Panel 4 - ESTADISTICAS --------------------------------------------------
-    tabPanel("Estadísticas",
-        
+    # Panel 4 - EPISODIOS --------------------------------------------------
+    tabPanel("Episodios",
+        # | -- Fila de filtros ----
+        fluidRow(
+            column(1),
+            column(3,
+                checkboxGroupInput("estadoFilter", choices = c("W", "S"), 
+                                   inline = TRUE, label = "Filtrar por Estado")
+            ),
+            column(3,
+                checkboxGroupInput("dianocFilter", choices = c("Dia", "Noche"),
+                                   inline = TRUE, label = "Filtrar por Dia|Noche")
+            ),
+            column(3,
+                uiOutput("periodFilter")
+            ),
+            column(3)
+        ),
+             
+        # | -- Tabla epi -----
         fluidRow(
             column(12,
-                verbatimTextOutput("pruebas"),
-                verbatimTextOutput("pruebas2"),
-                verbatimTextOutput("pruebas3")
+                splitLayout(cellWidths = c("5%", "90%", "5%"),
+                           p(" "), tableOutput("epi"), p("")
+                )
             )
         )
-             
+    ),
+
+    
+    # Panel 5 - ESTADISTICAS --------------------------------------------------
+    tabPanel("Informes",
+        verbatimTextOutput("test1"),
+        verbatimTextOutput("test2")
     )
     
-    # Pa los mensajes
-    #useShinyalert()
 )

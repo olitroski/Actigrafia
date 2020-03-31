@@ -7,7 +7,7 @@
 # Sugerencia sacar entre 20:00 y 06:00 porque el proceso del epi seri­a entre esas horas
 # noc = set$ininoc; dia = set$inidia
 create.semiper <- function(acv, noc = set$ininoc, dia = set$inidia){
-	cat(paste("exec(create.semiper) - noc", noc, "- dia", dia, "\n"))
+	# cat(paste("exec(create.semiper) - noc", noc, "- dia", dia, "\n"))
     # head(acv)
     
     # Construir los lugares de corte & asegurar el time zone para evitar error.

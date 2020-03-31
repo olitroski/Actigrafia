@@ -3,7 +3,7 @@
 ## ----- Create ACV - Estado (W|S), fechas y horas partir de un awd ------------------- #
 ## ------------------------------------------------------------------------------------ #
 create.acv <- function(awdfile = NULL, sensi = NULL, edit = FALSE){
-	cat(paste("exec(create.acv)", awdfile, "\n"))
+	# cat(paste("exec(create.acv)", awdfile, "\n"))
 	
     # Leer archivo
     awd <- readLines(awdfile)

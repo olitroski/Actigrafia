@@ -52,26 +52,26 @@ statlist <- function(lista=NULL){
     return(allstats)
 }
 
-# La otra versión apilando dfs
-stats.final <- NULL
-for (f in 1:100){
-    # Crear el archivo de detección    
-    file <- archivos[f]
-    acv <- create.acv(file, set$sensivar)
-    stats <- statlist(create.semiper(acv))
-    stats$file <- file
-    
-    # Decidir y ampliar
-    
-    
-    stats.final <- bind_rows(stats.final, stats)
-}
-rm(stats, file, f)
-
-stats.final <- arrange(stats.final, file, ini)
-write_dta(stats.final, "stats.final.dta")
-write.xlsx(stats.final, "stats.final.xlsx")
-
-
-
-ls()
+# # La otra versi?n apilando dfs
+# stats.final <- NULL
+# for (f in 1:100){
+#     # Crear el archivo de detecci?n    
+#     file <- archivos[f]
+#     acv <- create.acv(file, set$sensivar)
+#     stats <- statlist(create.semiper(acv))
+#     stats$file <- file
+#     
+#     # Decidir y ampliar
+#     
+#     
+#     stats.final <- bind_rows(stats.final, stats)
+# }
+# rm(stats, file, f)
+# 
+# stats.final <- arrange(stats.final, file, ini)
+# write_dta(stats.final, "stats.final.dta")
+# write.xlsx(stats.final, "stats.final.xlsx")
+# 
+# 
+# 
+# ls()

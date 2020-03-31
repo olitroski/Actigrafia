@@ -10,7 +10,7 @@ getset <- function(){
         temp <- file[grep(var, file)]
         temp <- str_split(temp, "=", simplify = TRUE)
         temp <- temp[1,2] 
-        temp <- hm(temp)
+        temp <- lubridate::hm(temp)
         return(temp)
     }
     
@@ -18,24 +18,24 @@ getset <- function(){
     ininoc <- leer("ininoc")
     # ininoc <<- leer("ininoc")
     
-    # Inicio dle día
+    # Inicio dle dia
     inidia <- leer("inidia")
     # inidia <<- leer("inidia")
 
        
-    # Primer sueño y vigilia
+    # Primer sue?o y vigilia
     dursleep <- leer("dursleep")
-    dursleep <- minute(dursleep)
+    dursleep <- lubridate::minute(dursleep)
     # dursleep <<- minute(dursleep)
     
     durawake <- leer("durawake")
-    durawake <- minute(durawake)
+    durawake <- lubridate::minute(durawake)
     # durawake <<- minute(durawake)
 
         
     # Duracion del cambio estado
     statedur <- leer("statedur")
-    statedur <- period_to_seconds(statedur)
+    statedur <- lubridate::period_to_seconds(statedur)
     # statedur <<- period_to_seconds(statedur)
 
     # Sensibilidad minimitter

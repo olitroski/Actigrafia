@@ -6,7 +6,7 @@
 #   create.acv > create.semiper = semiper (objeto lista)
 #   y crear estadisticas para hacer el filtro y crear el <<edit.file>>
 create.firstfilter <- function(awdfile, semiper){
-    cat(paste("Exec(create.firstfilter)"), awdfile, "\n")
+    # cat(paste("Exec(create.firstfilter)"), awdfile, "\n")
     
     # Funciona para sacar stats de cada df de la lista
     statdf <- function(semidf){

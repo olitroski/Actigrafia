@@ -24,8 +24,8 @@ create.plotActo <- function(gdata, pct.y = 1){
     
     
     # --- sueño y wake data para el background (indices) -------------------------- #
-    sdata <- find.segment(gdata, st.edit, "S")
-    wdata <- find.segment(gdata, st.edit, "W")
+    sdata <- find.segment(gdata, "st.edit", "S")
+    wdata <- find.segment(gdata, "st.edit", "W")
     
     # Solución por si no hay nada de sueño o vigilia 
     # (agrega 1 epoch falso al final) quitando un epoch al que tiene datos

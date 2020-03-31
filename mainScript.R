@@ -2,22 +2,17 @@
 # ----- Main Script para procesar archivos de actigrafía - Nov.2019 ----------- #
 # ----- Lab. Sueño - INTA - U.Chile - O.Rojas - oliver.rojas.b@gmail.com ------ #
 # ----------------------------------------------------------------------------- #
-rm(list = ls())
-
 # ----- Cargar funciones, settings --------------------------------------------
-# Folder del programa
+rm(list = ls())
 mainfolder <- "D:/OneDrive/INTA/Actigrafia"
 setwd(mainfolder)
-
-# Cargar funciones y objetos
-source("function_loader.R")
-lapply(X = dir()[grep("func_", dir())], FUN = function_loader)
-load.library()          # librerias
-set <- getset()         # <<<<"configuracion.set">>>>
+source("appLoader.R")
 
 # Cargar App
+# runApp(launch.browser = TRUE)
+
+
 stop()
-runApp(launch.browser = TRUE)
 
 
 
@@ -31,30 +26,47 @@ archivos <- archivos[grep(".[Aa][Ww][Dd]$", archivos)]
 awdfile <- "2058-010-310 NYU Visit3"
 awdfile <- str_replace(awdfile, ".AWD", "")
 
+# ----- Para probar un epi ------------------------------------------
+semiper <- check.acvfilter(awdfile)
+library(tictoc)
+tic(); test <- create.epi(semiper); toc()
 
-# Cargar data para un grafico
+rm(archivos, awdfolder)
+stop()
+# semiperdf <- semiper$per00
+# View(semiperdf)
+# otable("st.edit", data = semiperdf)
+
+
+# ----- Para probar gráficos ----------------------------------------
 semiper <- check.acvfilter(awdfile)
 semiper <- semiper$semiper
+semiperdf <- semiper$per01
+gdata <- semiperdf
+
+create.plotActo(gdata)
+
+# View(semiperdf)
+# otable("st.edit", data = semiperdf)
+
+# ----- Probar y trabajar el EPI ------------------------------------
+setwd("D:/OneDrive/INTA/Actigrafia/testfolder/test_kansas")
+AcvFilterRds <- check.acvfilter("2058-001-368 JRG Baseline")
+
+names(AcvFilterRds)
+names(AcvFilterRds$semiper)
+semiper <- AcvFilterRds$semiper
 names(semiper)
-semiperdf <- semiper$per00
-View(semiperdf)
-otable("st.edit", data = semiperdf)
 
 
-windows()
-create.plotSimple(semiperdf)
-
-windows()
-create.plotActo(semiperdf)
-
-windows()
-create.actogram(semiper)
+for (i in 1:length(semiper)){
+    s <- semiper[[i]]
+    print(paste("---------", names(semiper)[i], "----------"))
+    print(head(s))
+    print(tail(s))
+}
 
 
-names(semiperdf)
-
-
-        
 
 
 
