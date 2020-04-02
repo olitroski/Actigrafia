@@ -1,7 +1,10 @@
+# OlitoSleep App de sueño más App del mercado --------------------------------------
 server <- function(input, output, session){
-    # Panel - VISUALIZAR ARCHIVOS -----------------  -------------------------
+    
+    # | Panel - VISUALIZAR ARCHIVOS -----------------  -------------------------
+    
     # | -- Seleccionar directorio ---------------------------------------------
-    # Cargar el valor del save dir    ñññ
+    # Cargar el valor del save dir
     saved.folder <- reactive({
         load.savedir(mainfolder)
     })
@@ -143,8 +146,8 @@ server <- function(input, output, session){
         removeModal()
     })
 
-    
-    # Panel - ACTOGRAMA ----------------------------------- -------------------
+    # | ----
+    # | Panel - ACTOGRAMA ---------------------------------- -------------------
     # | renderUI selectInput de sujetos ------------------------------------
     output$subjInput <- renderUI({
         lechoices <- as.character(subjectDF()$Sujeto)
@@ -276,13 +279,13 @@ server <- function(input, output, session){
                     awdfile()
                 }
             }
-
+            
         # Algo extraño pasó
         } else {
             stop("Error en la selección de la acción")
         }
     })
-
+    
     
     # | Actograma -------------------------------------------------------------
     # La lógica depende del botón de accion a tomar, cuando se aprieta, el output
@@ -325,7 +328,9 @@ server <- function(input, output, session){
     })
 
     
-    # POLL: Filtro RDS ------------------------------------------ -------------
+    # | ----
+    # | REACTIVOS: filterRDS & acveditRDS ------------- -----------------------
+    # | -- POLL: Filtro RDS -------------------------------------------------------
     # Funcion leer el file mtime 
     filter.check <- function(){
         fichero <- str_c(awdfile(), ".edit.RDS")
@@ -381,8 +386,8 @@ server <- function(input, output, session){
     
     
     
-    
-    # Panel - EDICION ------------------------------------- -------------------
+    # | ----
+    # Panel - EDICION -------------------------------------------- -------------------
 
     # | -- Sujeto en edición --------------------------------------------------
     # Dijimos que cada vez se carga el awdfile, asi que primero checar si quedó 
@@ -390,6 +395,8 @@ server <- function(input, output, session){
     output$SubjEdicion <- renderPrint({
         cat(awdfile())
     })
+    
+    
     
     # | -- Seleccionar el período a editar ------------------------------------
     # Los periodos no cambian, asi que se cargan una vez y alimentan al botón 
@@ -404,22 +411,21 @@ server <- function(input, output, session){
             periodos <- paste(periodos$period, "-", periodos$tlist)
         }
         
-        selectInput(inputId = "perChoose", label = NULL, 
-                    choices = periodos, width = "100%")
+        radioButtons("perChoose", label = NULL, choices = periodos)
+        
     })
 
-    # | -- El mono ;) -----------------------------------------------------------
+    # | -- Gráfico ------------------------------------------------------------
     output$periodPlot <- renderPlot({
         # Espera el choose
-        validate(
-            need(input$perChoose, "Esperando input!")
-        )
+        validate(need(input$perChoose, "Esperando input!"))
+        
         # Periodos combinado con la selección
         create.plotSimple(gdata = acveditRDS()$semiper[[str_sub(input$perChoose, 1, 5)]],
                           limites = input$rangoX, lw = input$ldNum)
     })
 
-    # | -- Slider del gráfico -------------------------------------------------
+    # | -- Slider del gráfico ----
     # Reset Range btn
     observeEvent(input$resetBtn, {
         # El reset debiera calzar con el del grafico
@@ -433,73 +439,245 @@ server <- function(input, output, session){
         xscale <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
         minui <- min(xscale)
         maxui <- max(xscale)
-
+        
         sliderInput("rangoX", label = NULL,
                     min = minui, max = maxui, value = c(minui, maxui),
                     width = "95%", step = 1)
     })
 
-    # | -- Mostrar el filtro --------------------------------------------------
-    # output$testF <- renderPrint({
-    #     input$ok
-    # })
-    
-    # Esto es reactivo dependiendo de cambios en el filtro asi que no cambia
-    # | Mostrar el header 
+    # | -- Header Filtro ----
     output$filtroH <- renderPrint({
         # Si el filtroFinal no tiene length=2 es que no existe y carga el inicial
         if (length(filterRDS()) != 2){
             cat("No se ha seleccionado un sujeto")
         } else {
-            cat(paste(filterRDS()$header[1:3], collapse = "\n"))
+            cat(paste(filterRDS()$header[2:3], collapse = "\n"))
         }
     })
     
     
-    # | Mostrar el filtro 
+    # | -- Inicio Fin filtro ----
+    output$filtroIniFin <- renderPrint({
+        if (length(filterRDS()) != 2){
+            cat("No se ha seleccionado un sujeto")
+        } else {
+            cat(paste(filterRDS()$header[4:5], collapse = "\n"))
+        }
+    })
+    
+    
+    # | -- Tabla Filtro  ----
     output$filtroDF <- renderTable({
         # Si el filtroFinal no tiene length=2 es que no existe y carga el inicial
         if (length(filterRDS()) == 2){
             df <- filterRDS()$filter
-            df$ini <- format(df$ini, format = "%d/%m/%Y %H:%M:%S")
-            df$fin <- format(df$fin, format = "%d/%m/%Y %H:%M:%S")
+            df$ini <- format(df$ini, format = "%d-%m-%Y  %H:%M")
+            df$fin <- format(df$fin, format = "%d-%m-%Y  %H:%M")
             df
         }
     }, digits = 0, align = "c")
-    
-    # output$filtroDF <- renderPrint({
-    #     # Si el filtroFinal no tiene length=2 es que no existe y carga el inicial
-    #     if (length(filterRDS()) == 2){
-    #         df <- filterRDS()$filter
-    #         df$ini <- format(df$ini, format = "%d/%m/%Y %H:%M:%S")
-    #         df$fin <- format(df$fin, format = "%d/%m/%Y %H:%M:%S")
-    #         df
-    #     }
-    # } )
+
     
     
-    
-    
-    
-    # | -- Pestañas de ediciones ----------------------------------------------
+    # | Pestañas de ediciones -------------------------------------------------
     # Reactive del perChoose en formato POSIXct, para usar en las ediciones
     selectedPer <- reactive({
         validate(need(input$perChoose, "Esperando input!"))
-        
         fec <- str_sub(input$perChoose, 9, str_length(input$perChoose))
         fec <- str_sub(fec, str_locate(fec, " ")[1] + 1, str_length(fec))
         fec <- dmy(fec)
-        fec <- format(fec, "%A %d/%m/%Y")
+        fec <- format(fec, "%A %d-%m-%Y")
         fec
     })
     
-    # | -- 1. Editar periodo ------------------------------------------------
-    # Fecha en curso
-    output$selectedPer1 <- renderPrint({
-        cat(selectedPer())
+    # | -- 0. Inicio y termino registro ---------------------------------------
+    # El ui para elegir fechas
+    output$inifin.dateUI <- renderUI({
+        validate(need(input$perChoose, "Esperando input!"))
+        # Procesar las fechas
+        periodo <- str_split(input$perChoose, " - ", simplify = TRUE)[1]
+        minfec <- min(acveditRDS()[["semiper"]][[periodo]][, "time"])
+        maxfec <- max(acveditRDS()[["semiper"]][[periodo]][, "time"])
+        fechas <- c(format(as_date(minfec), format = "%d-%m-%Y"),
+                    format(as_date(maxfec), format = "%d-%m-%Y"))
+        # Widget
+        radioButtons("inifin.date", label = NULL, choices = fechas, inline = TRUE)
     })
     
-    # | ------ reactive filterPeriod() -------------------------------
+    
+    # | ------ Inicio del registro ----
+    output$inifin.iniUI <- renderUI({
+        validate(need(input$perChoose, "Esperando input!"))
+        valor <- filterRDS()$header[4]
+        valor <- str_split(valor, ": ", simplify = TRUE)[2]
+        textInput("inifin.ini", label = NULL, width = "150px", value = valor)
+    })
+    
+    # Funcion modal
+    warnModal.ini <- function(){
+        modalDialog(
+            title = "Confirmar Inicio Registro",
+            size = "m",
+            easyClose = TRUE,
+            
+            # El mensaje
+            div(span(p("Fecha: ", code(input$inifin.date))), 
+                span(p("Hora: " , code(input$inifin.ini )))),
+            
+            footer = tagList(
+                modalButton("Cancelar"),
+                actionButton("inifin.iniOK", "Confirmar")
+            )
+        )
+    }
+    
+    # Mostrar modal ini
+    observeEvent(input$inifin.iniset, {
+        # Probar que existra un ":"
+        if (str_detect(input$inifin.ini, ":")){
+            test1 <- str_split(input$inifin.ini, ":", simplify = TRUE)[1]
+            test2 <- str_split(input$inifin.ini, ":", simplify = TRUE)[2]
+            
+            # Probar largos == 2
+            if (str_length(test1) == 2 & str_length(test2) == 2){
+                
+                # Probar que antes y despues del ":" hay numero
+                if (is.numeric(as.numeric(test1)) & is.numeric(as.numeric(test2))){
+                    periodo <- str_split(input$perChoose, " - ", simplify = TRUE)[1]
+                    hrmin <- min(acveditRDS()[["semiper"]][[periodo]][, "time"])
+                    
+                    # Que no se superen limites
+                    if (is.numeric(as.numeric(test1)) < 24 & is.numeric(as.numeric(test2)) < 61){
+                        
+                        # Que la hora no sea menor al minimo
+                        if (dmy_hm(paste(input$inifin.date, input$inifin.ini)) >= hrmin){
+                            showModal(warnModal.ini())
+                            
+                        } else {
+                            showNotification("Input no válido...5", closeButton = FALSE, type = "error")
+                        }
+                    } else {
+                        showNotification("Input no válido...4", closeButton = FALSE, type = "error")                        
+                    }
+                } else {
+                    showNotification("Input no válido...3", closeButton = FALSE, type = "error")
+                }
+            } else {
+                showNotification("Input no válido...2", closeButton = FALSE, type = "error")
+            }
+        } else {
+            showNotification("Input no válido...1", closeButton = FALSE, type = "error")
+        }
+    })
+    
+    # Acciones a tomar ini
+    observeEvent(input$inifin.iniOK, {
+        # "Inicia:  "
+        newhead <- filterRDS()$header
+        newhead[4] <- ""
+        newhead[4] <- paste0("Inicia:  ", input$inifin.date, " ", input$inifin.ini)
+        # Guardar
+        newfiltro <- list(header = newhead, filter = filterRDS()$filter)
+        saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
+        removeModal()
+    })
+    
+    
+    
+    # | ------ Fin del registro ------   
+    output$inifin.finUI <- renderUI({
+        validate(need(input$perChoose, "Esperando input!"))
+        valor <- filterRDS()$header[5]
+        valor <- str_split(valor, ": ", simplify = TRUE)[2]
+        textInput("inifin.fin", label = NULL, width = "150px", value = valor)
+    })
+    
+    # Funcion modal fin
+    warnModal.fin <- function(){
+        modalDialog(
+            title = "Confirmar Término del Registro",
+            size = "m",
+            easyClose = TRUE,
+            
+            # El mensaje
+            div(span(p("Fecha: ", code(input$inifin.date))), 
+                span(p("Hora: " , code(input$inifin.fin )))),
+            
+            footer = tagList(
+                modalButton("Cancelar"),
+                actionButton("inifin.finOK", "Confirmar")
+            )
+        )
+    }
+    
+    # Mostrar modal fin
+    observeEvent(input$inifin.finset, {
+        # Probar que existra un ":"
+        if (str_detect(input$inifin.fin, ":")){
+            test1 <- str_split(input$inifin.fin, ":", simplify = TRUE)[1]
+            test2 <- str_split(input$inifin.fin, ":", simplify = TRUE)[2]
+            
+            # Probar largos == 2
+            if (str_length(test1) == 2 & str_length(test2) == 2){
+                
+                # Probar que antes y despues del ":" hay numero
+                if (is.numeric(as.numeric(test1)) & is.numeric(as.numeric(test2))){
+                    periodo <- str_split(input$perChoose, " - ", simplify = TRUE)[1]
+                    hrmax <- max(acveditRDS()[["semiper"]][[periodo]][, "time"])
+                    
+                    # Que no se superen limites
+                    if (is.numeric(as.numeric(test1)) < 24 & is.numeric(as.numeric(test2)) < 61){
+                        
+                        # Que la hora no sea menor al minimo
+                        if (dmy_hm(paste(input$inifin.date, input$inifin.fin)) <= hrmax){
+                            showModal(warnModal.fin())
+                            
+                        } else {
+                            showNotification("Input no válido...5", closeButton = FALSE, type = "error")
+                        }
+                    } else {
+                        showNotification("Input no válido...4", closeButton = FALSE, type = "error")
+                    }
+                } else {
+                    showNotification("Input no válido...3", closeButton = FALSE, type = "error")
+                }
+            } else {
+                showNotification("Input no válido...2", closeButton = FALSE, type = "error")
+            }
+        } else {
+            showNotification("Input no válido...1", closeButton = FALSE, type = "error")
+        }
+    })
+    
+    # Acciones a tomar
+    observeEvent(input$inifin.finOK, {
+        # "Termina: "
+        newhead <- filterRDS()$header
+        newhead[5] <- ""
+        newhead[5] <- paste0("Termina: ", input$inifin.date, " ", input$inifin.fin)
+        # Guardar
+        newfiltro <- list(header = newhead, filter = filterRDS()$filter)
+        saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
+        removeModal()
+    })
+    
+    
+    
+    # | -- 1. Editar periodo --------------------------------------------------
+    # Fecha en curso
+    output$selectedPer1 <- renderPrint({
+        validate(need(input$perChoose, "Esperando input!"))
+
+        # Procesar las fechas
+        periodo <- str_split(input$perChoose, " - ", simplify = TRUE)[1]
+        minfec <- min(acveditRDS()[["semiper"]][[periodo]][, "time"])
+        maxfec <- max(acveditRDS()[["semiper"]][[periodo]][, "time"])
+        fechas <- c(format(as_date(minfec), format = "%A %d-%m-%Y"),
+                    format(as_date(maxfec), format = "%A %d-%m-%Y"))
+        cat(fechas[1], "\n", fechas[2], sep = "")
+    })
+    
+    # | ------ reactive filterPeriod() -----
     # Esto tiene la info del filtro a aplicar, es una lista con el id, filtro y tipo
     filterPeriod <- reactive({
         # Esperar esto y ver si el periodo tiene dia, noche o ambos
@@ -921,9 +1099,68 @@ server <- function(input, output, session){
     })
 
     
+    # | -- 5. Mostrar estados ------
+    output$estadosTabla <- renderTable({
+    # output$estadosTabla <- renderDataTable({
+            
+        validate(need(input$perChoose, "Esperando input!"))
+        # Procesar las fechas
+        periodo <- str_split(input$perChoose, " - ", simplify = TRUE)[1]
+        periodo <- acveditRDS()[["semiper"]][[periodo]]
+        periodo <- select(periodo, nombre, time, st.stable, st.edit, filter)
+        
+        # Procesado simple de la tabla
+        vectSeq <- Vectorize(seq.default, vectorize.args = c("from", "to"))
+        
+        # Indices y segmentos SUEÑO
+        segm <- find.segment(periodo, "st.edit", filtro = "S")
+        ranges <- vectSeq(from = segm$ini, to = segm$fin, by = 1)
+        if (nrow(segm) == 1){ranges <- list(ranges)}
+        # Stats
+        ini     <- lapply(ranges, function(x) min(periodo$time[x]))
+        fin     <- lapply(ranges, function(x) max(periodo$time[x]))
+        filtro  <- lapply(ranges, function(x) unique(periodo$filter[x]))
+        # Reordenar la data
+        dataSleep <- data.frame(ini = paste(ini, sep = ","), fin = paste(fin, sep = ","),
+                                estado = "S", filtro = paste(filtro, sep = ","), stringsAsFactors = FALSE)
+        dataSleep <- mutate(dataSleep, inicio = as_datetime(as.numeric(ini), lubridate::origin),
+                                      termino = as_datetime(as.numeric(fin), lubridate::origin))
+        
+        # Indices y segmentos VIGILIA
+        segm <- find.segment(periodo, "st.edit", filtro = "W")
+        if (nrow(segm) == 0){
+            dataWake <- NULL
+        } else {
+            ranges <- vectSeq(from = segm$ini, to = segm$fin, by = 1)
+            if (nrow(segm) == 1){ranges <- list(ranges)}
+            # Stats
+            ini     <- lapply(ranges, function(x) min(periodo$time[x]))
+            fin     <- lapply(ranges, function(x) max(periodo$time[x]))
+            filtro  <- lapply(ranges, function(x) unique(periodo$filter[x]))
+            # Reordenar la data
+            dataWake <- data.frame(ini = paste(ini, sep = ","), fin = paste(fin, sep = ","),
+                                   estado = "W", filtro = paste(filtro, sep = ","), stringsAsFactors = FALSE)
+            dataWake <- mutate(dataWake, inicio = as_datetime(as.numeric(ini), lubridate::origin),
+                                        termino = as_datetime(as.numeric(fin), lubridate::origin))
+        }
+        
+        # Combinar y terminar
+        data <- bind_rows(dataSleep, dataWake)
+        data <- select(data, inicio, termino, estado, filtro)
+        data <- arrange(data, inicio)
+        data <- mutate(data, duracion = as.period(termino - inicio, unit = "minutes"), duracion = as.character(duracion))
+        data <- mutate(data, inicio = format(inicio,  format = "%d-%m-%Y  %H:%M"),
+                            termino = format(termino, format = "%d-%m-%Y  %H:%M"))
+            
+        # Y el resultado    
+        data
+    })
     
     
-    # Panel - EPISODIOS -------------------------------- ----------------------
+    
+    
+    # | ----
+    # Panel - EPISODIOS ------------------------------------- ----------------------
     # | -- Crear el reactive EPI ----
     epi <- reactive({
         data <- select(create.epi(acveditRDS()), 
@@ -998,25 +1235,18 @@ server <- function(input, output, session){
     }, striped = TRUE, hover = TRUE, bordered = TRUE, spacing = "xs",
     width = "100%", digits = 1, align = "c")
 
+    
+    # | ----
     # Panel - ESTADISTICAS -------------------------------- -------------------
     output$test1 <- renderPrint({
-                # Condicionales en variables secundarias
-        if (is.null(input$estadoFilter)) {ef <- 0} else {ef <- 1}
-        if (is.null(input$dianocFilter)) {df <- 0} else {df <- 1}
-        if (is.null(input$epiPeriod)) {
-            sf <- 0
-        } else if (input$epiPeriod == "Todo"){
-            sf <- 0
-        } else {sf <- 1}
-        
-        
-        paste(ef, df, sf)
+        filterRDS()$header
     })
     
     output$test2 <- renderPrint({
-        # paste(input$epiPeriod, "-", input$epiPeriod == "Todo", "-", 
-        #       is.null(input$epiPeriod), "_", class(input$epiPeriod))
-        epi()
+        periodo <- str_split(input$perChoose, " - ", simplify = TRUE)[1]
+        hrmax <- max(acveditRDS()[["semiper"]][[periodo]][, "time"])
+        
+        dmy_hm(paste(input$inifin.date, input$inifin.fin)) <= hrmax
     })
     
 

@@ -36,9 +36,20 @@ create.firstfilter <- function(awdfile, semiper){
     # El primer filtro serán solo los NA del meanW a futuro espero crear algo más sofisticado.
     allstats$filter <- ifelse(is.na(allstats$meanW), 1, NA)
     
-    # <<<<<< acá va el segundo filtro >>>>>>>>>>
     
+    # <<<<<< acá va el segundo filtro >>>>>>>>>> el de machine learning
+    #
+    #
+    #
+    #
     # ==========================================
+    
+    # Ordenar e indexar
+    filtro <- allstats %>% filter(filter == 1) %>% arrange(ini) %>% mutate(tipo = 1, id = NA) %>% select(id, ini, fin, tipo)
+    
+    if (dim(filtro)[1] > 0){
+        filtro <- mutate(filtro, id = 1:nrow(filtro))
+    }
     
     
     # El archivo edit
@@ -47,14 +58,10 @@ create.firstfilter <- function(awdfile, semiper){
     
     header <-c("Archivo Filtro",
                str_c("Sujeto: ", name),
-               str_c("Creado: ", as.character(Sys.time())), 
+               str_c("Creado: ", as.character(Sys.time())),
+               "Inicia:  -No determinado- ",
+               "Termina: -No determinado- ",
                "------------------------------------")
-
-    filtro <- allstats %>% filter(filter == 1) %>% arrange(ini) %>% mutate(tipo = 1, id = NA) %>% select(id, ini, fin, tipo)
-    
-    if (dim(filtro)[1] > 0){
-        filtro <- mutate(filtro, id = 1:nrow(filtro))
-    }
 
     # Guarda y sale
     saveRDS(object = list(header = header, filter = filtro), file = name)
