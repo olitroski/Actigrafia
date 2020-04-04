@@ -51,22 +51,7 @@ create.plotActo(gdata)
 
 # ----- Probar y trabajar el EPI ------------------------------------
 setwd("D:/OneDrive/INTA/Actigrafia/testfolder/test_kansas")
-AcvFilterRds <- check.acvfilter("2058-001-368 JRG Baseline")
-
-names(AcvFilterRds)
-names(AcvFilterRds$semiper)
-semiper <- AcvFilterRds$semiper
-names(semiper)
-
-
-for (i in 1:length(semiper)){
-    s <- semiper[[i]]
-    print(paste("---------", names(semiper)[i], "----------"))
-    print(head(s))
-    print(tail(s))
-}
-
-
-
-
+acv <- check.acvfilter("2058-001-368 JRG Baseline")
+per <- "per00 - martes 15/07/14"
+stagesTable(acv, per)
 

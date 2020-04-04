@@ -108,7 +108,7 @@ ui <- navbarPage(
             column(10, 
                 # | -- Plot y Slider ----
                 fluidRow(align = "center",
-                    plotOutput("periodPlot", height = 140, width = "100%"),
+                    plotOutput("periodPlot", height = 150, width = "100%"),
                     uiOutput("sliderEdicion")
                 ),
                 
@@ -125,15 +125,15 @@ ui <- navbarPage(
                         verbatimTextOutput("filtroIniFin")
                     ),
                     # Ancho de linea
-                    column(2,
-                        h4("Ancho de linea"),
+                    column(1, offset = 2,
+                        h4("Linea"),
                         numericInput("ldNum", value = 1, min = 1, max = 10, step = 1, 
                                      label = NULL, width = "80px"),
                     ),
                     # Resetear el gráfico
-                    column(2,
-                        h4("Reset gráfico"),
-                        actionButton("resetBtn", label = "Reset", icon = NULL)
+                    column(1,
+                        h4("Reset"),
+                        actionButton("resetBtn", label = "Reset", icon = NULL, width = "80px")
                     )
                     
                 ),
@@ -149,40 +149,32 @@ ui <- navbarPage(
                     column(8,
                         tabsetPanel(
                             # | -- 1. Inicio y fin ----
-                            tabPanel("Ini | Fin",
+                            tabPanel("Limite Registro",
                                 fluidRow(
                                     column(12, style = "padding-left: 25px; padding-top: 15px;",
                                         h4("Determinar inicio y fin del registro"),
-                                        p("Procurar que sea un inicio de estado de sueño o vigilia, ver:", code("Estados")), 
+                                        p("Seleccionar desde la lista desplegable, los valores corresponden al inicio o fin de estados de sueño o vigilia"), 
                                         
-                                        # Periodo seleccionado
-                                        fluidRow(
-                                            column(5,
-                                                strong("Seleccionar fecha"), br(),
-                                                uiOutput("inifin.dateUI")
-                                            ),
-                                            column(5, offset = 2,
-                                                strong("Ejemplo"), br(),
-                                                code("10:48")
-                                            )
-                                        ),
+                                        hr(),
                                         fluidRow(
                                             # Determinar inicio
                                             column(3,
-                                                strong("Hora de Inicio del registro"),
+                                                strong("Inicio del registro"),
                                                 uiOutput("inifin.iniUI"),
                                                 actionButton("inifin.iniset", label = "Set Inicio", 
                                                              icon = icon("angle-double-right"), width = "120px")
                                             ),
                                             # Determinar fin
-                                            column(9,
-                                                strong("Hora de Término del registro"),
+                                            column(3,
+                                                strong("Término del registro"),
                                                 uiOutput("inifin.finUI"),
                                                 actionButton("inifin.finset", label = "Set Término", 
                                                              icon = icon("angle-double-left"), width = "120px")
                                             ),
+                                            column(6)
                                         ),
                                         hr(),
+                                        
                                         p("El inicio y término del registro es útil para descartar extremos que no se utilizan, 
                                           sobre todo determinar el primer período al momento de calcular las estadísticas.")
                                     )
@@ -195,6 +187,9 @@ ui <- navbarPage(
                                 fluidRow(
                                     column(12, style = "padding-left: 25px; padding-top: 15px;",
                                         h4("Seleccionar dia, noche o ambos"),
+                                        p("El período se excluirá de los análisis y estadísticas"),
+                                        
+                                        hr(),
                                         p("El período contiene las siguientes fechas:"),
                                         splitLayout(cellWidths = c("28%", "2%", "20%", "50%"),
                                             # Fecha
@@ -206,6 +201,7 @@ ui <- navbarPage(
                                             actionButton("cambia_periodo", label = "Filtrar", icon = icon("filter"))
                                         ),
                                         hr(),
+                                        
                                         p("La noche se encuentra a la izquierda del gráfico y el día a la derecha. 
                                           La sección marcada no será considada en la creación de las estadísticas")
                                     )
@@ -216,31 +212,26 @@ ui <- navbarPage(
                             tabPanel("Edición de actividad",
                                 fluidRow(
                                     column(12, style = "padding-left: 25px; padding-top: 15px;",
-                                        h4("Escribir hora de inicio y fin para la corrección"),
-                                        p("El intervalo no debe cruzar las ", code("00:00:")),
+                                        h4("Seleccionar estado de sueño a modificar"),
+                                        p("Se agregará actividad simulada al estado de sueño seleccionada para transformar en vigilia"),
                                         
-                                        # La fila de cosas
-                                        splitLayout(cellWidths = c("28%", "2%", "10%", "10%", "2%", "48%"),
-                                            # Fecha
-                                            verbatimTextOutput("editAct.date"),
-                                            p(" "),
-                                            # Inputs
-                                            textInput("editAct.ini", label = NULL),
-                                            textInput("editAct.fin", label = NULL),
-                                            p(" "),
-                                            # Botón
-                                            actionButton("editAct.btn", label = "Editar", icon = icon("filter"))
+                                        hr(),
+                                        fluidRow(
+                                            column(4,
+                                                # Le nuevo radiobutton  <"editAct.data">
+                                                uiOutput("editActUI"),
+                                            ),
+                                            column(2,
+                                                # Boton de edicion
+                                                strong("Duración episodio"),
+                                                verbatimTextOutput("editActDur"),
+                                                actionButton("editAct.btn", label = "Editar", icon = icon("filter"), width = "120px")
+                                            ),
+                                            column(6),
                                         ),
-                                        splitLayout(cellWidths = c("28%", "2%", "10%", "10%", "2%", "48%"),
-                                                         style = "text-align: center; margin-top: -15px;",
-                                            # Indicaciones de formato
-                                            p(" "), p(" "), strong("Inicio"), strong("Final"), p(" "), p(" ")
-                                        ),
+                                        hr(),
                                         
                                         # Pie de página
-                                        br(),
-                                        shiny::HTML("Las horas deben tener 4 digitos, por ejemplo: <code>08:57</code> o <code>23:17</code>"),
-                                        hr(),
                                         p("Esta edición ", strong("transforma Sueño en Vigilia"), " y sólo se debe usar cuando 
                                            el sujeto se retira el actígrafo por un corto período de tiempo")
                                     )
@@ -252,19 +243,26 @@ ui <- navbarPage(
                                 fluidRow(
                                     column(12, style = "padding-left: 25px; padding-top: 15px;",
                                         h4("Indicar inicio de la noche"),
-                                        p("Indicar una hora aproximada en la que comienza la noche"),
+                                        p("Indicar la hora en que comienza la noche"),
                                         
-                                        # La fila de cosas
-                                        splitLayout(cellWidths = c("28%", "2%", "10%", "2%", "58%"),
-                                            # Fecha
-                                            verbatimTextOutput("moveNight.date", placeholder = TRUE),
-                                            p(" "),
-                                            # Hora <edicion>
-                                            textInput("moveNight.hora", label = NULL, value = "hh:mm"),
-                                            p(" "),
-                                            # Boton
-                                            actionButton("moveNight.btn", "Mover Noche", icon = icon("moon"))
-                                        )
+                                        hr(),
+                                        fluidRow(
+                                            # Listado de inicios de sueño
+                                            column(3,
+                                                uiOutput("moveNightUI")
+                                            ),
+                                            
+                                            # Botón
+                                            column(2,
+                                                strong("Duración episodio"),
+                                                verbatimTextOutput("moveNight.Dur"),
+                                                actionButton("moveNight.btn", "Mover Noche", icon = icon("moon"))
+                                            ),
+                                            
+                                            column(7)
+                                        ),
+                                        hr(),
+                                        p("También se debe utilizar cuando el periodo noche no sirve, pero si se puede salvar el final del día"),
                                     )
                                 )
                             ),
@@ -277,19 +275,21 @@ ui <- navbarPage(
                                         p("El registro será eliminado del archivo de filtros."),
                                             
                                         # Controles e inputs num-reactivenum-boton
+                                        hr(),
                                         fluidRow(
-                                            column(12,
+                                            column(4,
+                                                # Filtro seleccionado
                                                 tableOutput("borraFiltroTxt")
+                                            ),
+                                            column(2,
+                                                # Boton y seleccion
+                                                numericInput("borraFiltroNum", label = "Id del Filtro", value=1, min=1, step=1),
+                                                actionButton("borraFiltroBtn", label = "Borrar", icon = icon("trash"), width = "100px")
+                                            ),
+                                            column(6,
                                             )
                                         ),
-                                        fluidRow(
-                                            column(2,
-                                                numericInput("borraFiltroNum", label=NULL, value=1, min=1, step=1)
-                                            ),
-                                            column(10,
-                                                actionButton("borraFiltroBtn", label = "Borrar", icon = icon("trash"), width = "100px")
-                                            )
-                                        )
+                                        hr()
                                     )
                                 )
                             ),
@@ -298,10 +298,10 @@ ui <- navbarPage(
                             tabPanel("Estados",
                                 fluidRow(
                                     column(12, style = "padding-left: 25px; padding-top: 15px;",
-                                        div(style = "overflow-y: scroll; height: 350px",
+                                        # div(style = "overflow-y: scroll; height: 350px",
                                             h4("Estados de sueño y vigilia del período"),
                                             tableOutput("estadosTabla")
-                                        )
+                                        # )
                                     )
                                 )
                             )
