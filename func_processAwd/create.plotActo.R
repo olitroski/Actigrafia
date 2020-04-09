@@ -17,9 +17,16 @@ create.plotActo <- function(gdata, pct.y = 1){
     ylinea <- as.numeric(c(set$ininoc, set$inidia + hours(24), 
                            set$ininoc + hours(24)))/3600
     
-    # Y: Limites 
-    limY <-  c(0, ceiling(max(gdata$act.edit)/10)*10)
-    limY[2] <- limY[2] * pct.y
+    # Y: Limites  1100 porque si no mas
+    if (max(gdata$act.edit) > 0){
+        limY <- c(0, ceiling(max(gdata$act.edit)/10)*10)
+        limY[2] <- limY[2] * pct.y
+    } else {
+        limY <- c(0, 1100)
+        limY[2] <- limY[2] * pct.y
+    }
+    
+    # X: Limites
     limX <- c(min(xscale), max(xscale))
     
     
@@ -89,8 +96,8 @@ create.plotActo <- function(gdata, pct.y = 1){
     # ----- Grafico ----------------------------------------------------------------
     # Plot en blanco con Margenes nulos
     par(mar=c(0,3,0,2) + 0.5, xaxs = 'i', yaxs = 'i')
-    plot(gdata$xscale, gdata$act.edit, type='n', ylab='', 
-         axes=FALSE, xlim=limX, ylim=limY)
+    plot(gdata$xscale, gdata$act.edit, type = 'n', ylab = '', 
+         axes = FALSE, xlim = limX, ylim = limY)
     
     # <<SLEEP>>: Los indicadores de sueño  <<col2rgb("skyblue3", alpha = 0.5)/255>>
     for (i in 1:nrow(sdata)){

@@ -292,41 +292,42 @@ server <- function(input, output, session){
     # es: FALSE o el awdfile(), se cargan los datos y se pasan al actograma con el
     # actSelection() al igualarse a awdfile() 
 
-    # El ui render, el height se setea grande para que no de error de margins
-    output$actoUI <- renderUI({
-        # Darle al toque un tamaño
-        if (actSelection() != awdfile()){
-            plotOutput("actograma", width = "100%", height = 1800)
-        
-        # Cambiarlo si es que hay datos cargados
-        } else if (actSelection() == awdfile()){
-            h <- length(acveditRDS()[["semiper"]]) * 120
-            plotOutput("actograma", width = "100%", height = h)
-            
-        # algo raro paso
-        } else {
-            stop("Algo paso con el render ui del plot")
-        }
-    })
-    
-    # El actograma dependiente del botón y el awdfile
+    # Dibuja el actograma a partir del awdfile() y el acvditRDS() y lo pasa al renderUI de abajo
     output$actograma <- renderPlot({
-        validate(
-            need(acveditRDS(), "Esperando datos!")
-        )
+        validate(need(acveditRDS(), "Esperando datos!"))
         
         if (actSelection() == awdfile()){
             # Si no hay semiper pone algo igual
             if (length(acveditRDS()[["semiper"]]) == 0){
-                plot(0,type='n',axes=FALSE,ann=FALSE)
+                plot(0, type='n', axes=FALSE, ann=FALSE)
+                
             } else if (length(acveditRDS()[["semiper"]]) > 0){
                 create.actogram(acveditRDS()[["semiper"]])
+                
             } else {
                 stop("Algo pasó con el grafico")
             }
         }
     })
 
+    # El ui render, el height se setea grande para que no de error de margins
+    output$actoUI <- renderUI({
+        # Darle al toque un tamaño
+        if (actSelection() != awdfile()){
+            plotOutput("actograma", width = "100%", height = 1800)
+            
+            # Cambiarlo si es que hay datos cargados
+        } else if (actSelection() == awdfile()){
+            h <- length(acveditRDS()[["semiper"]]) * 120
+            plotOutput("actograma", width = "100%", height = h)
+            
+            # algo raro paso
+        } else {
+            stop("Algo paso con el render ui del plot")
+        }
+    })
+    
+    
     
     # | ----
     # | REACTIVOS: filterRDS & acveditRDS ------------- -----------------------

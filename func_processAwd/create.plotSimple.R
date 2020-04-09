@@ -17,10 +17,14 @@ create.plotSimple <- function(gdata, pct.y = 1, limites = NULL, lw = 1){
                            set$inidia + hours(24), 
                            set$ininoc + hours(24)))/3600
     
-    # Y: Limites 
-    chy <- (ceiling(max(gdata$act.edit)/10)*10) * pct.y
-    limY <-  c(0, chy)     
-
+    # Y: Limites  1100 porque si no más
+    if (max(gdata$act.edit) > 0){
+        chy <- (ceiling(max(gdata$act.edit)/10)*10) * pct.y
+        limY <-  c(0, chy)     
+    } else {
+        limY <- c(0, 1100)
+    }
+    
     # Limite en X
     if (class(limites) == "NULL"){
         limX <- c(min(xscale), max(xscale))
