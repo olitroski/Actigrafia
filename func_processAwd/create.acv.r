@@ -3,7 +3,7 @@
 ## ----- Create ACV - Estado (W|S), fechas y horas partir de un awd ------------------- #
 ## ------------------------------------------------------------------------------------ #
 create.acv <- function(awdfile = NULL, sensi = NULL, edit = FALSE){
-	# cat(paste("exec(create.acv)", awdfile, "\n"))
+	cat(paste0("| Iniciando Archivo: ", awdfile, "\n"))
 	
     # Leer archivo
     awd <- readLines(awdfile)
@@ -49,7 +49,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL, edit = FALSE){
         stop("error, algo pasó con el epoch len")
     }
 	
-	cat(paste("|--- Sens = ", sensi, " - Samp = ", epoch.len, "secs \n", sep = ""))
+	# cat(paste("|--- cAcv: Sens = ", sensi, " - Samp = ", epoch.len, "secs \n", sep = ""))
         
     # Crear fecha-hora inicial y Cambiar tambien el mes a ingles "se trabaja en character"
     fec.ini <- paste(awd.head[2], awd.head[3])
@@ -81,7 +81,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL, edit = FALSE){
     # --------------------------------------------------------------------------------- #
     # ----- Algoritmo del Actiwatch - MiniMitter -------------------------------------- #
     # --------------------------------------------------------------------------------- #
-	cat("|--- calc: Algorithm Minimitter\n")
+	cat("|--- cAcv: Algorithm Minimitter -Start-\n")
     ## Usa el vector de actividad recortado con el percentil 98
     ini <- 1
     fin <- nrow(awd)
@@ -145,7 +145,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL, edit = FALSE){
     # ----------------------------------------------------------------------------------- #
     # ---- Calcular ahora el estado actigrafico corregido ------------------------------- #
     # ----------------------------------------------------------------------------------- #
-	cat("|--- calc: Estado Actigrafico\n")
+	cat("|--- cAcv: Estado Actigrafico -Start-\n")
     # Con la regla de que para que cambie debe pasar 5 (statdur) minutos
     # Calcular cuantas lineas tiene el statedur (duracion para cambio de estado)
     tdiff <- difftime(awd$fec[2], awd$fec[1], units = "secs")
@@ -251,7 +251,7 @@ create.acv <- function(awdfile = NULL, sensi = NULL, edit = FALSE){
     ini <- nrow(awd)
     awd <- filter(awd, st.edit == "S" | st.edit =="W")
     fin <- nrow(awd)
-    cat(paste("|--- Lineas borradas al inicio =", ini - fin, "\n"))
+    cat(paste("|--- cAcv: Lineas borradas al inicio =", ini - fin, "\n"))
     
     # Agregar el nombre el archivos
     awd$filename <- awdfile

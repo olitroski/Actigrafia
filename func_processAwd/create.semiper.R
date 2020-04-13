@@ -27,7 +27,7 @@ create.semiper <- function(acv, noc = set$ininoc, dia = set$inidia){
     
     # Evaluar que noche y dia tengan mismo length
     if (length(noche) - length(dia) != 1){
-        stop("dia y noche tienen diferente largo")
+        stop("|--- cSemiper: Dia y noche tienen diferente largo (semiper)\n")
     }
 
     # Si hay antes de las 20 del primer dia es "dia" p0, si no hay fue no más.
@@ -35,7 +35,7 @@ create.semiper <- function(acv, noc = set$ininoc, dia = set$inidia){
     if (nrow(inicio) > 0){
         d0 <- inicio
     } else {
-        cat("No hay registro antes de la primera noche\n")
+        cat("|--- cSemiper: No hay registro antes de la primera noche (semiper)\n")
     }
         
     # El resto

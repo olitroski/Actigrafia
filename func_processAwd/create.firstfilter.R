@@ -54,7 +54,7 @@ create.firstfilter <- function(awdfile, semiper){
     
     # El archivo edit
     name <- paste(str_replace(awdfile, ".[Aa][Ww][Dd]", ""), ".edit.RDS", sep = "")
-    cat(paste("|--- Se crea el archivo de filtro", name, "\n"))
+    cat(paste("|--- cFirstFilter: Archivo filtro", name, "\n"))
     
     header <-c("Archivo Filtro",
                str_c("Sujeto: ", name),

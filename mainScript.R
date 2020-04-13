@@ -15,7 +15,7 @@ source("appLoader.R")
 
 # Cargar App
 # runApp(launch.browser = TRUE)
-
+runApp(display.mode = "normal")
 stop()
 
 

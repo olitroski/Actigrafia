@@ -1,7 +1,8 @@
-# OlitoSleep App de sueño más App del mercado --------------------------------------
-server <- function(input, output, session){
+# OlitoSleep App de sueño más App del mercado ---------------------------------
+server <- function(input, output, session){    
     
-    # | Panel - VISUALIZAR ARCHIVOS -----------------  -------------------------
+    # _________________________________________ -------------------------------
+    # ARCHIVOS ----------------------------------------------------------------
     
     # | -- Seleccionar directorio ---------------------------------------------
     # Cargar el valor del save dir
@@ -31,7 +32,7 @@ server <- function(input, output, session){
         }
     }
 
-    # | -- Output del folder -------------------------------------------------
+    # | -- Output del folder --------------------------------------------------
     output$wdFolderTxt <- renderPrint({
         cat(awdfolder())
     })
@@ -61,7 +62,7 @@ server <- function(input, output, session){
     })
 
 
-    # | -- -- Tabla directorio ----------------------------------
+    # | -- -- Tabla directorio ------------------------------------------------
     output$dfdir <- renderTable({
         # Los radio buttons para el filtraje
         if (input$filterDir != "Todos"){
@@ -71,7 +72,7 @@ server <- function(input, output, session){
         }
     })
 
-    # | -- -- Tabla de los recuentos ----------------------------
+    # | -- -- Tabla de los recuentos ------------------------------------------
     output$tableDir <- renderTable({
         if (subjectDF()[1,1] != "Directorio sin archivos AWD"){
             summDF <- otable(rvar = "Status", data = subjectDF())
@@ -99,7 +100,7 @@ server <- function(input, output, session){
         )
     })
     
-    # | -- -- Botón procesar en masa "massProc" ---------------------------------
+    # | -- -- Botón procesar en masa "massProc" -------------------------------
     # Modal de confirmación 
     warnModal.mass <- function(){
         modalDialog(
@@ -146,9 +147,9 @@ server <- function(input, output, session){
         removeModal()
     })
 
-    # | ----
-    # | Panel - ACTOGRAMA ---------------------------------- -------------------
-    # | renderUI selectInput de sujetos ------------------------------------
+    # ___________________________________________ -----------------------------
+    # | ACTOGRAMA -------------------------------------------------------------
+    # | renderUI selectInput de sujetos ---------------------------------------
     output$subjInput <- renderUI({
         lechoices <- as.character(subjectDF()$Sujeto)
         radioButtons(inputId = "awd_select", label = NULL, choices = lechoices)
@@ -180,7 +181,7 @@ server <- function(input, output, session){
         }
     })
 
-    # | Boton Acciones a tomar ------------------------------------------------------
+    # | Boton Acciones a tomar ------------------------------------------------
     # Crear un reactive cada vez que se apriete el boton
     actSelection <- eventReactive(input$accion_button, {
         
@@ -238,7 +239,7 @@ server <- function(input, output, session){
                 
                 # Hay sujeto y con status Editar guarda el awdfile para graficar.
                 if (subj.status == "En edicion"){
-                    showNotification("Creando actograma")
+                    showNotification("Creando actograma", closeButton = FALSE, type = "message")
                     # Devuelve el nombre del sujeto, asi si cambia en el selectInput 
                     # no se hace el actograma para otro sujeto.
                     awdfile()
@@ -329,9 +330,9 @@ server <- function(input, output, session){
     
     
     
-    # | ----
-    # | REACTIVOS: filterRDS & acveditRDS ------------- -----------------------
-    # | -- POLL: Filtro RDS -------------------------------------------------------
+    # _________________________________________ -------------------------------
+    # REACTIVOS: filterRDS & acveditRDS ---------------------------------------
+    # | -- POLL: Filtro RDS ---------------------------------------------------
     # Funcion leer el file mtime 
     filter.check <- function(){
         fichero <- str_c(awdfile(), ".edit.RDS")
@@ -387,8 +388,8 @@ server <- function(input, output, session){
     
     
     
-    # | ----
-    # Panel - EDICION -------------------------------------------- -------------------
+    # _________________________________________ -------------------------------
+    # EDICION -----------------------------------------------------------------
 
     # | -- Sujeto en edición --------------------------------------------------
     # Dijimos que cada vez se carga el awdfile, asi que primero checar si quedó 
@@ -759,7 +760,7 @@ server <- function(input, output, session){
     })
     
     
-    # | -- 3. Editar actividad -------------------------------------------
+    # | -- 3. Editar actividad ------------------------------------------------
     # El ui de los periodos de sueño
     output$editActUI <- renderUI({
         data <- filter(tablaEstados(), estado == "S")
@@ -847,7 +848,7 @@ server <- function(input, output, session){
     
     
     
-    # | -- 4. En mover noche ------------------------------------------------
+    # | -- 4. En mover noche --------------------------------------------------
     # el ui que muestra las horas disponibles
     output$moveNightUI <- renderUI({
         validate(need(input$perChoose, "Esperando input!"))
@@ -904,7 +905,7 @@ server <- function(input, output, session){
     })
 
     
-    # | -- 5. Borrar filtro -------------------------------------------------
+    # | -- 5. Borrar filtro ---------------------------------------------------
     # Mostrar el filtro a borrar
     output$borraFiltroTxt <- renderTable({
         if (length(filterRDS()) != 2){
@@ -985,8 +986,8 @@ server <- function(input, output, session){
     
     
     
-    # | ----
-    # Panel - EPISODIOS ------------------------------------- ----------------------
+    # _________________________________________ -------------------------------
+    # EPISODIOS ---------------------------------------------------------------
     # | -- Crear el reactive EPI ----
     epi <- reactive({
         data <- select(create.epi(acveditRDS()), 
