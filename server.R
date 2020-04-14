@@ -32,7 +32,7 @@ server <- function(input, output, session){
         }
     }
 
-    # | -- Output del folder --------------------------------------------------
+    # | -- Show awdfolder() ---------------------------------------------------
     output$wdFolderTxt <- renderPrint({
         cat(awdfolder())
     })
@@ -49,7 +49,7 @@ server <- function(input, output, session){
         }
     })
     
-    #| -- Cargar directorio en df ---------------------------------------------
+    #| -- Cargar subjectDF() --------------------------------------------------
     # Tiene un reactivePoll para ver si cambian los archivos del folder. Solo en nombres OJO, no en kb.
     new.files <- function() {dir()}
     get.files <- function() {dir()}
@@ -149,10 +149,16 @@ server <- function(input, output, session){
 
     # ___________________________________________ -----------------------------
     # | ACTOGRAMA -------------------------------------------------------------
-    # | renderUI selectInput de sujetos ---------------------------------------
+    # | renderUI selección de sujetos -----------------------------------------
     output$subjInput <- renderUI({
-        lechoices <- as.character(subjectDF()$Sujeto)
-        radioButtons(inputId = "awd_select", label = NULL, choices = lechoices)
+        lechoices <- filter(subjectDF(), Status == "En edicion")
+        lechoices <- as.character(lechoices$Sujeto)
+        # Por si queda en cero
+        if (length(lechoices) == 0){
+            radioButtons("asdf", label = NULL, choices = "No hay sujetos para editar")
+        } else {
+            radioButtons(inputId = "awd_select", label = NULL, choices = lechoices)
+        }
     })
 
     # | ---- Determina awdfile() ----------------------------------------------
@@ -161,25 +167,25 @@ server <- function(input, output, session){
     })
 
     # | ---- Status Sujeto ----------------------------------------------------
-    output$statsSubj <- renderPrint({
-        nfiles <- filter(subjectDF(), Sujeto == awdfile()) %>% select(N.Files)
-        
-        # Si no hay nada seleccionado
-        if (awdfile()=="Debe ingresar un sujeto"){
-            cat(" ")
-        # Si el sujeto seleccionado no tiene archivos
-        } else if (nrow(nfiles) == 0){
-            cat("---ERROR--- El sujeto no tiene archivos...")
-        # Si tiene solo 1 archivo
-        } else if (nfiles == 1){
-            cat("Sujeto sin procesar, se debe hacer el análisis preliminar, seleccionar 'Analizar' en 'Acciones'")
-        # Si tiene más de 1 archivo
-        } else if (nfiles > 1){
-            cat("Sujeto en edición, puede finalizarlo o seguir editando...")
-        } else {
-            cat("Error, Error en la base de datos... :)")
-        }
-    })
+    # output$statsSubj <- renderPrint({
+    #     nfiles <- filter(subjectDF(), Sujeto == awdfile()) %>% select(N.Files)
+    #     
+    #     # Si no hay nada seleccionado
+    #     if (awdfile()=="Debe ingresar un sujeto"){
+    #         cat(" ")
+    #     # Si el sujeto seleccionado no tiene archivos
+    #     } else if (nrow(nfiles) == 0){
+    #         cat("---ERROR--- El sujeto no tiene archivos...")
+    #     # Si tiene solo 1 archivo
+    #     } else if (nfiles == 1){
+    #         cat("Sujeto sin procesar, se debe hacer el análisis preliminar, seleccionar 'Analizar' en 'Acciones'")
+    #     # Si tiene más de 1 archivo
+    #     } else if (nfiles > 1){
+    #         cat("Sujeto en edición, puede finalizarlo o seguir editando...")
+    #     } else {
+    #         cat("Error, Error en la base de datos... :)")
+    #     }
+    # })
 
     # | Boton Acciones a tomar ------------------------------------------------
     # Crear un reactive cada vez que se apriete el boton
@@ -281,10 +287,43 @@ server <- function(input, output, session){
                 }
             }
             
+        # | ---- Accion 4: Finalizar ------------------------------------------    
+        } else if (input$accion_choice == "Finalizar") {
+            # Si aprieta debe aparecer un cuadro dialogo
+            finalModal <- function(){
+                modalDialog(
+                    title = "Finalizar edición",
+                    size = "m",
+                    easyClose = TRUE,
+                    
+                    div(h4("Terminar la edición del sujeto"),
+                        p(awdfile()),
+                        p(strong("Con esta acción se finaliza la edición del sujeto."))),
+                    
+                    footer = tagList(
+                        modalButton("Cancelar"),
+                        actionButton("finalOK", "Finalizar")  # El valor resultante
+                    )
+                )
+            }
+            
+            # Mostrar el modal y ejecutar acciones
+            showModal(finalModal())
+            observeEvent(input$finalOK,{
+                filename <- paste0(awdfile(), ".finish.RDS")
+                txt <- c("Sujeto terminado", awdfile(), "Fecha", now())
+                saveRDS(txt, file = file.path(awdfolder(), filename))
+                showNotification(paste("Terminando", awdfile()), closeButton = FALSE, type = "message")
+                removeModal()
+            })
+            # Mandar el valor de este reactivo
+            FALSE
+            
         # Algo extraño pasó
         } else {
             stop("Error en la selección de la acción")
         }
+        
     })
     
     
@@ -589,7 +628,6 @@ server <- function(input, output, session){
     # Fecha en curso
     output$selectedPer1 <- renderPrint({
         validate(need(input$perChoose, "Esperando input!"))
-
         # Procesar las fechas
         periodo <- str_split(input$perChoose, " - ", simplify = TRUE)[1]
         minfec <- min(acveditRDS()[["semiper"]][[periodo]][, "time"])
@@ -632,7 +670,7 @@ server <- function(input, output, session){
                 list(msg = "Debe seleccionar día, noche o ambos", action = 0)
     
             # Si selecciona Ambos
-            } else if (sum(input$dianoc == c("Dia", "Noche")) == 2){
+            } else if (length(input$dianoc) == 2 & sum(input$dianoc == c("Noche", "Dia")) == 2){
                 
                 # Si solo tiene 1 avisar y action 0
                 if (dn != "a"){
@@ -654,7 +692,7 @@ server <- function(input, output, session){
                 }
             
             # Si selecciona Noche
-            } else if (input$dianoc == "Noche"){
+            } else if (length(input$dianoc) == 1 & input$dianoc == "Noche"){
                 if (dn == "d"){
                     list(msg = "El periodo solo tiene día", action = 0)
                 } else {
@@ -667,7 +705,7 @@ server <- function(input, output, session){
                 }
 
             # Si selecciona Dia
-            } else if (input$dianoc == "Dia"){
+            } else if (length(input$dianoc) == 1 & input$dianoc == "Dia"){
                 if (dn == "n"){
                     list(msg = "El periodo solo tiene dia", action = 0)
                 } else {
@@ -735,7 +773,7 @@ server <- function(input, output, session){
         if (filterPeriod()$action == 1){
             # Hacer update al filtro
             filt <- bind_rows(filterRDS()$filter, filterPeriod()$filtro)
-            filt <- arrange(filt, fin)
+            filt <- arrange(filt, ini)
             filt <- distinct(filt, id, ini, fin, tipo)
             filt$id <- 1:nrow(filt)
             newfiltro <- list(header = filterRDS()$header, filter = filt)
@@ -860,13 +898,14 @@ server <- function(input, output, session){
     # La duracion del episodio seleccionado
     output$moveNight.Dur <- renderPrint({
         validate(need(input$perChoose, "Esperando input!"))
+        validate(need(input$moveNight.data, "Esperando"))
         # Tomar la tabla y filtrar
         data <- input$moveNight.data
         data <- filter(tablaEstados(), inicio == data)
         cat(data$duracion)
     })
 
-    # Modeal de confirmación
+    # Modal de confirmación
     warnModal.moveNight <- function(){
         modalDialog(
             title = "Determinar hora inicio noche",
@@ -897,6 +936,7 @@ server <- function(input, output, session){
         # Update del filterRDS()
         filt <- bind_rows(filterRDS()$filter, data)
         filt <- arrange(filt, ini)
+        filt <- mutate(filt, id = ifelse(is.na(fin), NA, id))
         filt <- distinct(filt, id, ini, fin, tipo)
         filt$id <- 1:nrow(filt)
         newfiltro <- list(header = filterRDS()$header, filter = filt)
@@ -967,7 +1007,8 @@ server <- function(input, output, session){
 
             # Update al filtro
             filt <- filterRDS()$filter[-input$borraFiltroNum,]
-            filt <- arrange(filt, fin)
+            filt <- arrange(filt, ini)
+            filt <- mutate(filt, id = NA)
             filt <- distinct(filt, id, ini, fin, tipo)
             if (nrow(filt) > 0){filt$id <- 1:nrow(filt)}
             newfiltro <- list(header = filterRDS()$header, filter = filt)
@@ -1066,25 +1107,18 @@ server <- function(input, output, session){
     # | ----
     # Panel - ESTADISTICAS -------------------------------- -------------------
     output$test1 <- renderPrint({
-        data <- str_split(input$editAct.data, " a ", simplify = TRUE)
-        data <- dmy_hm(data[1])
-        data <- format(data,  format = "%d-%m-%Y %H:%M")
+        c(
+            sum(input$dianoc == c("Noche", "Dia")) == 2,
+            "|",
+            input$dianoc, 
+            "|",
+            input$dianoc == c("Noche", "Dia")
+        )
         
-        d <- stagesTable(acveditRDS(), input$perChoose)
-        d <- d$inicio[nrow(d)]
-        
-        d == data
     })
     
     output$test2 <- renderPrint({
-        data <- str_split(input$editAct.data, " a ", simplify = TRUE)
-        data <- dmy_hm(data[1])
-        data <- format(data,  format = "%d-%m-%Y %H:%M")
-        
-        d <- stagesTable(acveditRDS(), input$perChoose)
-        d <- d$inicio[nrow(d)]
-        
-        cat(data, "\n", d, sep = "")
+        filterPeriod()
     })
     
 
