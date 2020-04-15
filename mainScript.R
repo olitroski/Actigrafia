@@ -24,33 +24,42 @@ stop()
 # --- Analisis inicial de un sujeto -------------------------------------------
 # Cargar un sujeto valido
 setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
-awdfile <- "2086-313-404 BJI Baseline.AWD"
+awdfile <- "2086-309-362 AJF Visit2.AWD"
 
 # Determinar S|W y estado actigrafico
 acv <- create.acv(awdfile, sensi = set$sensivar)
-View(acv)
+head(acv)
 
 # Cortar en semi periodos de dia y noche
 semiper <- create.semiper(acv)
 names(semiper)
-head(semiper$d1)
 
 # Crear el primer filtro
 filter.stats <- create.firstfilter(awdfile, semiper)
 filter.stats
 
-# create.acvedit, que 
+# create.acvedit, que integra el primer filtro al acv
 acvedit <- create.acvedit(awdfile, acv, filter.stats)
 names(acvedit)
+tail(acvedit)
 
-# Crea el acveditRDS que combina filtro y acv
+# Crea el acveditRDS que combina filtro y ACV para utilizar
 acveditRDS <- check.acvfilter(sub(".AWD", "", awdfile))
 names(acveditRDS)
+names(acveditRDS$semiper)
+acveditRDS$timelist
+
 
 # Actograma
 windows()
 create.actogram(acveditRDS$semiper)
 
+
+
+tail(acv)
+tail(acvedit)
+
+View(acv$filter == acvedit$filter)
 
 
 

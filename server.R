@@ -149,6 +149,11 @@ server <- function(input, output, session){
 
     # ___________________________________________ -----------------------------
     # | ACTOGRAMA -------------------------------------------------------------
+    # | ---- Determina awdfile() ----------------------------------------------
+    awdfile <-  reactive({
+        input$awd_select
+    })
+    
     # | renderUI selección de sujetos -----------------------------------------
     output$subjInput <- renderUI({
         lechoices <- filter(subjectDF(), Status == "En edicion")
@@ -161,182 +166,94 @@ server <- function(input, output, session){
         }
     })
 
-    # | ---- Determina awdfile() ----------------------------------------------
-    awdfile <-  reactive({
-        input$awd_select
-    })
+    # Valor reactivo para que cambie dentro de los botones
+    showActogram <- reactiveValues()
+    showActogram$val <- "sin seleccion"
 
-    # | ---- Status Sujeto ----------------------------------------------------
-    # output$statsSubj <- renderPrint({
-    #     nfiles <- filter(subjectDF(), Sujeto == awdfile()) %>% select(N.Files)
-    #     
-    #     # Si no hay nada seleccionado
-    #     if (awdfile()=="Debe ingresar un sujeto"){
-    #         cat(" ")
-    #     # Si el sujeto seleccionado no tiene archivos
-    #     } else if (nrow(nfiles) == 0){
-    #         cat("---ERROR--- El sujeto no tiene archivos...")
-    #     # Si tiene solo 1 archivo
-    #     } else if (nfiles == 1){
-    #         cat("Sujeto sin procesar, se debe hacer el análisis preliminar, seleccionar 'Analizar' en 'Acciones'")
-    #     # Si tiene más de 1 archivo
-    #     } else if (nfiles > 1){
-    #         cat("Sujeto en edición, puede finalizarlo o seguir editando...")
-    #     } else {
-    #         cat("Error, Error en la base de datos... :)")
-    #     }
+    # | Boton Editar ----------------------------------------------------------
+    # Apretar y nos vamos a pestaña siguiente
+    observeEvent(input$edEdit.btn, {
+        # Debiera hacer el actograma e irse a la siguiente pestaña
+        showNotification("Procesando...", closeButton = FALSE, type = "message")
+        showActogram$val <- awdfile()
+        updateNavbarPage(session, inputId = "TablasApp", selected = "Edición")
+    })
+    
+    # | Boton Actograma -------------------------------------------------------
+    # Solo muestra el acto
+    # observeEvent(input$edActo.btn, {
+    #     showNotification("Graficando...", closeButton = FALSE, type = "message", duration = 2)
+    #     showActogram$val <- awdfile()
     # })
-
-    # | Boton Acciones a tomar ------------------------------------------------
-    # Crear un reactive cada vez que se apriete el boton
-    actSelection <- eventReactive(input$accion_button, {
+    
+    # | Boton Finalizar -------------------------------------------------------
+    # Modal
+    edFin.modal <- function(){
+        modalDialog(
+            title = "Finalizar edición",
+            size = "m",
+            easyClose = TRUE,
+            
+            div(h4("Terminar la edición del sujeto"),
+                p(awdfile()),
+                p(strong("Con esta acción se finaliza la edición del sujeto."))),
+            
+            footer = tagList(
+                modalButton("Cancelar"),
+                actionButton("finalOK", "Finalizar")  # El valor resultante
+            )
+        )
+    }
+    
+    # Modal de no rango
+    edFin.modalNO <- function(){
+        modalDialog(
+            title = "Falta acción",
+            size = "m",
+            easyClose = TRUE,
+            div(h4("No se ha determinado el inicio y final del registro")),
+            footer = tagList(
+                modalButton("Cancelar"),
+                # actionButton("finalOK", "Finalizar")  # El valor resultante
+            )
+        )
+    }
+    
+    # Botón a mostrar
+    observeEvent(input$edFin.btn, {
+        # Asegurar que esté el inicio y fin
+        rango <- filterRDS()$header
         
-        # | ---- Accion 1: Analizar -------------------------------------------
-        if (input$accion_choice == "Analizar"){
-            # Si aprieta y no se ha seleccionado un sujeto
-            if (awdfile() == "Debe ingresar un sujeto"){
-                showNotification("Error, no hay sujeto")
-                FALSE
-                
-            # Si hay sujeto proseguir
-            } else {
-                subj.status <- filter(subjectDF(), Sujeto == awdfile()) %>% select(Status)
-                subj.status <- subj.status[1,1]
-                
-                # Hay sujeto, pero con status Editar
-                if (subj.status == "En edicion"){
-                    showNotification("Error, Sujeto en edición")
-                    FALSE
-                
-                # Hay sujeto pero está terminado
-                } else if (subj.status == "Terminado"){
-                    showNotification("Error, Sujeto terminado")
-                    FALSE
-                    
-                # Ahora si procesar el sujeto desde cero
-                } else if (subj.status == "No procesado"){
-                    showNotification("Procesando...")
-                    
-                    # La vuelta completa está en el powerpoint
-                    sujeto <- paste(awdfile(), ".AWD", sep = "")
-                    acv <- create.acv(sujeto, set$sensivar)
-                    semiper <- create.semiper(acv)
-                    filter.stats <- create.firstfilter(sujeto, semiper)
-                    acv.edit <- create.acvedit(sujeto, acv, filter.stats)
-                    
-                    # Volver a la pestaña de archivos
-                    updateNavbarPage(session, inputId = "TablasApp", selected = "Archivos")
-                    
-                    FALSE
-                }
-            }
-            
-        # | ---- Accion 2: Cargar actograma -----------------------------------
-        } else if (input$accion_choice == "Actograma"){
-            # Si aprieta y no se ha seleccionado un sujeto
-            if (awdfile() == "Debe ingresar un sujeto"){
-                showNotification("Error, no hay sujeto")
-                FALSE
-
-            # Si hay sujeto proseguir
-            } else {
-                subj.status <- filter(subjectDF(), Sujeto == awdfile()) %>% select(Status)
-                subj.status <- subj.status[1,1]
-                
-                # Hay sujeto y con status Editar guarda el awdfile para graficar.
-                if (subj.status == "En edicion"){
-                    showNotification("Creando actograma", closeButton = FALSE, type = "message")
-                    # Devuelve el nombre del sujeto, asi si cambia en el selectInput 
-                    # no se hace el actograma para otro sujeto.
-                    awdfile()
-                } else {
-                    showNotification("El sujeto no ha sido analizado")
-                    FALSE
-                }
-            }
-         
-        # | ---- Accion 3: Editar -----------------------------------------------
-        } else if (input$accion_choice == "Editar"){
-            # Si aprieta y no se ha seleccionado un sujeto
-            if (awdfile() == "Debe ingresar un sujeto"){
-                showNotification("Error, no hay sujeto")
-                FALSE            
-            
-            # Hay sujeto... se sigue
-            } else {
-                subj.status <- filter(subjectDF(), Sujeto == awdfile()) %>% select(Status)
-                subj.status <- subj.status[1,1]
-                
-                # Hay sujeto, pero con status Sin editar
-                if (subj.status == "No procesado"){
-                    showNotification("Error, Sujeto no tiene análisis inicial")
-                    FALSE
-                    
-                # Hay sujeto pero está terminado
-                } else if (subj.status == "Terminado"){
-                    showNotification("Error, Sujeto terminado")
-                    FALSE
-                
-                 # Ahora si procesar el sujeto 
-                } else if (subj.status == "En edicion"){
-                    showNotification("Procesando...")
-                    # La idea es que nos mande para la pestaña siguiente.
-                    updateNavbarPage(session, inputId = "TablasApp", selected = "Edición")
-                    # Dejo el awdfile() para que se haga actograma y se pueda consultar
-                    awdfile()
-                }
-            }
-            
-        # | ---- Accion 4: Finalizar ------------------------------------------    
-        } else if (input$accion_choice == "Finalizar") {
-            # Si aprieta debe aparecer un cuadro dialogo
-            finalModal <- function(){
-                modalDialog(
-                    title = "Finalizar edición",
-                    size = "m",
-                    easyClose = TRUE,
-                    
-                    div(h4("Terminar la edición del sujeto"),
-                        p(awdfile()),
-                        p(strong("Con esta acción se finaliza la edición del sujeto."))),
-                    
-                    footer = tagList(
-                        modalButton("Cancelar"),
-                        actionButton("finalOK", "Finalizar")  # El valor resultante
-                    )
-                )
-            }
-            
-            # Mostrar el modal y ejecutar acciones
-            showModal(finalModal())
-            observeEvent(input$finalOK,{
-                filename <- paste0(awdfile(), ".finish.RDS")
-                txt <- c("Sujeto terminado", awdfile(), "Fecha", now())
-                saveRDS(txt, file = file.path(awdfolder(), filename))
-                showNotification(paste("Terminando", awdfile()), closeButton = FALSE, type = "message")
-                removeModal()
-            })
-            # Mandar el valor de este reactivo
-            FALSE
-            
-        # Algo extraño pasó
+        if (rango[4] == "Inicia:  -No determinado- " | rango[5] == "Termina: -No determinado- "){
+            showModal(edFin.modalNO())
         } else {
-            stop("Error en la selección de la acción")
+            showModal(edFin.modal())
         }
-        
+    })
+
+    # Mostrar el modal y ejecutar acciones
+    observeEvent(input$finalOK,{
+        filename <- paste0(awdfile(), ".finish.RDS")
+        txt <- c("Sujeto terminado", awdfile(), "Fecha", now())
+        saveRDS(txt, file = file.path(awdfolder(), filename))
+        showNotification(paste("Terminando", awdfile()), closeButton = FALSE, type = "message")
+        removeModal()
     })
     
-    
+
     # | Actograma -------------------------------------------------------------
-    # La lógica depende del botón de accion a tomar, cuando se aprieta, el output
-    # es: FALSE o el awdfile(), se cargan los datos y se pasan al actograma con el
-    # actSelection() al igualarse a awdfile() 
+    # La lógica depende del botón de accion, cuando se aprieta, el output es awdfile()
+    # eso activa el proceso.
 
     # Dibuja el actograma a partir del awdfile() y el acvditRDS() y lo pasa al renderUI de abajo
     output$actograma <- renderPlot({
         validate(need(acveditRDS(), "Esperando datos!"))
+        validate(need(showActogram$val, "Esperando datos!"))
         
-        if (actSelection() == awdfile()){
+        # if (actSelection() == awdfile()){
+        #if (showActogram$val == awdfile()){
+        
+                
             # Si no hay semiper pone algo igual
             if (length(acveditRDS()[["semiper"]]) == 0){
                 plot(0, type='n', axes=FALSE, ann=FALSE)
@@ -347,24 +264,34 @@ server <- function(input, output, session){
             } else {
                 stop("Algo pasó con el grafico")
             }
-        }
+        # }
     })
 
     # El ui render, el height se setea grande para que no de error de margins
     output$actoUI <- renderUI({
-        # Darle al toque un tamaño
-        if (actSelection() != awdfile()){
-            plotOutput("actograma", width = "100%", height = 1800)
-            
-            # Cambiarlo si es que hay datos cargados
-        } else if (actSelection() == awdfile()){
-            h <- length(acveditRDS()[["semiper"]]) * 120
-            plotOutput("actograma", width = "100%", height = h)
-            
-            # algo raro paso
-        } else {
-            stop("Algo paso con el render ui del plot")
-        }
+        validate(need(showActogram$val, "Esperando datos!"))
+        validate(need(awdfile(), "Esperando datos!"))
+        
+        # # Si sujeto no es correcto dibuja en blanco
+        # if (showActogram$val != awdfile()){
+        #     plotOutput("actograma", width = "100%", height = 1800)
+        #     
+        # # Cambiarlo si es que hay datos cargados
+        # # } else if (actSelection() == awdfile()){
+        # } else if (showActogram$val == awdfile()){
+        #     h <- length(acveditRDS()[["semiper"]]) * 120
+        #     plotOutput("actograma", width = "100%", height = h)
+        #     
+        #     # algo raro paso
+        # } else {
+        #     stop("Algo paso con el render ui del plot")
+        # }
+        
+        
+        # Carga al tiro
+        h <- length(acveditRDS()[["semiper"]]) * 120
+        plotOutput("actograma", width = "100%", height = h)
+        
     })
     
     
@@ -472,13 +399,18 @@ server <- function(input, output, session){
                           limites = input$rangoX, lw = input$ldNum)
     })
 
-    # | -- Slider del gráfico ----
+    # | -- Slider y control del gráfico ----
     # Reset Range btn
     observeEvent(input$resetBtn, {
         # El reset debiera calzar con el del grafico
         xscale <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
         updateSliderInput(session, "rangoX", value = c(min(xscale), max(xscale)))
         updateNumericInput(session, "ldNum", value = 1)
+    })
+    
+    # Boton volver a actograma
+    observeEvent(input$volverActo, {
+        updateNavbarPage(session, inputId = "TablasApp", selected = "Actograma")
     })
 
     # Render ui del slider
@@ -491,6 +423,8 @@ server <- function(input, output, session){
                     min = minui, max = maxui, value = c(minui, maxui),
                     width = "95%", step = 1)
     })
+    
+    
 
     # | -- Header Filtro ----
     output$filtroH <- renderPrint({
@@ -1107,18 +1041,11 @@ server <- function(input, output, session){
     # | ----
     # Panel - ESTADISTICAS -------------------------------- -------------------
     output$test1 <- renderPrint({
-        c(
-            sum(input$dianoc == c("Noche", "Dia")) == 2,
-            "|",
-            input$dianoc, 
-            "|",
-            input$dianoc == c("Noche", "Dia")
-        )
-        
+        filterRDS()
     })
     
     output$test2 <- renderPrint({
-        filterPeriod()
+        c(showActogram$val, showActogram$val == awdfile())
     })
     
 

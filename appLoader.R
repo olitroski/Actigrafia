@@ -1,7 +1,7 @@
 # Cargador de todas las cosas
 # | -- Library Loader ---------------------------------------------------------
 # Listar lo instalado
-packlist <- c("sourcetools","tidyselect","fastmap","xtable", "httpuv","zip","backports","assertthat", "tibble", "pkgconfig", 
+packlist <- c("utf8", "sourcetools","tidyselect","fastmap","xtable", "httpuv","zip","backports","assertthat", "tibble", "pkgconfig", 
               "R6", "kableExtra", "Hmisc", "openxlsx", "fs", "shinyFiles","shiny",
               "rmarkdown","haven", "stringr", "purrr", "lubridate", "dplyr")
 new.packages <- packlist[!(packlist %in% installed.packages()[,"Package"])]

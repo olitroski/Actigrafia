@@ -71,12 +71,25 @@ ui <- navbarPage(
         fluidRow(
             # | Seleccion de Sujetos + Ejecutar -------------------------------
             column(3,
-                h4("Seleccionar sujeto a editar"),
-                radioButtons("accion_choice", label = NULL, 
-                         choices = c("Editar", "Actograma", "Finalizar"),
-                         selected = "Editar", inline = TRUE),
-                actionButton("accion_button", "Ejecutar"),
+                fluidRow(
+                    column(12,
+                        h4("Seleccionar sujeto y edición")
+                    )
+                ),
+                # Botones de edición
+                fluidRow(
+                    column(4,
+                        actionButton("edEdit.btn", "Editar", width = "90")
+                    ),
+                    column(4,
+                        actionButton("edFin.btn", "Finalizar", width = "90")
+                    ),
+                    column(4,
+                        # actionButton("edActo.btn", "Actograma", width = "90")
+                    )
+                ),
                 hr(),
+                # Seleccion de sujetos
                 uiOutput("subjInput")
             ),
             
@@ -125,7 +138,11 @@ ui <- navbarPage(
                         verbatimTextOutput("filtroIniFin")
                     ),
                     # Ancho de linea
-                    column(1, offset = 2,
+                    column(1, offset = 1,
+                        h4("Volver"),
+                        actionButton("volverActo", label = "Actograma", width = "95px")
+                    ),
+                    column(1, # offset = 2,
                         h4("Linea"),
                         numericInput("ldNum", value = 1, min = 1, max = 10, step = 1, 
                                      label = NULL, width = "80px"),

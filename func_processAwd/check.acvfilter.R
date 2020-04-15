@@ -12,6 +12,7 @@
 # El output es el list del create.semiper
 check.acvfilter <- function(awdfile){
 	# cat("exec(check.acvfilter)")
+    # awdfile <- sub(".AWD", "", awdfile)
     # Cargar acv y filter ----------------------------------------------------------
     acvfile <- paste(awdfile, "_acv.edit.RDS", sep = "")
     acvfile <- readRDS(acvfile)
@@ -19,13 +20,8 @@ check.acvfilter <- function(awdfile){
     filterfile <- paste(awdfile, ".edit.RDS", sep = "")
     filterfile <- readRDS(filterfile)
     filterfile <- filterfile[["filter"]]
-    
-    # filterfile <- filterfile[6:length(filterfile)]
-    # filterfile <- str_split(filterfile, ": ", simplify = TRUE)[,2]
-    # filterfile <- as.data.frame(str_split(filterfile, " - ", simplify = TRUE), stringsAsFactors = FALSE)
-    # names(filterfile) <- c("ini", "fin")
-    # filterfile <- filterfile %>% mutate(ini = ymd_hm(ini), fin = ymd_hm(fin)) %>% arrange(ini)
-    
+
+
     # Chequeo que en acv$filter haya algo diferente de NA  # i <- 1
     time <- acvfile$time
     filtro <- acvfile$filter
@@ -33,13 +29,14 @@ check.acvfilter <- function(awdfile){
     filtroNA <- NULL
     
     for (i in 1:nrow(filterfile)){
+        # print(i)
+        # Buscar los indices de cada linea de filtro en el file acv
         indx <- which(time >= filterfile$ini[i] & time <= filterfile$fin[i])
         
         # Solo deben haber numeros, nada de NA
         if (sum(is.na(filtro[indx])) != 0){
             filtroERROR <- c(filtroERROR, i)            
-        }
-        
+        } 
         # Guarda el index para la otra rueba
         filtroNA <- c(filtroNA, indx)
     }
@@ -54,26 +51,43 @@ check.acvfilter <- function(awdfile){
     } else {
         filtroNA <- 0
     }
-
+    
+    
+    
     # Usar el acv.edit para crear los semiperiodos con la función ---------
     semiper <- create.semiper(acvfile)
     
     # Redistirbuir los semiperiodos (con codigo del create.actogram())
-    # Combinar [noche -> dia] mismo periodo    p <- "1" ------
-    per <- unique(str_sub(names(semiper), 2, 2))
+    # Combinar [noche -> dia] mismo periodo
+    per <- data.frame(original = names(semiper), 
+                      indice = str_replace(names(semiper), "[d|n]", ""),
+                      stringsAsFactors = FALSE)
+    per <- mutate(per, indx = as.numeric(indice))
+    per <- arrange(per, indx, desc(original))
+    per <- group_by(per, indice)
+    per <- as.data.frame(mutate(per, n = n()))
+
     perlist <- list()
-    for (p in per){
-        # Capturar lo que termine en p
-        i <- grep(paste(p, "$", sep = ""), names(semiper))
+    for (p in unique(per$indice)){
+        # p <- "2"
+        temp <- per[per$indice == p, "original"]
         
-        if (length(i) == 2){
-            temp <- bind_rows(semiper[[i[2]]], semiper[[i[1]]]) %>% arrange()
+        # Combinar si hay 2
+        if (length(temp) == 1){
+            temp.per <- semiper[[temp[1]]]
+        } else if (length(temp) == 2){
+            temp.per <- rbind(semiper[[temp[1]]], semiper[[temp[2]]])
         } else {
-            temp <- semiper[[i[1]]]
+            stop("No pueden haber más de 2 semiper")
         }
         
-        if (as.numeric(p) < 10){p <- paste("0", p, sep ="")}
-        cmd <- paste("perlist <- append(perlist, list(per", p, " = temp))", sep = "")
+        # Camiar p
+        if (as.numeric(p) < 10){
+            p <- paste("0", p, sep ="")
+        }
+        
+        # Agrega a la lista
+        cmd <- paste("perlist <- append(perlist, list(per", p, " = temp.per))", sep = "")
         eval(parse(text=cmd))
     }
 
@@ -89,11 +103,9 @@ check.acvfilter <- function(awdfile){
     timelist <- function(df){ return(min(df$time)) }
     timelist <- sapply(X = perlist, FUN = timelist)
     timelist <- data.frame(time = timelist)
-    
     timelist <- timelist %>% mutate(period = row.names(timelist), 
                                     time = as_datetime(time, lubridate::origin),
                                     tlist = format(date(time), "%A %d/%m/%y"))
-    
 
     # Y listo... tenemos el filtroNA, filtroERROR, el semiper, y el timelist
     return(list(semiper = perlist,

@@ -190,7 +190,9 @@ create.acv <- function(awdfile = NULL, sensi = NULL, edit = FALSE){
         if (length(which(stXmin == state)) > 0){
             acti.fix[x] <- state
         } else if (length(which(stXmin == state)) == 0){
-            # Cambio estado
+            # Cambio estado ejem si state == W
+            # W W W W W[S S S S S]S S S S W W W W W 
+            #           x
             state <- acti[x]      # El de mini mitter
             acti.fix[x] <- state
         }
