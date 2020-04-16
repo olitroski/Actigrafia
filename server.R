@@ -167,15 +167,15 @@ server <- function(input, output, session){
     })
 
     # Valor reactivo para que cambie dentro de los botones
-    showActogram <- reactiveValues()
-    showActogram$val <- "sin seleccion"
+    # showActogram <- reactiveValues()
+    # showActogram$val <- "sin seleccion"
 
     # | Boton Editar ----------------------------------------------------------
     # Apretar y nos vamos a pestaña siguiente
     observeEvent(input$edEdit.btn, {
         # Debiera hacer el actograma e irse a la siguiente pestaña
         showNotification("Procesando...", closeButton = FALSE, type = "message")
-        showActogram$val <- awdfile()
+        # showActogram$val <- awdfile()
         updateNavbarPage(session, inputId = "TablasApp", selected = "Edición")
     })
     
@@ -199,8 +199,8 @@ server <- function(input, output, session){
                 p(strong("Con esta acción se finaliza la edición del sujeto."))),
             
             footer = tagList(
-                modalButton("Cancelar"),
-                actionButton("finalOK", "Finalizar")  # El valor resultante
+                modalButton("Cancelar", icon = icon("window-close")),
+                actionButton("finalOK", "Finalizar", icon = icon("save"))  # El valor resultante
             )
         )
     }
@@ -248,12 +248,10 @@ server <- function(input, output, session){
     # Dibuja el actograma a partir del awdfile() y el acvditRDS() y lo pasa al renderUI de abajo
     output$actograma <- renderPlot({
         validate(need(acveditRDS(), "Esperando datos!"))
-        validate(need(showActogram$val, "Esperando datos!"))
+        # validate(need(showActogram$val, "Esperando datos!"))
         
-        # if (actSelection() == awdfile()){
-        #if (showActogram$val == awdfile()){
-        
-                
+        # if (showActogram$val == awdfile()){
+            
             # Si no hay semiper pone algo igual
             if (length(acveditRDS()[["semiper"]]) == 0){
                 plot(0, type='n', axes=FALSE, ann=FALSE)
@@ -269,7 +267,7 @@ server <- function(input, output, session){
 
     # El ui render, el height se setea grande para que no de error de margins
     output$actoUI <- renderUI({
-        validate(need(showActogram$val, "Esperando datos!"))
+        # validate(need(showActogram$val, "Esperando datos!"))
         validate(need(awdfile(), "Esperando datos!"))
         
         # # Si sujeto no es correcto dibuja en blanco
@@ -363,9 +361,7 @@ server <- function(input, output, session){
     output$SubjEdicion <- renderPrint({
         cat(awdfile())
     })
-    
-    
-    
+
     # | -- Seleccionar el período a editar ------------------------------------
     # Los periodos no cambian, asi que se cargan una vez y alimentan al botón 
     # para seleccionar la data adecuada.
@@ -475,7 +471,11 @@ server <- function(input, output, session){
     # | ------ Inicio del registro ----
     output$inifin.iniUI <- renderUI({
         validate(need(input$perChoose, "Esperando input!"))
-        valor <- tablaEstados()$inicio
+        
+        # Debe ser el inicio de una vigilia
+        valor <- filter(tablaEstados(), estado == "W")
+        valor <- valor$inicio
+        
         selectInput("inifin.ini", label = NULL, choices = valor)
     })
 
@@ -518,7 +518,11 @@ server <- function(input, output, session){
     # | ------ Fin del registro ------   
     output$inifin.finUI <- renderUI({
         validate(need(input$perChoose, "Esperando input!"))
-        valor <- tablaEstados()$termino
+        
+        # Debe ser un final de vigilia
+        valor <- filter(tablaEstados(), estado == "W")
+        valor <- valor$termino
+        
         selectInput("inifin.fin", label = NULL, choices = valor)
     })
 
@@ -708,6 +712,7 @@ server <- function(input, output, session){
             # Hacer update al filtro
             filt <- bind_rows(filterRDS()$filter, filterPeriod()$filtro)
             filt <- arrange(filt, ini)
+            filt <- mutate(filt, id = NA)
             filt <- distinct(filt, id, ini, fin, tipo)
             filt$id <- 1:nrow(filt)
             newfiltro <- list(header = filterRDS()$header, filter = filt)

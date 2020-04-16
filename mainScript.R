@@ -53,20 +53,7 @@ acveditRDS$timelist
 # Actograma
 windows()
 create.actogram(acveditRDS$semiper)
-
-
-
-tail(acv)
-tail(acvedit)
-
 View(acv$filter == acvedit$filter)
-
-
-
-
-
-
-
 
 
 # ----- Para probar un epi ------------------------------------------
@@ -82,19 +69,32 @@ stop()
 
 
 # ----- Para probar gráficos ----------------------------------------
-semiper <- check.acvfilter(awdfile)
-semiper <- semiper$semiper
-semiperdf <- semiper$per01
-gdata <- semiperdf
+setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
+awdfile <- "2086-306-757 NCM Visit2.AWD"
+acveditRDS <- check.acvfilter(sub(".AWD", "", awdfile))
+names(acveditRDS)
+acveditRDS <- acveditRDS$semiper
+names(acveditRDS)
+gdata <- acveditRDS[["per04"]]
+head(gdata)
 
 create.plotActo(gdata)
 
 # View(semiperdf)
 # otable("st.edit", data = semiperdf)
 
-# ----- Probar y trabajar el EPI ------------------------------------
-setwd("D:/OneDrive/INTA/Actigrafia/testfolder/test_kansas")
-acv <- check.acvfilter("2058-001-368 JRG Baseline")
-per <- "per00 - martes 15/07/14"
-stagesTable(acv, per)
+# ----- Trabajar un acvfilter + per --------------------------------
+setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
+awdfile <- "2086-308-045 CHT Visit2.AWD"
+acveditRDS <- check.acvfilter(sub(".AWD", "", awdfile))
+# acveditRDS <- acveditRDS$semiper
+# names(acveditRDS)
+per <- "per00"
+
+stagesTable(acveditRDS, per)
+
+
+
+
+
 

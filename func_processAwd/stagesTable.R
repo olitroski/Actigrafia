@@ -3,30 +3,40 @@
 # que chequea si tiene cambios, además el input$perChoose que es de tipo "per00"
 # COmo se usará en varias partes lo mejor es dejar como función y además como reactivo
 
-stagesTable <- function(acv, per){
+stagesTable <- function(acveditRDS, per){
     # Procesar las fechas
     periodo <- str_split(per, " - ", simplify = TRUE)[1]
-    periodo <- acv[["semiper"]][[periodo]]
+    periodo <- acveditRDS[["semiper"]][[periodo]]
     periodo <- select(periodo, nombre, time, st.stable, st.edit, filter)
-    
+
     # Procesado simple de la tabla
     vectSeq <- Vectorize(seq.default, vectorize.args = c("from", "to"))
     
-    # Indices y segmentos SUEÑO
+    # --- Indices y segmentos SUEÑO -------------------------------------------
     segm <- find.segment(periodo, "st.edit", filtro = "S")
-    ranges <- vectSeq(from = segm$ini, to = segm$fin, by = 1)
-    if (nrow(segm) == 1){ranges <- list(ranges)}
-    # Stats
-    ini     <- lapply(ranges, function(x) min(periodo$time[x]))
-    fin     <- lapply(ranges, function(x) max(periodo$time[x]))
-    filtro  <- lapply(ranges, function(x) unique(periodo$filter[x]))
-    # Reordenar la data
-    dataSleep <- data.frame(ini = paste(ini, sep = ","), fin = paste(fin, sep = ","),
-                            estado = "S", filtro = paste(filtro, sep = ","), stringsAsFactors = FALSE)
-    dataSleep <- mutate(dataSleep, inicio = as_datetime(as.numeric(ini), lubridate::origin),
-                        termino = as_datetime(as.numeric(fin), lubridate::origin))
     
-    # Indices y segmentos VIGILIA
+    if (nrow(segm) == 0){
+        dataSleep <- NULL
+    } else {
+        ranges <- vectSeq(from = segm$ini, to = segm$fin, by = 1)
+        
+        # Si solo hay uno que quede como lista
+        if (nrow(segm) == 1){ranges <- list(ranges)}
+        
+        # Stats
+        ini     <- lapply(ranges, function(x) min(periodo$time[x]))
+        fin     <- lapply(ranges, function(x) max(periodo$time[x]))
+        filtro  <- lapply(ranges, function(x) unique(periodo$filter[x]))
+        
+        # Reordenar la data
+        dataSleep <- data.frame(ini = paste(ini, sep = ","), fin = paste(fin, sep = ","),
+                                estado = "S", filtro = paste(filtro, sep = ","), stringsAsFactors = FALSE)
+        dataSleep <- mutate(dataSleep, inicio = as_datetime(as.numeric(ini), lubridate::origin),
+                            termino = as_datetime(as.numeric(fin), lubridate::origin))
+    }
+    
+    
+    # --- Indices y segmentos VIGILIA -----------------------------------------
     segm <- find.segment(periodo, "st.edit", filtro = "W")
     if (nrow(segm) == 0){
         dataWake <- NULL

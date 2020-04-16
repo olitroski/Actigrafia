@@ -79,10 +79,10 @@ ui <- navbarPage(
                 # Botones de edición
                 fluidRow(
                     column(4,
-                        actionButton("edEdit.btn", "Editar", width = "90")
+                        actionButton("edFin.btn", "Finalizar", width = "90", icon = icon("save"))
                     ),
                     column(4,
-                        actionButton("edFin.btn", "Finalizar", width = "90")
+                        actionButton("edEdit.btn", "Editar", width = "90", icon = icon("edit"))
                     ),
                     column(4,
                         # actionButton("edActo.btn", "Actograma", width = "90")
