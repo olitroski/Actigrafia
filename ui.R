@@ -166,7 +166,7 @@ ui <- navbarPage(
                     column(8,
                         tabsetPanel(
                             # | -- 1. Inicio y fin ----
-                            tabPanel("Limite Registro",
+                            tabPanel("Limites Registro",
                                 fluidRow(
                                     column(12, style = "padding-left: 25px; padding-top: 15px;",
                                         h4("Determinar inicio y fin del registro"),
@@ -200,7 +200,7 @@ ui <- navbarPage(
                             
                             
                             # | -- 2. Edición de períodos -------------------------
-                            tabPanel("Edición de periodos",
+                            tabPanel("Filtrar Períodos",
                                 fluidRow(
                                     column(12, style = "padding-left: 25px; padding-top: 15px;",
                                         h4("Seleccionar dia, noche o ambos"),
@@ -226,7 +226,7 @@ ui <- navbarPage(
                             ),
                             
                             # | -- 3. Edicion de actividad --------------------------
-                            tabPanel("Edición de actividad",
+                            tabPanel("Editar actividad",
                                 fluidRow(
                                     column(12, style = "padding-left: 25px; padding-top: 15px;",
                                         h4("Seleccionar estado de sueño a modificar"),
@@ -241,7 +241,7 @@ ui <- navbarPage(
                                             column(2,
                                                 # Boton de edicion
                                                 strong("Duración episodio"),
-                                                verbatimTextOutput("editActDur"),
+                                                verbatimTextOutput("editActDur", placeholder = TRUE),
                                                 actionButton("editAct.btn", label = "Editar", icon = icon("filter"), width = "120px")
                                             ),
                                             column(6),
@@ -256,12 +256,17 @@ ui <- navbarPage(
                             ),
                             
                             # | -- 4. Mover la noche -------------------------------------
-                            tabPanel("Mover la noche",
+                            tabPanel("Editar límite",
                                 fluidRow(
                                     column(12, style = "padding-left: 25px; padding-top: 15px;",
-                                        h4("Indicar inicio de la noche"),
-                                        p("Indicar la hora en que comienza la noche"),
-                                        
+                                        h4("Indicar el inicio o fin de un período"),
+                                        # Elegir escenario
+                                        fluidRow(
+                                            column(12,
+                                                radioButtons("moveNightEscena", label = NULL, inline = TRUE,
+                                                             choices = c("Inicio Vigilia", "Fin Vigilia", "Inicio Sueño", "Fin Sueño"))
+                                            )    
+                                        ),
                                         hr(),
                                         fluidRow(
                                             # Listado de inicios de sueño
@@ -270,16 +275,21 @@ ui <- navbarPage(
                                             ),
                                             
                                             # Botón
-                                            column(2,
+                                            column(3,
                                                 strong("Duración episodio"),
-                                                verbatimTextOutput("moveNight.Dur"),
+                                                verbatimTextOutput("moveNight.Dur", placeholder = TRUE),
                                                 actionButton("moveNight.btn", "Mover Noche", icon = icon("moon"))
                                             ),
                                             
-                                            column(7)
+                                            column(6)
                                         ),
                                         hr(),
-                                        p("También se debe utilizar cuando el periodo noche no sirve, pero si se puede salvar el final del día"),
+                                        p(strong("Se usa en 4 escenarios para rescatar datos:")),
+                                        p(code("AM-1"), "Se puso el actigrafo al despertar", code("[Inicio Vigilia]"), br(), 
+                                          code("AM-2"), "Se sacó el actígrafo al despertar", code("[Fin Sueño]")),
+                                        p(code("SetN"), "Mover la noche, existe un", code("[S]"), "largo inicio noche", code("[Inicio Sueño]")),
+                                        p(code("PM-1"), "Se sacó el actígrafo antes de dormir", code("[Fin Vigilia]"), br(),
+                                          code("PM-2"), "Se puso el actigrafo antes de dormir", code("[Inicio Sueño]"))
                                     )
                                 )
                             ),

@@ -118,23 +118,25 @@ create.plotSimple <- function(gdata, pct.y = 1, limites = NULL, lw = 1){
     if (nrow(fdata) > 0){
         for (i in 1:nrow(fdata)){
             rect(fdata$ini[i], 0, fdata$fin[i], limY[2], 
-                 col = "red", border = "red")
+                 col = rgb(1, 0, 0, 0.5), border = "red")
+                 # col = "red", border = "red")
         }
     }
     
-    # 2 WAKE --- Muestra las modifiaciones desde sueño a vigilia
+    # Modificar actividad --- Muestra las modifiaciones desde sueño a vigilia
     if (nrow(f2wake) > 0){
         for (i in 1:nrow(f2wake)){
-            rect(f2wake$ini[i], limY[2] - 10, f2wake$fin[i], limY[2], 
+            rect(f2wake$ini[i], limY[2] - 30, f2wake$fin[i], limY[2], 
                  col = "red", border = "red")
         }
     }
     
-    # 2 SLEEP --- Muestral los modificaciones desde vigilia a sueño
+    # Edita periodo --- Muestral los modificaciones desde vigilia a sueño
     if (nrow(f2sleep) > 0){
         for (i in 1:nrow(f2sleep)){
             rect(f2sleep$ini[i], 0, f2sleep$fin[i], limY[2], 
-                 col = "orchid", border = "red")
+                 col = rgb(0.85, 0.44, 0.84, 0.5), border = "orchid")
+                 # col = "orchid", border = "red")
         }
     }    
     

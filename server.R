@@ -160,7 +160,7 @@ server <- function(input, output, session){
         lechoices <- as.character(lechoices$Sujeto)
         # Por si queda en cero
         if (length(lechoices) == 0){
-            radioButtons("asdf", label = NULL, choices = "No hay sujetos para editar")
+            radioButtons(inputId = "awd_select", label = NULL, choices = c("No hay sujetos"))
         } else {
             radioButtons(inputId = "awd_select", label = NULL, choices = lechoices)
         }
@@ -252,6 +252,8 @@ server <- function(input, output, session){
         
         # if (showActogram$val == awdfile()){
             
+        if (awdfile() != "No hay sujetos"){
+            
             # Si no hay semiper pone algo igual
             if (length(acveditRDS()[["semiper"]]) == 0){
                 plot(0, type='n', axes=FALSE, ann=FALSE)
@@ -262,6 +264,9 @@ server <- function(input, output, session){
             } else {
                 stop("Algo pasó con el grafico")
             }
+            
+        }
+        
         # }
     })
 
@@ -269,6 +274,7 @@ server <- function(input, output, session){
     output$actoUI <- renderUI({
         # validate(need(showActogram$val, "Esperando datos!"))
         validate(need(awdfile(), "Esperando datos!"))
+        validate(need(acveditRDS(), "Esperado datos!"))
         
         # # Si sujeto no es correcto dibuja en blanco
         # if (showActogram$val != awdfile()){
@@ -287,8 +293,12 @@ server <- function(input, output, session){
         
         
         # Carga al tiro
-        h <- length(acveditRDS()[["semiper"]]) * 120
-        plotOutput("actograma", width = "100%", height = h)
+        if (awdfile() != "No hay sujetos"){
+            h <- length(acveditRDS()[["semiper"]]) * 120
+            plotOutput("actograma", width = "100%", height = h)
+        }
+        
+        
         
     })
     
@@ -375,7 +385,10 @@ server <- function(input, output, session){
             periodos <- paste(periodos$period, "-", periodos$tlist)
         }
         
-        radioButtons("perChoose", label = NULL, choices = periodos)
+        # Si no hay sujetos
+        if (awdfile() != "No hay sujetos"){
+            radioButtons("perChoose", label = NULL, choices = periodos)
+        } 
         
     })
     
@@ -699,7 +712,18 @@ server <- function(input, output, session){
     
     # Mostrar el modal cuando se aprieta el modificiar filtro
     observeEvent(input$cambia_periodo,{
-        if (filterPeriod()$action == 1){
+        # Si se va a superponer un filtro 2 en un 1
+        test <- filterPeriod()$filtro
+        test <- test$ini
+        
+        filtro <- filterRDS()$filter
+        filtro <- filtro$ini
+        
+        temp <- test %in%filtro
+        
+        if (sum(temp) == 1 | sum(temp) == 2){
+            showNotification("No se pueden superponer filtros", closeButton = FALSE, type = "error")
+        } else if (filterPeriod()$action == 1){
             showModal(warnModal())
         }
     })
@@ -829,9 +853,28 @@ server <- function(input, output, session){
     # el ui que muestra las horas disponibles
     output$moveNightUI <- renderUI({
         validate(need(input$perChoose, "Esperando input!"))
-        valor <- filter(tablaEstados(), estado == "S")
-        valor <- valor$inicio
-        radioButtons("moveNight.data", label = NULL, choices = valor)
+        
+        # Validar qué mostrar
+        if (input$moveNightEscena == "Inicio Vigilia"){
+            valor <- filter(tablaEstados(), estado == "W")
+            valor <- valor$inicio
+            radioButtons("moveNight.data", label = NULL, choices = valor)
+            
+        } else if (input$moveNightEscena == "Fin Vigilia"){
+            valor <- filter(tablaEstados(), estado == "W")
+            valor <- valor$termino
+            radioButtons("moveNight.data", label = NULL, choices = valor)
+            
+        } else if (input$moveNightEscena == "Inicio Sueño"){
+            valor <- filter(tablaEstados(), estado == "S")
+            valor <- valor$inicio
+            radioButtons("moveNight.data", label = NULL, choices = valor)
+            
+        } else if (input$moveNightEscena == "Fin Sueño"){
+            valor <- filter(tablaEstados(), estado == "S")
+            valor <- valor$termino
+            radioButtons("moveNight.data", label = NULL, choices = valor)
+        }
     })
     
     # La duracion del episodio seleccionado
@@ -840,8 +883,17 @@ server <- function(input, output, session){
         validate(need(input$moveNight.data, "Esperando"))
         # Tomar la tabla y filtrar
         data <- input$moveNight.data
-        data <- filter(tablaEstados(), inicio == data)
-        cat(data$duracion)
+        
+        if (input$moveNightEscena == "Inicio Vigilia" | input$moveNightEscena == "Inicio Sueño"){
+            data <- filter(tablaEstados(), inicio == data)
+            cat(data$duracion)
+        } else if (input$moveNightEscena == "Fin Vigilia" | input$moveNightEscena == "Fin Sueño"){
+            data <- filter(tablaEstados(), termino == data)
+            cat(data$duracion)
+        } else {
+            cat("0m 0s")
+        }
+        
     })
 
     # Modal de confirmación
@@ -1046,11 +1098,37 @@ server <- function(input, output, session){
     # | ----
     # Panel - ESTADISTICAS -------------------------------- -------------------
     output$test1 <- renderPrint({
-        filterRDS()
+        filtro <- filterRDS()$filter
+        
+        ylinea <- as.numeric(c(set$ininoc, set$inidia + hours(24), 
+                               set$ininoc + hours(24)))/3600
+        
+        
+        # Mover noche
+        mnoc <- filter(filtro, tipo == 4)
+        mnoc <- round(hour(mnoc$ini) + minute(mnoc$ini)/60, 2)
+        
+        
+        # rango registro
+        rango <- filterRDS()$header
+        rango <- c(rango[4], rango[5])
+        rango <- str_split(rango, ": ", simplify = TRUE)
+        rango <- rango[,2]
+        rango <- dmy_hm(rango)
+        rango <- round(hour(rango) + minute(rango)/60, 2)
+        rango
+        
+        
+        
+        # cat("ejemplo ylinea: ",   paste(ylinea, collapse = ","), "\n",
+        #     "filtro mueve noc: ", paste(mnoc, collapse = ","), "\n",
+        #     "rango registro: ", paste(rango, collapse =","),
+        #     sep = "")
+        
     })
     
     output$test2 <- renderPrint({
-        c(showActogram$val, showActogram$val == awdfile())
+        filterRDS()
     })
     
 

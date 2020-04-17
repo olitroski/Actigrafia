@@ -115,23 +115,25 @@ create.plotActo <- function(gdata, pct.y = 1){
     if (nrow(fdata) > 0){
         for (i in 1:nrow(fdata)){
             rect(fdata$ini[i], 0, fdata$fin[i], limY[2], 
-                 col = "red", border = "red")
+                 col = rgb(1, 0, 0, 0.5), border = "red")
+                 # col = "red", border = "red")
         }
     }
     
-    # 2 WAKE --- Muestra las modifiaciones desde sueño a vigilia
+    # Modificar Actividad --- Muestra las modifiaciones desde sueño a vigilia
     if (nrow(f2wake) > 0){
         for (i in 1:nrow(f2wake)){
-            rect(f2wake$ini[i], limY[2] - 10, f2wake$fin[i], limY[2], 
+            rect(f2wake$ini[i], limY[2] - 30, f2wake$fin[i], limY[2], 
                  col = "red", border = "red")
         }
     }
     
-    # 2 SLEEP --- Muestral los modificaciones desde vigilia a sueño
+    # Modificar periodo --- Muestral los modificaciones desde vigilia a sueño
     if (nrow(f2sleep) > 0){
         for (i in 1:nrow(f2sleep)){
             rect(f2sleep$ini[i], 0, f2sleep$fin[i], limY[2], 
-                 col = "orchid", border = "red")
+                 col = rgb(0.85, 0.44, 0.84, 0.5), border = "orchid")
+                 # col = "orchid", border = "red")
         }
     }    
     
@@ -140,7 +142,7 @@ create.plotActo <- function(gdata, pct.y = 1){
     plot(gdata$xscale, gdata$act.edit, type='h', 
          col='grey20', ylab='', axes=FALSE, xlim=limX, ylim=limY)
     
-    # Agrega más detalls
+    # Linea de incio dia
     abline(v = ylinea, col = "red")
     
     yfec <- paste(format(date(gdata$time[1]), "%a"),
