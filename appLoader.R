@@ -25,6 +25,9 @@ rm(packlist, new.packages, lib)
 
 # | -- Functions --------------------------------------------------------------
 func.folders <- dir()[dir.exists(dir())]
+func.folders <- func.folders[!(func.folders == "varios")]
+func.folders <- func.folders[!(func.folders == "package")]
+
 for (f in func.folders) {
     print(paste("---Loading folder---", f))
     setwd(file.path(mainfolder, f))
