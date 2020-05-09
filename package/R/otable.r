@@ -9,15 +9,26 @@
 #'
 #' @return Devuelve una dataframe si 1 var o lista con las 4 tablas y el test si contingencia. Seg?n clip se pasa al clipboard.
 #'
+#' @export
+#' 
 #' @examples
 #' # otable(rvar = "cyl", data = mtcars)
 #' # otable(rvar = "cyl", cvar = "am", data = mtcars, clip = 0)
 #' # otable(rvar = "cyl", cvar = "am", data = mtcars, clip = 1)
+#'
+#' @importFrom stats reshape
+#' @importFrom utils write.table
+#' @importFrom dplyr select
+#' @importFrom dplyr mutate
+
+
+
 
 otable <- function(rvar = NULL, cvar = NULL, data = NULL, clip = 0){
-     require(dplyr)
+     # Los bindings
+     Freq <- total <- NULL
 
-     # Si es que s?lo hay row var (1 variable)
+     # Si es que si lo hay row var (1 variable)
      if (class(cvar) == "NULL"){
           # Tablas
           df <- paste("table(data$", rvar, ")", sep = "")

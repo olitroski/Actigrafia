@@ -1,24 +1,11 @@
-#' @title Carga contenido del folder AWD
-#' @description Carga el listado de archivos AWD de un folder
-#' @param filelist vector de archivos que se obtiene con dir()
-#' @return data.frame con el nombre y status del archivo
-#' @export
-#' @examples
-#' # awdfolder <- "D:/OneDrive/INTA/Patricio Peirano/2019.12 Kansas/kansas"
-#' # load.awdfolder(awdfolder)#'
-#' @importFrom stringr str_replace
-#' @importFrom dplyr %>%
-#' @importFrom dplyr arrange
-
-
 # ----------------------------------------------------------------------------- #
 # ----- Load folder, para cargar awd files y su status si hubiera ene2020 ----- #
 # ----- Lab. Sueño - INTA - U.Chile - O.Rojas - oliver.rojas.b@gmail.com ------ #
 # ----------------------------------------------------------------------------- #
+# awdfolder <- "D:/OneDrive/INTA/Patricio Peirano/2019.12 Kansas/kansas"
+# load.awdfolder(awdfolder)
 
 load.awdfolder <- function(filelist = NULL){
-    N.Files <- Finalizado <- Sujeto <- NULL
-    
     # capturar archivos
     # archivos <- dir()
     archivos <- filelist

@@ -25,4 +25,5 @@ Funcion que calcula una tabla de contingencia entre dos variables de cualquier t
 # otable(rvar = "cyl", data = mtcars)
 # otable(rvar = "cyl", cvar = "am", data = mtcars, clip = 0)
 # otable(rvar = "cyl", cvar = "am", data = mtcars, clip = 1)
+
 }

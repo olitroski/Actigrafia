@@ -9,9 +9,9 @@ ordervar(datos, varmove, after = 1)
 \arguments{
 \item{datos}{Un data.frame}
 
-\item{after}{Después de cual variable se dese mover (char or index), default = 1}
+\item{varmove}{o variables a mover (en un vector char)}
 
-\item{variable}{o variables a mover (en un vector char)}
+\item{after}{Después de cual variable se dese mover (char or index), default = 1}
 }
 \value{
 Data frame con las variables ordenadas
@@ -23,11 +23,9 @@ Ordena variables dentro de un data.frame
 # Get some data and save order
 # data(mtcars)
 # nameberfore <- names(mtcars)
-
 # Ordenar
 # mtcars <- ordervar(mtcars, "mpg", "am")
 # nameberfore; names(mtcars)
-
 # mtcars <- ordervar(mtcars, c("gear", "carb"), after = "wt")
 
 }

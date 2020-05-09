@@ -1,15 +1,3 @@
-#' @title find.segment
-#' @description Encuentra segmentos de algo en un vetor
-#' @param df, un data.frame
-#' @param var, varible donde buscar
-#' @param filtro, un valor que buscar
-#' @return data.frame con el inicio y fin (en index) de la posicion del filtro
-#' @export
-#' @examples
-#' # find.segment(mtcars, "am", 1)
-#'
-
-
 # FUncion para encontrar segmentos de cosas en un secuencia
 # df <- mtcars
 # var <- "gear"

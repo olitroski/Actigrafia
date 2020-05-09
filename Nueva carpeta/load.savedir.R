@@ -1,10 +1,3 @@
-#' @title Cargar directorio
-#' @description Carga el ultimo directorio en el que se trabajo, depende de un archivo para funcionar
-#' @param mainfolder Ruta 
-#' @return El string con la ruta
-#' @export
-#' @examples
-
 # Cargar el savedir, nada más
 load.savedir <- function(mainfolder){
     # Nos vamos al mainfolder

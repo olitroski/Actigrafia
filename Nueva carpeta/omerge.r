@@ -6,6 +6,7 @@
 #' @param ydf DataFrame, con "idvar" actua de "using"
 #' @param byvar String, Variable idvar
 #' @param keep Logical, si guarda o no el resultado, si no solo da el reporte
+#' @param output Logical, de si muestra o no el resultado
 #'
 #' @return Lista con el merge separado en solo using, master, merge y un reporte
 #'
