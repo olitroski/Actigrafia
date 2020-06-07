@@ -7,12 +7,11 @@
 #' @export
 #' @examples
 #' # setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
-#' # set <- getset(getwd())
-#' # filterRDS <- readRDS("2058-001-368 JRG Baseline.edit.RDS")
-#' # acveditRDS <- check.acvfilter("2058-001-368 JRG Baseline.AWD", set)
+#' # awdfile <- "2086-306-757 NCM Visit2.AWD"
+#' # acveditRDS <- check.acvfilter(sub(".AWD", "", awdfile))
 #' # acveditRDS <- acveditRDS$semiper
 #' # windows()
-#' # create.actogram(acveditRDS, set, filterRDS)
+#' # create.actogram(acveditRDS)
 #' @importFrom graphics par
 #' @importFrom graphics plot
 #' @importFrom graphics axis
@@ -21,34 +20,30 @@
 ## ----- Actograma con ggplot not ------------------------------------------------- #
 ## -------------------------------------------------------------------------------- #
 # La idea es tomar un acv y mostrarlos de 20 a 20 horas asi aseguramos todos los dias
-create.actogram <- function(semiper, set, filterRDS, fy = 1){
-# create.actogram <- function(semiper){
+create.actogram <- function(semiper, fy = 1, set = NULL){
 
     # Valores
     xscale2 <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
-    # xscale2 <- seq(as.numeric(set()$ininoc)/3600, length.out = 25)
-    xlabel2 <- ifelse(xscale2 >= 48, xscale2 - 48, ifelse(xscale2 >= 24, xscale2 - 24, xscale2))
+    xlabel2 <- ifelse(xscale2 >= 48, xscale2 - 48,
+                      ifelse(xscale2 >= 24, xscale2 - 24, xscale2))
     limX2 <- c(min(xscale2), max(xscale2))
 
     # Se saca toda la info desde la lista <semiper> filtros todo...   :)
     nplot <- length(semiper)
     par(mfrow = c(nplot + 2, 1))
-    
-    # Marco de arriba
+
     par(mar=c(2, 3, 0, 2) + 0.5 , xaxs = 'i', yaxs = 'i')
     plot(0, type = 'n', ann = FALSE, axes = FALSE, xlim = limX2)
     axis(side = 1, at = xscale2, labels = xlabel2)
 
-    # Graficos
     for (g in 1:nplot){
-        create.plotActo(semiper[[g]], set, filterRDS, pct.y = fy)
-        # create.plotActo(semiper[[g]], set(), filterRDS())
+        create.plotActo(semiper[[g]], fy, set = set)
     }
-    
-    # Marco de abajo
+
     par(mar=c(0, 3, 2, 2) + 0.5)
     plot(0, type = 'n', ann = FALSE, axes = FALSE, xlim = limX2)
     axis(side = 3, at = xscale2, labels = xlabel2)
 
 }
 
+#create.actogram(awdfile)

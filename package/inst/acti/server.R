@@ -6,8 +6,7 @@ server <- function(input, output, session){
     # | -- Seleccionar directorio ---------------------------------------------    
     path <- reactiveValues()
     
-    # ---- Checar exista savedir ---- #   y cargar el set
-    # El savedir se guarda en un archivo en el user folder de windows
+    # ---- Checar exista savedir ---- #
     savedir_path <- file.path(Sys.getenv("USERPROFILE"), "savedir")
     
     # Si no existe lo crea
@@ -36,7 +35,6 @@ server <- function(input, output, session){
             path$ruta <- readLines(savedir_path)
             setwd(readLines(savedir_path))
         }
-
     })
     
     # Mostrar Path
@@ -61,7 +59,7 @@ server <- function(input, output, session){
         load.awdfolder(filelist = my_files())
     })
 
-    # | -- -- Table directorio ------------------------------------------------
+    # | -- -- renderTable directorio ------------------------------------------------
     output$dfdir <- renderTable({
         # Los radio buttons para el filtraje
         if (input$filterDir != "Todos"){
@@ -71,31 +69,14 @@ server <- function(input, output, session){
         }
     })
 
-    
-    # | -- -- Settings --------------------------------------------------------
-    set <- reactive({ 
-        if (subjectDF()[1,1] != "Directorio sin archivos AWD"){
-            # Ver si pasa el settings
-            getset(awdfolder())
-        } else {
-            list(ininoc=NA, inidia=NA, dursleep=NA,
-                        durawake=NA, statedur = NA, sensivar=NA)
-        }
-
-    }) 
-    
-    
-    # | -- -- Tabla recuentos -------------------------------------------------
-    # Aca voy a insertar el procesado del archivo de settings.  <<SETTINGS>>
+    # | -- -- renderTable recuentos ------------------------------------------
     output$tableDir <- renderTable({
         if (subjectDF()[1,1] != "Directorio sin archivos AWD"){
-            # Crear la tabla de recuentos
             summDF <- otable(rvar = "Status", data = subjectDF())
             summDF <- summDF %>% mutate(pct = pct*100, pct = paste(pct, "%", sep="")) %>%
                 rename(N = freq, Porcentaje = pct)
             levels(summDF$Status)[length(levels(summDF$Status))] <- "Total"
             summDF
-            
         } else {
             data.frame(Status = "Directorio sin archivos AWD")
         }
@@ -106,18 +87,15 @@ server <- function(input, output, session){
     # Los parametros se leen de la lista de settings.
     output$showSet <- renderUI({
         HTML(
-            paste("<strong>Hora inicio noche:</strong><br>", set()$ininoc, "<br>",
-                  "<strong>Duración primer sueño:</strong><br>", set()$dursleep, " mins<br><br>",
-                  "<strong>Hora inicio día:</strong><br>", set()$inidia, "<br>",
-                  "<strong>Duración primera vigilia:</strong><br>", set()$durawake, " mins<br><br>",
-                  "<strong>Consolidación de estado</strong><br>", set()$statedur/60, " mins<br><br>",
-                  "<strong>Sensibilidad deteción</strong><br>", set()$sensivar, "<br><br>",
-                  "Para cambiar parámetros modificar archivo <strong>settings.sleep</strong> que se creó en el directorio de los archivos AWD. ",
-                  "<br><strong>Si no se reflejan los cambios recargar la app.</strong>",
+            paste("<strong>Hora inicio noche:</strong><br>", set$ininoc, "<br>",
+                  "<strong>Duración primer sueño:</strong><br>", set$dursleep, " mins<br><br>",
+                  "<strong>Hora inicio día:</strong><br>", set$inidia, "<br>",
+                  "<strong>Duración primera vigilia:</strong><br>", set$durawake, " mins<br><br>",
+                  "<strong>Sensibilidad deteción</strong><br>", set$sensivar, "<br><br>",
+                  "Para cambiar la configuración se debe modificar el archivo <strong>settings.lab</strong> ubicado en el directorio del programa.",
                   "<br><br>", sep = "")
         )
     })
-    
     
     # | -- -- Botón procesar en masa "massProc" -------------------------------
     # Modal de confirmación 
@@ -157,8 +135,8 @@ server <- function(input, output, session){
         # Procesar
         for (sujeto in procAwd){
             showNotification(paste("Cargando", sujeto))
-            acv <- create.acv(sujeto, set())
-            semiper <- create.semiper(acv, set())
+            acv <- create.acv(sujeto, set$sensivar)
+            semiper <- create.semiper(acv)
             filter.stats <- create.firstfilter(sujeto, semiper)
             acv.edit <- create.acvedit(sujeto, acv, filter.stats)
             showNotification("Sujeto procesado", type = "message")
@@ -202,7 +180,7 @@ server <- function(input, output, session){
         updateNavbarPage(session, inputId = "TablasApp", selected = "Edición")
     })
     
-    # | Boton Actograma ------------------------------------------------------- #
+    # | Boton Actograma -------------------------------------------------------
     # Solo muestra el acto
     # observeEvent(input$edActo.btn, {
     #     showNotification("Graficando...", closeButton = FALSE, type = "message", duration = 2)
@@ -271,16 +249,26 @@ server <- function(input, output, session){
     # Dibuja el actograma a partir del awdfile() y el acvditRDS() y lo pasa al renderUI de abajo
     output$actograma <- renderPlot({
         validate(need(acveditRDS(), "Esperando datos!"))
-        validate(need(awdfile(), "Esperando datos!"))
+        # validate(need(showActogram$val, "Esperando datos!"))
         
-        # Verifica que haya algo para graficar
-        if (length(acveditRDS()[["semiper"]]) > 0){
-            create.actogram(acveditRDS()[["semiper"]], set = set(), filterRDS = filterRDS())
-            # create.actogram(acveditRDS()[["semiper"]])
-        } else {
-            plot(0, type='n', axes=FALSE, ann=FALSE)
-        } 
+        # if (showActogram$val == awdfile()){
+            
+        if (awdfile() != "No hay sujetos"){
+            
+            # Si no hay semiper pone algo igual
+            if (length(acveditRDS()[["semiper"]]) == 0){
+                plot(0, type='n', axes=FALSE, ann=FALSE)
+                
+            } else if (length(acveditRDS()[["semiper"]]) > 0){
+                create.actogram(acveditRDS()[["semiper"]], set = set)
+                
+            } else {
+                stop("Algo pasó con el grafico")
+            }
+            
+        }
         
+        # }
     })
 
     # El ui render, el height se setea grande para que no de error de margins
@@ -364,7 +352,7 @@ server <- function(input, output, session){
         validate(need(awdfile(), "Esperando awdfile!"))
         fichero <- str_c(awdfile(), ".acv.edit.RDS")
         if (file.exists(fichero)){
-            return(check.acvfilter(awdfile(), set()))
+            return(check.acvfilter(awdfile(), set))
         } else {
             return(1)
         }
@@ -418,14 +406,14 @@ server <- function(input, output, session){
         
         # Periodos combinado con la selección
         create.plotSimple(gdata = acveditRDS()$semiper[[str_sub(input$perChoose, 1, 5)]],
-                          set(), filterRDS(), limites = input$rangoX, lw = input$ldNum)
+                          limites = input$rangoX, lw = input$ldNum, set = set)
     })
 
     # | -- Slider y control del gráfico ----
     # Reset Range btn
     observeEvent(input$resetBtn, {
         # El reset debiera calzar con el del grafico
-        xscale <- seq(as.numeric(set()$ininoc)/3600, length.out = 25)
+        xscale <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
         updateSliderInput(session, "rangoX", value = c(min(xscale), max(xscale)))
         updateNumericInput(session, "ldNum", value = 1)
     })
@@ -437,7 +425,7 @@ server <- function(input, output, session){
 
     # Render ui del slider
     output$sliderEdicion <- renderUI({
-        xscale <- seq(as.numeric(set()$ininoc)/3600, length.out = 25)
+        xscale <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
         minui <- min(xscale)
         maxui <- max(xscale)
         
@@ -610,7 +598,7 @@ server <- function(input, output, session){
         gdata <- acveditRDS()$semiper[[str_sub(input$perChoose, 1, 5)]]
         
         time <- gdata$xscale
-        corte <- 24 + as.numeric(set()$inidia)/3600
+        corte <- 24 + as.numeric(set$inidia)/3600
         nnoc <- sum(time < corte)
         ndia <- sum(time >= corte)
         

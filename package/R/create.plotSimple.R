@@ -9,12 +9,12 @@
 #' @export
 #' @examples
 #' # setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
-#' # set <- getset(getwd())
-#' # acveditRDS <- check.acvfilter("2058-001-368 JRG Baseline.AWD", set)
+#' # awdfile <- "2086-309-362 AJF Visit2"
+#' # acveditRDS <- check.acvfilter(awdfile, set)
 #' # acveditRDS <- acveditRDS$semiper
-#' # filterRDS <- readRDS("2058-001-368 JRG Baseline.edit.RDS")
-#' # gdata <- acveditRDS[["per08"]]
-#' # create.plotSimple(gdata, set, filterRDS)
+#' # names(acveditRDS)
+#' # gdata <- acveditRDS[["per01"]]
+#' # create.plotSimple(gdata, set = set)
 #' @importFrom grDevices rgb
 #' @import graphics
 
@@ -24,67 +24,21 @@
 # Toma un data.frame de la lista "semiper" y con eso hace el grafico
 # pct.y = 1; limites = NULL; lw = 1
 
-create.plotSimple <- function(gdata, set, filterRDS, pct.y = 1, limites = NULL, lw = 1){
-    options(warn = 2)
+create.plotSimple <- function(gdata, pct.y = 1, limites = NULL, lw = 1, set = NULL){
     # nulos de paquete
     st.edit <- fin <- ini <- NULL
-    
-    
-    # ---- Inicio y fin de registro + filtro tipo 4 ------------------------------ #
-    # Lo primero será capturar las fechas del filtro en formato del gráfico
-    iniSubj <- filterRDS$header[4]
-    iniSubj <- str_split(iniSubj, ": ", simplify = TRUE)[2]
-    
-    if (iniSubj == " -No determinado- "){
-        iniSubj <- NA
-    } else {
-        iniSubj <- dmy_hm(iniSubj)
-        if (iniSubj %in% gdata$time){
-            iniSubj <- gdata$xscale[which(gdata$time == iniSubj)]
-        } else {
-            iniSubj <- NA
-        }    
-    }
-    
-    
-    finSubj <- filterRDS$header[5]
-    finSubj <- str_split(finSubj, ": ", simplify = TRUE)[2]
-    
-    if (finSubj == "-No determinado- "){
-        finSubj <- NA
-    } else {
-        finSubj <- dmy_hm(finSubj)
-        if (finSubj %in% gdata$time){
-            finSubj <- gdata$xscale[which(gdata$time == finSubj)]
-        } else {
-            finSubj <- NA
-        }
-    }
 
-    # También ver si hay un Tipo = 4 en el filtro
-    tipoCuatro <- dplyr::filter(filterRDS$filter, tipo == 4)
-    if (nrow(tipoCuatro) > 0){
-        tipoCuatro <- tipoCuatro[["ini"]]
-        if (sum(tipoCuatro %in% gdata$time) > 0){
-            # si hay y están en el vector de horas, buscarse la hora del grafico
-            tipoCuatro <- gdata$xscale[which(gdata$time == tipoCuatro)]
-        } else {
-            tipoCuatro <- NA
-        }
-    } else {
-        tipoCuatro <- NA
-    }
-    
-    
     # ---- Data para los ejes ----------------------------------------------------
-    # X: Escala y Etiquetas
+    # X: Escala y etiquetas
     xscale <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
-    xlabel <- ifelse(xscale >= 48, xscale - 48, ifelse(xscale >= 24, xscale - 24, xscale))
-    
-    # X: Lineas al inicio, ini-dia, y fin (solo es necesario el de la mitad)
-    ylinea <- as.numeric(c(set$ininoc, set$inidia + hours(24), set$ininoc + hours(24))) / 3600
-    ylinea[1] <- NA
-    ylinea[3] <- NA
+    xlabel <- ifelse(xscale >= 48, xscale - 48,
+                     ifelse(xscale >= 24, xscale - 24,
+                            xscale))
+
+    # Y: Lineas al inicio, dia, y fin
+    ylinea <- as.numeric(c(set$ininoc,
+                           set$inidia + hours(24),
+                           set$ininoc + hours(24)))/3600
 
     # Y: Limites  1100 porque si no mas
     if (max(gdata$act.edit) > 0){
@@ -101,8 +55,8 @@ create.plotSimple <- function(gdata, set, filterRDS, pct.y = 1, limites = NULL, 
         limX <- limites
     }
 
-    
-    # --- Colorear Sueno y Wake en background (ini|fin xscale) ------------------- #
+
+    # --- sleep y wake data para el background (indices) ---------------------------
     sdata <- find.segment(gdata, st.edit, "S")
     wdata <- find.segment(gdata, st.edit, "W")
 
@@ -142,20 +96,20 @@ create.plotSimple <- function(gdata, set, filterRDS, pct.y = 1, limites = NULL, 
     wdata <- mutate(wdata, ini = gdata$xscale[ini], fin = gdata$xscale[fin])
 
 
-    # ---- Coloreado de filtros -----------------------------------------------------
-    # Filtro automático
+    # ---- Filtros y ediciones -----------------------------------------------------
+    # El filtro que retira semi.periodos completos
     fdata <- find.segment(gdata, filter, 1)
     if (nrow(fdata) > 0){
         fdata <- mutate(fdata, ini = gdata$xscale[ini], fin = gdata$xscale[fin])
     }
 
-    # Filtro periodos agregados en la app
+    # Filtro para wake to sleep = 2
     f2sleep <- find.segment(gdata, filter, 2)
     if (nrow(f2sleep) > 0){
         f2sleep <- mutate(f2sleep, ini = gdata$xscale[ini], fin = gdata$xscale[fin])
     }
 
-    # Filtro para sleep to Wake = 3 (cuando se agrega actividad)
+    # Filtro para sleep to wake = 3
     f2wake <- find.segment(gdata, filter, 3)
     if (nrow(f2wake) > 0){
         f2wake <- mutate(f2wake, ini = gdata$xscale[ini], fin = gdata$xscale[fin])
@@ -183,24 +137,15 @@ create.plotSimple <- function(gdata, set, filterRDS, pct.y = 1, limites = NULL, 
              col = rgb(0.9333,0.7882,0.0000,0.5), border = "gold2")
     }
 
-    # FILTRO 1: indicadores para el filtro de dia o noche completo
+    # FILTRO: indicadores para el filtro de dia o noche completo
     if (nrow(fdata) > 0){
         for (i in 1:nrow(fdata)){
             rect(fdata$ini[i], 0, fdata$fin[i], limY[2],
-                 col = rgb(1, 0, 0, 0.3), border = "red")
+                 col = rgb(1, 0, 0, 0.5), border = "red")
         }
     }
 
-    # FILTRO 2: Agregados en la app
-    if (nrow(f2sleep) > 0){
-        for (i in 1:nrow(f2sleep)){
-            rect(f2sleep$ini[i], 0, f2sleep$fin[i], limY[2],
-                # col = rgb(0.85, 0.44, 0.84, 0.5), border = "orchid")  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                col = rgb(0, 0.3921, 0, 0.3))
-        }
-    }
-    
-    # Modificar Actividad 3: Modifiaciones desde SLEEP -> WAKE
+    # Modificar actividad --- Muestra las modifiaciones desde sueno a vigilia
     if (nrow(f2wake) > 0){
         for (i in 1:nrow(f2wake)){
             rect(f2wake$ini[i], limY[2] - 30, f2wake$fin[i], limY[2],
@@ -208,27 +153,26 @@ create.plotSimple <- function(gdata, set, filterRDS, pct.y = 1, limites = NULL, 
         }
     }
 
+    # Edita periodo --- Muestral los modificaciones desde vigilia a sueno
+    if (nrow(f2sleep) > 0){
+        for (i in 1:nrow(f2sleep)){
+            rect(f2sleep$ini[i], 0, f2sleep$fin[i], limY[2],
+                 col = rgb(0.85, 0.44, 0.84, 0.5), border = "orchid")
+        }
+    }
 
     # Anadir grafico nuevo encima
     par(new=TRUE)
     plot(gdata$xscale, gdata$act.edit, type='h', lwd = lw, col='grey20',
          ylab='', axes=FALSE, xlim=limX, ylim=limY)
-    
-    # Linea de incio dia
-    abline(v = ylinea, col = "red", lwd = 1)
-    
-    # Linea de mover noche
-    abline(v = tipoCuatro, col = "green", lwd = 2)
-    
-    # Linea de inicio y fin de período
-    abline(v = iniSubj, col = "magenta", lwd = 2)
-    abline(v = finSubj, col = "magenta", lwd = 2)
 
     # Agrega mas detalles
+    abline(v = ylinea, col = "red")
     title(ylab = (format(date(gdata$time[1]), "%A %d, %m--%Y")), line = 0.5)
     axis(side = 1, at = xscale, labels = xlabel)
     box()
 
     # Etiqueta en Y
-    mtext(format(date(gdata$time[nrow(gdata)]), "%A %d, %m--%Y"), side = 4, line = 0.5)
+    mtext(format(date(gdata$time[nrow(gdata)]), "%A %d, %m--%Y"),
+          side = 4, line = 0.5)
 }

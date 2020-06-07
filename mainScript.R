@@ -15,8 +15,8 @@ source("appLoader.R")
 
 # Cargar App
 # runApp(launch.browser = TRUE)
-stop()
 runApp(display.mode = "normal")
+stop()
 
 
 
@@ -27,74 +27,33 @@ setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
 awdfile <- "2086-309-362 AJF Visit2.AWD"
 
 # Determinar S|W y estado actigrafico
-acv <- create.acv(awdfile, sensi = set$sensivar)
+acv <- create.acv(awdfile, set)
 head(acv)
 
 # Cortar en semi periodos de dia y noche
-semiper <- create.semiper(acv)
+semiper <- create.semiper(acv, set)
 names(semiper)
 
 # Crear el primer filtro
-filter.stats <- create.firstfilter(awdfile, semiper)
-filter.stats
+firstFilter <- create.firstfilter(awdfile, semiper)
+firstFilter
 
 # create.acvedit, que integra el primer filtro al acv
-acvedit <- create.acvedit(awdfile, acv, filter.stats)
+acvedit <- create.acvedit(awdfile, acv, firstFilter)
 names(acvedit)
 tail(acvedit)
 
 # Crea el acveditRDS que combina filtro y ACV para utilizar
-acveditRDS <- check.acvfilter(sub(".AWD", "", awdfile))
+acveditRDS <- check.acvfilter(awdfile, set)
 names(acveditRDS)
 names(acveditRDS$semiper)
 acveditRDS$timelist
+stop()
 
 
 # Actograma
 windows()
 create.actogram(acveditRDS$semiper)
 View(acv$filter == acvedit$filter)
-
-
-# ----- Para probar un epi ------------------------------------------
-semiper <- check.acvfilter(awdfile)
-library(tictoc)
-tic(); test <- create.epi(semiper); toc()
-
-rm(archivos, awdfolder)
-stop()
-# semiperdf <- semiper$per00
-# View(semiperdf)
-# otable("st.edit", data = semiperdf)
-
-
-# ----- Para probar gráficos ----------------------------------------
-setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
-awdfile <- "2086-306-757 NCM Visit2.AWD"
-acveditRDS <- check.acvfilter(sub(".AWD", "", awdfile))
-names(acveditRDS)
-acveditRDS <- acveditRDS$semiper
-names(acveditRDS)
-gdata <- acveditRDS[["per04"]]
-head(gdata)
-
-create.plotActo(gdata)
-
-# View(semiperdf)
-# otable("st.edit", data = semiperdf)
-
-# ----- Trabajar un acvfilter + per --------------------------------
-setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
-awdfile <- "2086-308-045 CHT Visit2.AWD"
-acveditRDS <- check.acvfilter(sub(".AWD", "", awdfile))
-# acveditRDS <- acveditRDS$semiper
-# names(acveditRDS)
-per <- "per00"
-
-stagesTable(acveditRDS, per)
-
-
-
-
 
 

@@ -6,9 +6,8 @@
 #' @export
 #' @examples
 #' # setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
-#' # set <- getset(getwd())
 #' # awdfile <- "2058-001-368 JRG Baseline"
-#' # acvedit <- check.acvfilter(awdfile, set)
+#' # acvedit <- check.acvfilter(awdfile)
 #' # filter <- readRDS(paste0(awdfile, ".edit.RDS"))
 #' @importFrom dplyr rename
 #' @importFrom lubridate hours

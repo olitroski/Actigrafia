@@ -8,11 +8,11 @@
 #' @examples
 #' # setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
 #' # set <- getset(getwd())
-#' # acveditRDS <- check.acvfilter("2058-002-298 MLR Baseline.AWD", set)
+#' # acveditRDS <- check.acvfilter("2058-001-368 JRG Baseline.AWD", set)
 #' # acveditRDS <- acveditRDS$semiper
-#' # filterRDS <- readRDS("2058-002-298 MLR Baseline.edit.RDS")
-#' # gdata <- acveditRDS[["per00"]]
-#' # create.plotActo(gdata, set, filterRDS)
+#' # filterRDS <- readRDS("2058-001-368 JRG Baseline.edit.RDS")
+#' # gdata <- acveditRDS[["per04"]]
+#' # create.plotActo(gdata)
 #' @importFrom graphics mtext
 #' @importFrom graphics box
 #' @importFrom graphics rect
@@ -25,77 +25,26 @@
 ## ----- Plot para cada periodo -------------------------------------------------- #
 ## ------------------------------------------------------------------------------- #
 # Toma un data.frame de la lista "semiper" y con eso hace el grafico para actograma
-create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
-    options(warn = 2)
-    
+create.plotActo_old <- function(gdata, pct.y = 1, set){
     # Nulos de paquete
     hrdec <- ini <- fin <- NULL
-    
-    
-    # ---- Inicio y fin de registro + filtro tipo 4 ------------------------------ #
-    # Lo primero será capturar las fechas del filtro en formato del gráfico
-    iniSubj <- filterRDS$header[4]
-    iniSubj <- str_split(iniSubj, ": ", simplify = TRUE)[2]
-    
-    if (iniSubj == " -No determinado- "){
-        iniSubj <- NA
-    } else {
-        iniSubj <- dmy_hm(iniSubj)
-        if (iniSubj %in% gdata$time){
-            iniSubj <- gdata$xscale[which(gdata$time == iniSubj)]
-        } else {
-            iniSubj <- NA
-        }    
-    }
-    
-    
-    finSubj <- filterRDS$header[5]
-    finSubj <- str_split(finSubj, ": ", simplify = TRUE)[2]
-    
-    if (finSubj == "-No determinado- "){
-        finSubj <- NA
-    } else {
-        finSubj <- dmy_hm(finSubj)
-        if (finSubj %in% gdata$time){
-            finSubj <- gdata$xscale[which(gdata$time == finSubj)]
-        } else {
-            finSubj <- NA
-        }
-    }
-    
-    # También ver si hay un Tipo = 4 en el filtro
-    tipoCuatro <- dplyr::filter(filterRDS$filter, tipo == 4)
-    if (nrow(tipoCuatro) > 0){
-        tipoCuatro <- tipoCuatro[["ini"]]
-        if (sum(tipoCuatro %in% gdata$time) > 0){
-            # si hay y están en el vector de horas, buscarse la hora del grafico
-            tipoCuatro <- gdata$xscale[which(gdata$time == tipoCuatro)]
-        } else {
-            tipoCuatro <- NA
-        }
-    } else {
-        tipoCuatro <- NA
-    }
-    
-    
+
+
     # ---- Data para los ejes ---------------------------------------------------- #
     # Hora decimal continua
-    # lim <- as.numeric(set$ininoc)/3600
-    # gdata <- mutate(gdata, xscale = ifelse(hrdec < lim,  hrdec + 24, hrdec))
+    lim <- as.numeric(set$ininoc)/3600
+    gdata <- mutate(gdata, xscale = ifelse(hrdec < lim,  hrdec + 24, hrdec))
 
-    # X: Escala y Etiquetas
+    # X: Escala y etuquetas
     xscale <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
-    xlabel <- ifelse(xscale >= 48, xscale - 48, ifelse(xscale >= 24, xscale - 24, xscale))
+    xlabel <- ifelse(xscale >= 48, xscale - 48,
+                     ifelse(xscale >= 24, xscale - 24, xscale))
 
-    # X: Lineas al inicio, ini-dia, y fin (solo es necesario el de la mitad)
-    ylinea <- as.numeric(c(set$ininoc, set$inidia + hours(24), set$ininoc + hours(24))) / 3600
-    ylinea[1] <- NA
-    ylinea[3] <- NA
+    # Y: Lineas al inicio, dia, y fin
+    ylinea <- as.numeric(c(set$ininoc, set$inidia + hours(24),
+                           set$ininoc + hours(24)))/3600
 
-    # X: Limites
-    limX <- c(min(xscale), max(xscale))
-    
-    # Y: Limites del eje Y = 1100 porque si no mas
+    # Y: Limites  1100 porque si no mas
     if (max(gdata$act.edit) > 0){
         limY <- c(0, ceiling(max(gdata$act.edit)/10)*10)
         limY[2] <- limY[2] * pct.y
@@ -104,8 +53,11 @@ create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
         limY[2] <- limY[2] * pct.y
     }
 
-    
-    # --- Colorear Sueno y Wake en background (ini|fin xscale) ------------------- #
+    # X: Limites
+    limX <- c(min(xscale), max(xscale))
+
+
+    # --- sueno y wake data para el background (indices) -------------------------- #
     sdata <- find.segment(gdata, "st.edit", "S")
     wdata <- find.segment(gdata, "st.edit", "W")
 
@@ -145,22 +97,22 @@ create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
     wdata <- mutate(wdata, ini = gdata$xscale[ini], fin = gdata$xscale[fin])
 
 
-    # ---- Coloreado de Filtros -------------------------------------------------- #
-    # Filtro automático
+    # ---- Filtros y ediciones ---------------------------------------------------- #
+    # El filtro de inicio
     fdata <- find.segment(gdata, filter, 1)
     if (nrow(fdata) > 0){
         fdata <- mutate(fdata, ini = gdata$xscale[ini],
                         fin = gdata$xscale[fin])
     }
 
-    # Filtro periodos agregados en la app
+    # Filtro para periodos desde la app
     f2sleep <- find.segment(gdata, filter, 2)
     if (nrow(f2sleep) > 0){
         f2sleep <- mutate(f2sleep, ini = gdata$xscale[ini],
                           fin = gdata$xscale[fin])
     }
 
-    # Filtro para sleep to Wake = 3 (cuando se agrega actividad)
+    # Filtro para sleep to wake = 3
     f2wake <- find.segment(gdata, filter, 3)
     if (nrow(f2wake) > 0){
         f2wake <- mutate(f2wake, ini = gdata$xscale[ini],
@@ -171,7 +123,8 @@ create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
     # ----- Grafico ----------------------------------------------------------------
     # Plot en blanco con Margenes nulos
     par(mar=c(0,3,0,2) + 0.5, xaxs = 'i', yaxs = 'i')
-    plot(gdata$xscale, gdata$act.edit, type = 'n', ylab = '', axes = FALSE, xlim = limX, ylim = limY)
+    plot(gdata$xscale, gdata$act.edit, type = 'n', ylab = '',
+         axes = FALSE, xlim = limX, ylim = limY)
 
     # <<SLEEP>>: Los indicadores de sueno  <<col2rgb("skyblue3", alpha = 0.5)/255>>
     for (i in 1:nrow(sdata)){
@@ -185,29 +138,29 @@ create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
              col = rgb(0.9333,0.7882,0.0000,0.5), border = "gold2")
     }
 
-    # FILTRO: indicadores para el filtro = 1 dia o noche completo
+    # FILTRO: indicadores para el filtro de dia o noche completo
     if (nrow(fdata) > 0){
         for (i in 1:nrow(fdata)){
             rect(fdata$ini[i], 0, fdata$fin[i], limY[2],
-                 col = rgb(1, 0, 0, 0.3), border = "red")
+                 col = rgb(1, 0, 0, 0.5), border = "red")
                  # col = "red", border = "red")
         }
     }
 
-    # FILTRO: Agregados en la app
-    if (nrow(f2sleep) > 0){
-        for (i in 1:nrow(f2sleep)){
-            rect(f2sleep$ini[i], 0, f2sleep$fin[i], limY[2],
-                # col = rgb(0.85, 0.44, 0.84, 0.5), border = "orchid")
-                    col = rgb(0, 0.3921, 0, 0.3))
-        }
-    }
-
-    # Modificar Actividad --- Muestra las modifiaciones desde SLEEP -> WAKE
+    # Modificar Actividad --- Muestra las modifiaciones desde sueno a vigilia
     if (nrow(f2wake) > 0){
         for (i in 1:nrow(f2wake)){
             rect(f2wake$ini[i], limY[2] - 30, f2wake$fin[i], limY[2],
                  col = "red", border = "red")
+        }
+    }
+
+    # Modificar periodo --- Muestral los modificaciones desde vigilia a sueno
+    if (nrow(f2sleep) > 0){
+        for (i in 1:nrow(f2sleep)){
+            rect(f2sleep$ini[i], 0, f2sleep$fin[i], limY[2],
+                 col = rgb(0.85, 0.44, 0.84, 0.5), border = "orchid")
+                 # col = "orchid", border = "red")
         }
     }
 
@@ -217,17 +170,10 @@ create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
          col='grey20', ylab='', axes=FALSE, xlim=limX, ylim=limY)
 
     # Linea de incio dia
-    abline(v = ylinea, col = "red", lwd = 2)
-    
-    # Linea de mover noche
-    abline(v = tipoCuatro, col = "green", lwd = 2)
-    
-    # Linea de inicio y fin de período
-    abline(v = iniSubj, col = "magenta", lwd = 2)
-    abline(v = finSubj, col = "magenta", lwd = 2)
+    abline(v = ylinea, col = "red")
 
-    # Fechas en los ylabel
-    yfec <- paste(format(date(gdata$time[1]), "%a"), format(date(gdata$time[1]), "%d-%m"), sep = "\n")
+    yfec <- paste(format(date(gdata$time[1]), "%a"),
+                  format(date(gdata$time[1]), "%d-%m"), sep = "\n")
     mtext(yfec, side = 2, las = 1, line = 0.5, cex = 0.8)
 
     box()
