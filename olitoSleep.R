@@ -1,3 +1,7 @@
+# ----------------------------------------------------------------------------- #
+# ----- Funcion necesaria para cargar desde el formato libreria que sera ------ #
+# ----- el final, hay que revisar los nombres aun ----------------------------- #
+# ----------------------------------------------------------------------------- #
 olitoSleep <- function(){
     # Acá se dirige al path
     appDir <- system.file("acti", package = "olitosleep")

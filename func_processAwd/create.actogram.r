@@ -22,11 +22,9 @@
 ## -------------------------------------------------------------------------------- #
 # La idea es tomar un acv y mostrarlos de 20 a 20 horas asi aseguramos todos los dias
 create.actogram <- function(semiper, set, filterRDS, fy = 1){
-# create.actogram <- function(semiper){
 
     # Valores
     xscale2 <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
-    # xscale2 <- seq(as.numeric(set()$ininoc)/3600, length.out = 25)
     xlabel2 <- ifelse(xscale2 >= 48, xscale2 - 48, ifelse(xscale2 >= 24, xscale2 - 24, xscale2))
     limX2 <- c(min(xscale2), max(xscale2))
 
@@ -42,13 +40,11 @@ create.actogram <- function(semiper, set, filterRDS, fy = 1){
     # Graficos
     for (g in 1:nplot){
         create.plotActo(semiper[[g]], set, filterRDS, pct.y = fy)
-        # create.plotActo(semiper[[g]], set(), filterRDS())
     }
     
     # Marco de abajo
     par(mar=c(0, 3, 2, 2) + 0.5)
     plot(0, type = 'n', ann = FALSE, axes = FALSE, xlim = limX2)
     axis(side = 3, at = xscale2, labels = xlabel2)
-
 }
 

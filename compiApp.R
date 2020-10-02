@@ -1,3 +1,7 @@
+# ----------------------------------------------------------------------------- #
+# ----- Script para actualizar la app, manda todo a la carpeta de la app ------ #
+# ----- hace la actualizacion, creo ------------------------------------------- #
+# ----------------------------------------------------------------------------- #
 # Ejecutar los pasos para actualizar la app
 # Los pasos están documentados en el OneNote.
 # El sha1

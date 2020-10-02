@@ -1,4 +1,9 @@
+# ----------------------------------------------------------------------------- #
+# ----- Script para cargar todo lo necesario para ejecutar la Aplicación ------ #
+# ----- para el entorno de pruebas porque en Pakcage way no es necesario ------ #
+# ----------------------------------------------------------------------------- #
 # Cargador de todas las cosas
+
 # | -- Library Loader ---------------------------------------------------------
 # Listar lo instalado
 packlist <- c("utf8", "sourcetools","tidyselect","fastmap","xtable", "httpuv","zip","backports","assertthat", "tibble", "pkgconfig", 
@@ -6,7 +11,7 @@ packlist <- c("utf8", "sourcetools","tidyselect","fastmap","xtable", "httpuv","z
               "rmarkdown","haven", "stringr", "purrr", "lubridate", "dplyr")
 new.packages <- packlist[!(packlist %in% installed.packages()[,"Package"])]
 
-# Instalar
+# Instalar si no estan
 if (length(new.packages) > 0) {
     install.packages(new.packages) 
 }
@@ -23,7 +28,7 @@ library("dplyr")
 rm(packlist, new.packages, lib)
 
 
-# | -- Functions --------------------------------------------------------------
+# | -- Cargar funciones al Gloval Env -----------------------------------------
 func.folders <- dir()[dir.exists(dir())]
 func.folders <- func.folders[grep("func_", func.folders)]
 
@@ -42,9 +47,4 @@ rm(f, fun, func.folders, funciones)
 
 # | -- Cargar algunas cosas ---------------------------------------------------
 setwd(mainfolder)
-# print("<<< Cargando los settings >>>")
-# set <- getset()
-
-
-
 

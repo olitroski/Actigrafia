@@ -27,13 +27,10 @@
 # Toma un data.frame de la lista "semiper" y con eso hace el grafico para actograma
 create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
     options(warn = 2)
-    
-    # Nulos de paquete
     hrdec <- ini <- fin <- NULL
     
-    
     # ---- Inicio y fin de registro + filtro tipo 4 ------------------------------ #
-    # Lo primero será capturar las fechas del filtro en formato del gráfico
+    # Inicio del registro
     iniSubj <- filterRDS$header[4]
     iniSubj <- str_split(iniSubj, ": ", simplify = TRUE)[2]
     
@@ -48,7 +45,7 @@ create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
         }    
     }
     
-    
+    # Fin registro
     finSubj <- filterRDS$header[5]
     finSubj <- str_split(finSubj, ": ", simplify = TRUE)[2]
     
@@ -63,16 +60,12 @@ create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
         }
     }
     
-    # También ver si hay un Tipo = 4 en el filtro
+    # También ver si hay un Tipo = 4 en el filtro 
     tipoCuatro <- dplyr::filter(filterRDS$filter, tipo == 4)
     if (nrow(tipoCuatro) > 0){
         tipoCuatro <- tipoCuatro[["ini"]]
-        if (sum(tipoCuatro %in% gdata$time) > 0){
-            # si hay y están en el vector de horas, buscarse la hora del grafico
-            tipoCuatro <- gdata$xscale[which(gdata$time == tipoCuatro)]
-        } else {
-            tipoCuatro <- NA
-        }
+        tipoCuatro <- tipoCuatro[tipoCuatro %in% gdata$time]
+        tipoCuatro <- gdata$xscale[tipoCuatro == gdata$time]
     } else {
         tipoCuatro <- NA
     }
@@ -185,33 +178,28 @@ create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
              col = rgb(0.9333,0.7882,0.0000,0.5), border = "gold2")
     }
 
-    # FILTRO: indicadores para el filtro = 1 dia o noche completo
+    # FILTRO 1: indicadores para el filtro = 1 dia o noche completo
     if (nrow(fdata) > 0){
         for (i in 1:nrow(fdata)){
-            rect(fdata$ini[i], 0, fdata$fin[i], limY[2],
-                 col = rgb(1, 0, 0, 0.3), border = "red")
-                 # col = "red", border = "red")
+            rect(fdata$ini[i], 0, fdata$fin[i], limY[2], col = rgb(1, 0, 0, 0.3), border = "red")
         }
     }
 
-    # FILTRO: Agregados en la app
+    # FILTRO 2: Agregados en la app
     if (nrow(f2sleep) > 0){
         for (i in 1:nrow(f2sleep)){
-            rect(f2sleep$ini[i], 0, f2sleep$fin[i], limY[2],
-                # col = rgb(0.85, 0.44, 0.84, 0.5), border = "orchid")
-                    col = rgb(0, 0.3921, 0, 0.3))
+            rect(f2sleep$ini[i], 0, f2sleep$fin[i], limY[2], col = rgb(0, 0.3921, 0, 0.3))
         }
     }
 
-    # Modificar Actividad --- Muestra las modifiaciones desde SLEEP -> WAKE
+    # FILTRO 3: Modificar Actividad --- Muestra las modifiaciones desde SLEEP -> WAKE
     if (nrow(f2wake) > 0){
         for (i in 1:nrow(f2wake)){
-            rect(f2wake$ini[i], limY[2] - 30, f2wake$fin[i], limY[2],
-                 col = "red", border = "red")
+            rect(f2wake$ini[i], limY[2] - 30, f2wake$fin[i], limY[2], col = "red", border = "red")
         }
     }
 
-    # add nuevo grafico encima: Los datos de actividad
+    # GRAFICO ACTIVIDAD: add nuevo grafico encima
     par(new=TRUE)
     plot(gdata$xscale, gdata$act.edit, type='h',
          col='grey20', ylab='', axes=FALSE, xlim=limX, ylim=limY)
@@ -219,7 +207,7 @@ create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
     # Linea de incio dia
     abline(v = ylinea, col = "red", lwd = 2)
     
-    # Linea de mover noche
+    # FILTRO 4: Linea de mover noche
     abline(v = tipoCuatro, col = "green", lwd = 2)
     
     # Linea de inicio y fin de período

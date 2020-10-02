@@ -181,6 +181,7 @@ server <- function(input, output, session){
     output$subjInput <- renderUI({
         lechoices <- filter(subjectDF(), Status == "En edicion")
         lechoices <- as.character(lechoices$Sujeto)
+        
         # Por si queda en cero
         if (length(lechoices) == 0){
             radioButtons(inputId = "awd_select", label = NULL, choices = c("No hay sujetos"))
@@ -189,26 +190,13 @@ server <- function(input, output, session){
         }
     })
 
-    # Valor reactivo para que cambie dentro de los botones
-    # showActogram <- reactiveValues()
-    # showActogram$val <- "sin seleccion"
-
     # | Boton Editar ----------------------------------------------------------
     # Apretar y nos vamos a pestaña siguiente
     observeEvent(input$edEdit.btn, {
-        # Debiera hacer el actograma e irse a la siguiente pestaña
         showNotification("Procesando...", closeButton = FALSE, type = "message")
-        # showActogram$val <- awdfile()
         updateNavbarPage(session, inputId = "TablasApp", selected = "Edición")
     })
-    
-    # | Boton Actograma ------------------------------------------------------- #
-    # Solo muestra el acto
-    # observeEvent(input$edActo.btn, {
-    #     showNotification("Graficando...", closeButton = FALSE, type = "message", duration = 2)
-    #     showActogram$val <- awdfile()
-    # })
-    
+
     # | Boton Finalizar -------------------------------------------------------
     # Modal
     edFin.modal <- function(){
@@ -265,24 +253,6 @@ server <- function(input, output, session){
     
 
     # | Actograma -------------------------------------------------------------
-    # La lógica depende del botón de accion, cuando se aprieta, el output es awdfile()
-    # eso activa el proceso.
-
-    # Dibuja el actograma a partir del awdfile() y el acvditRDS() y lo pasa al renderUI de abajo
-    output$actograma <- renderPlot({
-        validate(need(acveditRDS(), "Esperando datos!"))
-        validate(need(awdfile(), "Esperando datos!"))
-        
-        # Verifica que haya algo para graficar
-        if (length(acveditRDS()[["semiper"]]) > 0){
-            create.actogram(acveditRDS()[["semiper"]], set = set(), filterRDS = filterRDS())
-            # create.actogram(acveditRDS()[["semiper"]])
-        } else {
-            plot(0, type='n', axes=FALSE, ann=FALSE)
-        } 
-        
-    })
-
     # El ui render, el height se setea grande para que no de error de margins
     output$actoUI <- renderUI({
         # validate(need(showActogram$val, "Esperando datos!"))
@@ -315,6 +285,20 @@ server <- function(input, output, session){
         
     })
     
+    # Dibuja el actograma a partir del awdfile() y el acvditRDS() y lo pasa al renderUI de abajo
+    output$actograma <- renderPlot({
+        validate(need(acveditRDS(), "Esperando datos!"))
+        validate(need(awdfile(), "Esperando datos!"))
+        
+        # Verifica que haya algo para graficar
+        if (length(acveditRDS()[["semiper"]]) > 0){
+            create.actogram(acveditRDS()[["semiper"]], set = set(), filterRDS = filterRDS())
+            # create.actogram(acveditRDS()[["semiper"]])
+        } else {
+            plot(0, type='n', axes=FALSE, ann=FALSE)
+        } 
+        
+    })
     
     
     # _________________________________________ -------------------------------
@@ -379,8 +363,7 @@ server <- function(input, output, session){
     # EDICION -----------------------------------------------------------------
 
     # | -- Sujeto en edición --------------------------------------------------
-    # Dijimos que cada vez se carga el awdfile, asi que primero checar si quedó 
-    # seleccionado
+    # Cada vez se carga el awdfile(), lo primero es mostrarlo
     output$SubjEdicion <- renderPrint({
         cat(awdfile())
     })

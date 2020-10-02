@@ -61,16 +61,12 @@ create.plotSimple <- function(gdata, set, filterRDS, pct.y = 1, limites = NULL, 
         }
     }
 
-    # También ver si hay un Tipo = 4 en el filtro
+    # También ver si hay un Tipo = 4 en el filtro 
     tipoCuatro <- dplyr::filter(filterRDS$filter, tipo == 4)
     if (nrow(tipoCuatro) > 0){
         tipoCuatro <- tipoCuatro[["ini"]]
-        if (sum(tipoCuatro %in% gdata$time) > 0){
-            # si hay y están en el vector de horas, buscarse la hora del grafico
-            tipoCuatro <- gdata$xscale[which(gdata$time == tipoCuatro)]
-        } else {
-            tipoCuatro <- NA
-        }
+        tipoCuatro <- tipoCuatro[tipoCuatro %in% gdata$time]
+        tipoCuatro <- gdata$xscale[tipoCuatro == gdata$time]
     } else {
         tipoCuatro <- NA
     }
