@@ -81,3 +81,32 @@ create.actogram(acveditRDS$semiper)
 View(acv$filter == acvedit$filter)
 
 
+# --- Construcción del EPI ----------------------------------------------------
+setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
+set <- getset(getwd())
+
+# acv
+acvedit <- check.acvfilter("2058-001-368 JRG Baseline.AWD", set)
+# filtro
+filter <- readRDS("2058-001-368 JRG Baseline.edit.RDS")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

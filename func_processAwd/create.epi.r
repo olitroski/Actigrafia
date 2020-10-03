@@ -32,21 +32,21 @@
 # acveditRDS se carga desde <<return(check.acvfilter(awdfile()))>>
 # y el filtro se carga directo con <<return(readRDS(fichero))>>
 
-create.epi <- function(acvedit = NULL, filter = NULL){
+create.epi <- function(acvedit = NULL, filter = NULL, set = NULL){
     # Nulos de paquete
-    data <- dinofinal <- indx <- name <- estado <- periodo <- set <- hrdec <- nper <- NULL
+    data <- dinofinal <- indx <- name <- estado <- periodo <- hrdec <- nper <- NULL
     nseq <- duracion <- dianoc <- NULL
-
 
     # Vectorizacion de secuencia
     vectSeq <- Vectorize(seq.default, vectorize.args = c("from", "to"))
 
-    # Separar los datos de filtro
+    # Separar los datos de filtro inicio y fin
     rango <- filter$header[4:5]
     rango <- str_split(rango, "a:", simplify = TRUE)[, 2]
     rango <- dmy_hm(rango)
-    filtro <- filter$filter   # filtro <- filtro[-12,]
+    filtro <- filter$filter   
 
+    
     # | - 1. dianoc previo ----
     # Crear el tag Dia|Noche en los semiperiodos, para asegurar que existan y
     # no secundarios al estado de sueno como en actividorm
@@ -63,6 +63,7 @@ create.epi <- function(acvedit = NULL, filter = NULL){
     acvdata <- bind_rows(acvdata, .id = "nper")
     acvdata <- mutate(acvdata, nper = str_replace(nper, "per", ""))
 
+    
 
     # --------------------------------------------------------------------------------- #
     # --- 3. Determinar dia y noche ---------------------------------------------------
@@ -103,22 +104,86 @@ create.epi <- function(acvedit = NULL, filter = NULL){
 
 
 
-    # Determinar el 1er episodio de mas de x minutos
-    acvdata <- mutate(acvdata, )
+    # Hacer una tabla de episodios para hacer las determinaciones, luego con el index
+    # lo pasamos a la base completa
+    acvdata <- mutate(acvdata, periodo = paste(dianoc, nper), indx = indx - 1)
 
+    # Tabla de episodios
+    tabepi <- group_by(acvdata, seqStage)
+    tabepi <- summarize(tabepi, 
+                      min.index = min(indx), max.index = max(indx),
+                      ini = min(time), fin = max(time), dur = mean(duracion)+1)
+    tabepi <- arrange(tabepi, ini)
 
+    # Distribucion dia noche de los stages
+    freqDN <- otable("seqStage", "dianoc", data = acvdata, clip = 1)
+    freqDN <- filter(freqDN, seqStage != "total")
+    freqDN <- select(freqDN, -total)
+    names(freqDN) <- c("seqStage", "dia", "noche")
+    
+    # Pegar a la tabla
+    temp <- omerge(tabepi, freqDN, byvar = "seqStage", keep = TRUE)
+    temp <- temp$match
+    temp <- select(temp, -merge)
+    
+    # limpiar
+    tabepi <- temp
+    rm(temp, freqDN)
+    tabepi <- arrange(tabepi, ini)
+    
+    # Mas variables
+    tabepi <- mutate(tabepi, dianoc = ifelse(dia > 0, "Dia", "Noche"))
+    tabepi <- mutate(tabepi, estado = str_sub(seqStage, 1, 1))
 
+    # loopear cada linea para decidir noche o dia
+    tabepi$dianoc2 <- NA
+    stage.i <- tabepi$dianoc[1]
+    ininoc <- hour(set$ininoc) + minute(set$ininoc)/60
+    inidia <- hour(set$inidia) + minute(set$inidia)/60
+    
+    for (i in 1:nrow(tabepi)){
+        # Comenzamos con dia
+        if (stage.i == "Dia"){
+            # cumplir con la hora del inicio
+            hora <- tabepi$ini[i]
+            hora <- period(hour(hora), units = "hours") + period(minute(hora), units = "minute")
+            
+            # buscamos sueño hasta que cambie
+            if (tabepi$dur[i] >= set$dursleep & hora >= set$ininoc & tabepi$estado[i] == "S"){
+                tabepi$dianoc2[i] <- "Noche"
+                stage.i <- "Noche"
+            } else {
+                tabepi$dianoc2[i] <- "Dia"
+            }
+        
+        # si es noche    
+        } else if (stage.i == "Noche"){
+            hora <- tabepi$ini[i]
+            hora <- hour(hora) + minute(hora)/60
+            
+            # Que la hora cumpla con ser menor de las 6 de la mañana
+            if (hora < ininoc & hora >= inidia){
+                hora <- TRUE
+            } else {
+                hora <- FALSE
+            }
+            
+            # buscamos sueño hasta que cambie
+            if (tabepi$dur[i] >= set$durawake & hora == TRUE & tabepi$estado[i] == "W"){
+                tabepi$dianoc2[i] <- "Dia"
+                stage.i <- "Dia"
+            } else {
+                tabepi$dianoc2[i] <- "Noche"
+            }
+            
+        # ALgun error
+        } else {
+            stop("algo paso")
+        }
+    }
 
-
-
-
-
-
-
-
-
-
-
+    
+    i <- 18
 
 
 
