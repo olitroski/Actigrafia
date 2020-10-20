@@ -36,7 +36,7 @@ check.acvfilter <- function(awdfile, set){
     awdfile <- sub(".AWD", "", awdfile)
 
     # Cargar acv y filter ----------------------------------------------------------
-    acvfile <- paste(awdfile, ".acv.edit.RDS", sep = "")
+    acvfile <- paste(awdfile, ".acvedit.RDS", sep = "")
     acvfile <- readRDS(acvfile)
 
     filterfile <- paste(awdfile, ".edit.RDS", sep = "")

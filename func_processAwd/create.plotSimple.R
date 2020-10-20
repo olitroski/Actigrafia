@@ -46,14 +46,14 @@ create.plotSimple <- function(gdata, set, filterRDS, pct.y = 1, limites = NULL, 
         }    
     }
     
-    
+    # Fin registro
     finSubj <- filterRDS$header[5]
     finSubj <- str_split(finSubj, ": ", simplify = TRUE)[2]
     
     if (finSubj == "-No determinado- "){
         finSubj <- NA
     } else {
-        finSubj <- dmy_hm(finSubj)
+        finSubj <- dmy_hm(finSubj) + minutes(1)
         if (finSubj %in% gdata$time){
             finSubj <- gdata$xscale[which(gdata$time == finSubj)]
         } else {
@@ -61,14 +61,15 @@ create.plotSimple <- function(gdata, set, filterRDS, pct.y = 1, limites = NULL, 
         }
     }
 
-    # También ver si hay un Tipo = 4 en el filtro 
-    tipoCuatro <- dplyr::filter(filterRDS$filter, tipo == 4)
-    if (nrow(tipoCuatro) > 0){
-        tipoCuatro <- tipoCuatro[["ini"]]
-        tipoCuatro <- tipoCuatro[tipoCuatro %in% gdata$time]
-        tipoCuatro <- gdata$xscale[tipoCuatro == gdata$time]
+    # Filtro: Linea mover noche
+    moverND <- dplyr::filter(filterRDS$filter, tipo == "Mover")
+    if (nrow(moverND) > 0){
+        moverND <- moverND[["ini"]]
+        moverND <- dmy_hm(moverND)
+        moverND <- moverND[moverND %in% gdata$time]
+        moverND <- gdata$xscale[moverND == gdata$time]
     } else {
-        tipoCuatro <- NA
+        moverND <- NA
     }
     
     
@@ -139,20 +140,21 @@ create.plotSimple <- function(gdata, set, filterRDS, pct.y = 1, limites = NULL, 
 
 
     # ---- Coloreado de filtros -----------------------------------------------------
-    # Filtro automático
-    fdata <- find.segment(gdata, filter, 1)
+    # Filtro de tipo "Excluir"
+    fdata <- find.segment(gdata, filter, "Excluir")
     if (nrow(fdata) > 0){
         fdata <- mutate(fdata, ini = gdata$xscale[ini], fin = gdata$xscale[fin])
     }
 
-    # Filtro periodos agregados en la app
-    f2sleep <- find.segment(gdata, filter, 2)
+    # Filtro Inicio y termino del registro
+    f2sleep <- rbind(find.segment(gdata, filter, "Ini"),
+                     find.segment(gdata, filter, "Fin"))
     if (nrow(f2sleep) > 0){
         f2sleep <- mutate(f2sleep, ini = gdata$xscale[ini], fin = gdata$xscale[fin])
     }
 
-    # Filtro para sleep to Wake = 3 (cuando se agrega actividad)
-    f2wake <- find.segment(gdata, filter, 3)
+    # Filtro agregar actividad
+    f2wake <- find.segment(gdata, filter, "Actividad")
     if (nrow(f2wake) > 0){
         f2wake <- mutate(f2wake, ini = gdata$xscale[ini], fin = gdata$xscale[fin])
     }
@@ -183,16 +185,15 @@ create.plotSimple <- function(gdata, set, filterRDS, pct.y = 1, limites = NULL, 
     if (nrow(fdata) > 0){
         for (i in 1:nrow(fdata)){
             rect(fdata$ini[i], 0, fdata$fin[i], limY[2],
-                 col = rgb(1, 0, 0, 0.3), border = "red")
+                 col = rgb(1, 0, 0, 0.3), border = rgb(1, 0, 0, 0.3))
         }
     }
 
     # FILTRO 2: Agregados en la app
     if (nrow(f2sleep) > 0){
         for (i in 1:nrow(f2sleep)){
-            rect(f2sleep$ini[i], 0, f2sleep$fin[i], limY[2],
-                # col = rgb(0.85, 0.44, 0.84, 0.5), border = "orchid")  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                col = rgb(0, 0.3921, 0, 0.3))
+            rect(f2sleep$ini[i], 0, f2sleep$fin[i], limY[2], col = rgb(0, 1, 0, 0.4), border = rgb(0, 1, 0, 0.3))
+            # rect(f2sleep$ini[i], 0, f2sleep$fin[i], limY[2], col = rgb(0, 0.3921, 0, 0.3))
         }
     }
     
@@ -214,11 +215,11 @@ create.plotSimple <- function(gdata, set, filterRDS, pct.y = 1, limites = NULL, 
     abline(v = ylinea, col = "red", lwd = 1)
     
     # Linea de mover noche
-    abline(v = tipoCuatro, col = "green", lwd = 2)
+    abline(v = moverND, col = "magenta", lwd = 2)
     
     # Linea de inicio y fin de período
-    abline(v = iniSubj, col = "magenta", lwd = 2)
-    abline(v = finSubj, col = "magenta", lwd = 2)
+    abline(v = iniSubj, col = "green4", lwd = 2)
+    abline(v = finSubj, col = "green4", lwd = 2)
 
     # Agrega mas detalles
     title(ylab = (format(date(gdata$time[1]), "%A %d, %m--%Y")), line = 0.5)

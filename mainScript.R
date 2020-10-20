@@ -17,8 +17,7 @@ setwd(mainfolder)
 source("appLoader.R")
 
 # Cargar App
-# runApp(launch.browser = FALSE)
-runApp(display.mode = "normal")
+# runApp(display.mode = "normal")
 stop()
 
 
@@ -59,54 +58,108 @@ stop()
 # --- Revisar create.plotActo -------------------------------------------------
 setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
 set <- getset(getwd())
-
-# Cargar datos
 acveditRDS <- check.acvfilter("2058-001-368 JRG Baseline.AWD", set)
+filterRDS <- readRDS("2058-001-368 JRG Baseline.edit.RDS")
+
+# Revisar acvedit
 names(acveditRDS)
 acveditRDS$timelist
 acveditRDS <- acveditRDS$semiper
-gdata <- acveditRDS[["per07"]]
 
-# Cargar filtros
-filterRDS <- readRDS("2058-001-368 JRG Baseline.edit.RDS")
+# Revisar filtros
 filterRDS$filter
+
+# Crear un plot simple para actograma
+gdata <- acveditRDS[["per00"]]
 create.plotActo(gdata, set, filterRDS)
 
 
 
 
-# Actograma
-windows()
-create.actogram(acveditRDS$semiper)
-View(acv$filter == acvedit$filter)
+# Crear un plot simple para edicion
+
+
+
+
 
 
 # --- Construcción del EPI ----------------------------------------------------
 setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
+awd <- c("2058-001-368 JRG Baseline", "2058-002-298 MLR Baseline", "2058-004-433 AJM Baseline",
+         "2058-007-464 JMH Baseline", "2058-009-577 KNC Baseline", "2058-012-833 DFW Visit3")
+
+
+# Probar
 set <- getset(getwd())
+acvedit <- check.acvfilter(paste0(awd[1], ".AWD"), set)
+filter <-  readRDS(paste0(awd[1], ".edit.RDS"))
+epi <- create.epi(acvedit, filter, set)
 
-# acv
-acvedit <- check.acvfilter("2058-001-368 JRG Baseline.AWD", set)
-# filtro
+library(microbenchmark)
+microbenchmark(create.epi(acvedit, filter, set), times = 50)
+
+# Probar en loop
+for (i in 1:length(awd)){
+    # Datos necesarios
+    # i <- 1
+    print(i)
+    set <- getset(getwd())
+    acvedit <- check.acvfilter(paste0(awd[i], ".AWD"), set)
+    filter <-  readRDS(paste0(awd[i], ".edit.RDS"))
+
+    # Lista la funcion
+    epi <- create.epi(acvedit, filter, set)
+}
+
+
+
+
+
+
+# --- Revisar la secuencia de detección ---------------------------------------
+setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
+awdfile <- "2058-001-368 JRG Baseline.AWD"
+dir()
+set <- getset(getwd())
+acv <- create.acv(awdfile, set)
+head(acv)
+
+semiper <- create.semiper(acv, set)
+names(semiper)
+head(semiper$d0)
+
+filter.stats <- create.firstfilter(awdfile, semiper)
+readRDS("2058-001-368 JRG Baseline.edit.RDS")
+
+acv.edit <- create.acvedit(awdfile, acv, filter.stats)
+
+
+
+
+# --- Tabla de estados ---------------------------------------------------------
+setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
+set <- set <- getset(getwd())
+acvedit <- check.acvfilter("2058-001-368 JRG Baseline", set)
+names(acvedit$semiper)
 filter <- readRDS("2058-001-368 JRG Baseline.edit.RDS")
+str(filter)
+
+# input$perChoose
+periodos <- acvedit$timelist
+periodos <- paste(periodos$period, "-", periodos$tlist)
+
+# tabla
+tablaEstados <- stagesTable(acvedit, "per00")
+
+# Lo que se muestra
+data <- filter(tablaEstados, estado == "S")
+data <- c(paste(data$inicio, "-", data$termino))
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# Mostrar la duracion
+input <- data[4] # Elije el 4
+data <- str_split(input, "-", simplify = TRUE)
+data <- dmy_hm(data[1])
+data <- format(data,  format = "%d-%m-%Y %H:%M")
+data <- filter(tablaEstados(), inicio == data)
+cat(data$duracion)

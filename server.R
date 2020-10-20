@@ -67,23 +67,12 @@ server <- function(input, output, session){
         if (input$filterDir != "Todos"){
             filter(subjectDF(), Status == input$filterDir)            
         } else {
-            subjectDF()
+            tabladir <- subjectDF()
+            names(tabladir) <- c("Id Sujeto", "Archivos", "Terminado", "Status")
+            tabladir
         }
-    })
+    }, digits = 0, align = "c", striped = TRUE, hover = TRUE, width = "100%", spacing = "s")
 
-    
-    # | -- -- Settings --------------------------------------------------------
-    set <- reactive({ 
-        if (subjectDF()[1,1] != "Directorio sin archivos AWD"){
-            # Ver si pasa el settings
-            getset(awdfolder())
-        } else {
-            list(ininoc=NA, inidia=NA, dursleep=NA,
-                        durawake=NA, statedur = NA, sensivar=NA)
-        }
-
-    }) 
-    
     
     # | -- -- Tabla recuentos -------------------------------------------------
     # Aca voy a insertar el procesado del archivo de settings.  <<SETTINGS>>
@@ -91,8 +80,8 @@ server <- function(input, output, session){
         if (subjectDF()[1,1] != "Directorio sin archivos AWD"){
             # Crear la tabla de recuentos
             summDF <- otable(rvar = "Status", data = subjectDF())
-            summDF <- summDF %>% mutate(pct = pct*100, pct = paste(pct, "%", sep="")) %>%
-                rename(N = freq, Porcentaje = pct)
+            summDF <- mutate(summDF, pct = pct*100, pct = paste(pct, "%", sep=""))
+            summDF <- rename(summDF, N = freq, Porcentaje = pct)
             levels(summDF$Status)[length(levels(summDF$Status))] <- "Total"
             summDF
             
@@ -100,27 +89,37 @@ server <- function(input, output, session){
             data.frame(Status = "Directorio sin archivos AWD")
         }
     })
+
+        
+    
     
 
     # | -- Parametros detección -----------------------------------------------
+    # | -- -- Settings ----
+    set <- reactive({ 
+        if (subjectDF()[1,1] != "Directorio sin archivos AWD"){
+            # Ver si pasa el settings
+            getset(awdfolder())
+        } else {
+            list(ininoc=NA, inidia=NA, dursleep=NA, durawake=NA, statedur = NA, sensivar=NA)
+        }
+    }) 
+    
     # Los parametros se leen de la lista de settings.
     output$showSet <- renderUI({
         HTML(
-            paste("<strong>Hora inicio noche:</strong><br>", set()$ininoc, "<br>",
-                  "<strong>Duración primer sueño:</strong><br>", set()$dursleep, " mins<br><br>",
-                  "<strong>Hora inicio día:</strong><br>", set()$inidia, "<br>",
-                  "<strong>Duración primera vigilia:</strong><br>", set()$durawake, " mins<br><br>",
-                  "<strong>Consolidación de estado</strong><br>", set()$statedur/60, " mins<br><br>",
-                  "<strong>Sensibilidad deteción</strong><br>", set()$sensivar, "<br><br>",
-                  "Para cambiar parámetros modificar archivo <strong>settings.sleep</strong> que se creó en el directorio de los archivos AWD. ",
-                  "<br><strong>Si no se reflejan los cambios recargar la app.</strong>",
-                  "<br><br>", sep = "")
+            paste("<strong>Hora inicio período nocturno:</strong><br>",       set()$ininoc, "<br><br>",
+                  "<strong>Duración mínima primer sueño:</strong><br>",       set()$dursleep, " mins<br><br>",
+                  "<strong>Hora inicio período diurno:</strong><br>",         set()$inidia, "<br><br>",
+                  "<strong>Duración mínima primera vigilia:</strong><br>",    set()$durawake, " mins<br><br>",
+                  "<strong>Tiempo para consolidación de estado</strong><br>", set()$statedur/60, " mins<br><br>",
+                  "<strong>Sensibilidad de la deteción</strong><br>",         set()$sensivar, sep = "")
         )
     })
     
     
     # | -- -- Botón procesar en masa "massProc" -------------------------------
-    # Modal de confirmación 
+    # massProc: Modal de confirmación
     warnModal.mass <- function(){
         modalDialog(
             title = "Confirmar procesado en masa",
@@ -138,8 +137,8 @@ server <- function(input, output, session){
         )
     }
 
-    # Mostrar modal al apretar boton y error si no hay pa procesar
-    observeEvent(input$massProc,{
+    # massProc: Evento boton y error si no hay para procesar
+    observeEvent(input$massProc, {
         nopro <- filter(subjectDF(), Status == "No procesado") %>% select(Sujeto)
         
         if (nrow(nopro) == 0){
@@ -149,19 +148,23 @@ server <- function(input, output, session){
         }
     })    
 
-    # Si se acepta el mass proc, proceder
+    # massProc: Si se acepta el modal
     observeEvent(input$mass, {
         # Listado de sujetos
-        procAwd <- filter(subjectDF(), Status == "No procesado") %>% select(Sujeto)
+        procAwd <- filter(subjectDF(), Status == "No procesado")
+        procAwd <- select(procAwd, Sujeto)
         procAwd <- paste0(procAwd$Sujeto, ".AWD")
-        # Procesar
+        
+        # <<<<< Secuencia de procesado >>>>>>
         for (sujeto in procAwd){
-            showNotification(paste("Cargando", sujeto))
+            showNotification(paste("Cargando", sujeto), closeButton = FALSE, duration = 1)
+            
             acv <- create.acv(sujeto, set())
             semiper <- create.semiper(acv, set())
             filter.stats <- create.firstfilter(sujeto, semiper)
             acv.edit <- create.acvedit(sujeto, acv, filter.stats)
-            showNotification("Sujeto procesado", type = "message")
+            
+            showNotification("Sujeto procesado", type = "message", closeButton = FALSE, duration = 1)
         }
         removeModal()
     })
@@ -193,12 +196,12 @@ server <- function(input, output, session){
     # | Boton Editar ----------------------------------------------------------
     # Apretar y nos vamos a pestaña siguiente
     observeEvent(input$edEdit.btn, {
-        showNotification("Procesando...", closeButton = FALSE, type = "message")
+        showNotification("Procesando...", closeButton = FALSE, type = "message", duration = 1)
         updateNavbarPage(session, inputId = "TablasApp", selected = "Edición")
     })
 
     # | Boton Finalizar -------------------------------------------------------
-    # Modal
+    # edFin.btn: Modal cuando hay inicio y fin
     edFin.modal <- function(){
         modalDialog(
             title = "Finalizar edición",
@@ -216,7 +219,7 @@ server <- function(input, output, session){
         )
     }
     
-    # Modal de no rango
+    # edFin.btn: Modal de cuando no hay inicio y fin
     edFin.modalNO <- function(){
         modalDialog(
             title = "Falta acción",
@@ -230,7 +233,7 @@ server <- function(input, output, session){
         )
     }
     
-    # Botón a mostrar
+    # edFin.btn: Botón para mostrar el modal
     observeEvent(input$edFin.btn, {
         # Asegurar que esté el inicio y fin
         rango <- filterRDS()$header
@@ -242,7 +245,7 @@ server <- function(input, output, session){
         }
     })
 
-    # Mostrar el modal y ejecutar acciones
+    # edFin.btn: Mostrar el modal y ejecutar acciones
     observeEvent(input$finalOK,{
         filename <- paste0(awdfile(), ".finish.RDS")
         txt <- c("Sujeto terminado", awdfile(), "Fecha", now())
@@ -259,33 +262,14 @@ server <- function(input, output, session){
         validate(need(awdfile(), "Esperando datos!"))
         validate(need(acveditRDS(), "Esperado datos!"))
         
-        # # Si sujeto no es correcto dibuja en blanco
-        # if (showActogram$val != awdfile()){
-        #     plotOutput("actograma", width = "100%", height = 1800)
-        #     
-        # # Cambiarlo si es que hay datos cargados
-        # # } else if (actSelection() == awdfile()){
-        # } else if (showActogram$val == awdfile()){
-        #     h <- length(acveditRDS()[["semiper"]]) * 120
-        #     plotOutput("actograma", width = "100%", height = h)
-        #     
-        #     # algo raro paso
-        # } else {
-        #     stop("Algo paso con el render ui del plot")
-        # }
-        
-        
         # Carga al tiro
         if (awdfile() != "No hay sujetos"){
-            h <- length(acveditRDS()[["semiper"]]) * 120
+            h <- length(acveditRDS()[["semiper"]]) * 110 + 220
             plotOutput("actograma", width = "100%", height = h)
         }
-        
-        
-        
     })
     
-    # Dibuja el actograma a partir del awdfile() y el acvditRDS() y lo pasa al renderUI de abajo
+    # Dibuja el actograma a partir del awdfile() y el acvditRDS() 
     output$actograma <- renderPlot({
         validate(need(acveditRDS(), "Esperando datos!"))
         validate(need(awdfile(), "Esperando datos!"))
@@ -293,11 +277,9 @@ server <- function(input, output, session){
         # Verifica que haya algo para graficar
         if (length(acveditRDS()[["semiper"]]) > 0){
             create.actogram(acveditRDS()[["semiper"]], set = set(), filterRDS = filterRDS())
-            # create.actogram(acveditRDS()[["semiper"]])
         } else {
             plot(0, type='n', axes=FALSE, ann=FALSE)
         } 
-        
     })
     
     
@@ -333,7 +315,7 @@ server <- function(input, output, session){
     # | -- POLL: AcvEdit RDS --------------------------------------------------
     # Función leer el mtime del acvedit
     acvedit.check <- function(){
-        fichero <- str_c(awdfile(), ".acv.edit.RDS")
+        fichero <- str_c(awdfile(), ".acvedit.RDS")
         if (file.exists(fichero)){
             info <- base::file.info(fichero)
             info <- info$mtime
@@ -346,7 +328,7 @@ server <- function(input, output, session){
     # Si cambia cargar el acv.edit
     acvedit.get <- function(){
         validate(need(awdfile(), "Esperando awdfile!"))
-        fichero <- str_c(awdfile(), ".acv.edit.RDS")
+        fichero <- str_c(awdfile(), ".acvedit.RDS")
         if (file.exists(fichero)){
             return(check.acvfilter(awdfile(), set()))
         } else {
@@ -431,15 +413,7 @@ server <- function(input, output, session){
     
     
 
-    # | -- Header Filtro ----
-    output$filtroH <- renderPrint({
-        # Si el filtroFinal no tiene length=2 es que no existe y carga el inicial
-        if (length(filterRDS()) != 2){
-            cat("No se ha seleccionado un sujeto")
-        } else {
-            cat(paste(filterRDS()$header[2:3], collapse = "\n"))
-        }
-    })
+
     
     
     # | -- Inicio Fin filtro ----
@@ -452,16 +426,17 @@ server <- function(input, output, session){
     })
     
     
-    # | -- Tabla Filtro  ----
+    # | -- Tabla de Filtros  ----
     output$filtroDF <- renderTable({
         # Si el filtroFinal no tiene length=2 es que no existe y carga el inicial
         if (length(filterRDS()) == 2){
             df <- filterRDS()$filter
             df$ini <- format(df$ini, format = "%d-%m-%Y  %H:%M")
             df$fin <- format(df$fin, format = "%d-%m-%Y  %H:%M")
+            names(df) <- c("Id", "Inicio", "Final ", "Tipo")
             df
         }
-    }, digits = 0, align = "c")
+    }, digits = 0, align = "c", striped = TRUE, hover = TRUE, width = "100%")
 
     
     
@@ -476,19 +451,18 @@ server <- function(input, output, session){
         fec
     })
     
+    
     # | -- 1. Inicio y termino registro ---------------------------------------
     # | ------ Inicio del registro ----
+    # UI para seleccionar el inicio del registro
     output$inifin.iniUI <- renderUI({
         validate(need(input$perChoose, "Esperando input!"))
-        
         # Debe ser el inicio de una vigilia
-        valor <- filter(tablaEstados(), estado == "W")
-        valor <- valor$inicio
-        
-        selectInput("inifin.ini", label = NULL, choices = valor)
+        iniW <- filter(tablaEstados(), estado == "W")
+        selectInput("inifin.ini", label = NULL, choices = iniW$inicio)
     })
 
-    # Funcion modal
+    # inifin.iniset: Funcion modal
     warnModal.ini <- function(){
         modalDialog(
             title = "Confirmar Inicio Registro",
@@ -505,37 +479,69 @@ server <- function(input, output, session){
         )
     }
     
-    # Mostrar modal ini
+    # inifin.iniset: Mostrar modal 
     observeEvent(input$inifin.iniset, {
         showModal(warnModal.ini())
     })
     
-    # Acciones a tomar ini
+    # inifin.iniset: Acciones a tomar 
     observeEvent(input$inifin.iniOK, {
-        # "Inicia:  "
-        newhead <- filterRDS()$header
-        newhead[4] <- ""
+        # browser()
+        # ----- Actualizar el header ----- #
+        filt <- readRDS(paste0(awdfile(), ".edit.RDS"))
+        newhead <- filt$header
         newhead[4] <- paste0("Inicia:  ", input$inifin.ini)
+        
+        # ----- Actualizar ACVedit ----- #
+        acvedit <- readRDS(paste0(awdfile(), ".acvedit.RDS"))
+        
+        # Borrarle los filtros "Fin" que contenga
+        acvedit$filter[acvedit$filter == "Ini"] <- NA
+        
+        # Capturar limites del final (sirven para el lo siguiente igual)
+        ini <- min(acvedit$time)
+        fin <- dmy_hm(input$inifin.ini)
+        
+        # Escribir el acvedit
+        range <- which(acvedit$time >= ini & acvedit$time < fin)
+        acvedit$filter[range] <- "Ini"
+        saveRDS(acvedit,  paste0(awdfile(), ".acvedit.RDS"))
+        
+        # ---- Actualizar filtro ----- # 
+        # Sacar la linea de "Ini" del filtro
+        filt <- filt$filter
+        filt <- filter(filt, tipo != "Ini")
+        
+        # Agregar la nueva linea
+        temp <- data.frame(id = as.numeric(NA), 
+                           ini = format(ini,  format = "%d-%m-%Y %H:%M"), 
+                           fin = format(fin,  format = "%d-%m-%Y %H:%M"), 
+                           tipo = "Ini", stringsAsFactors = FALSE)
+        filt <- bind_rows(filt, temp)
+        filt <- arrange(filt, ini)
+        filt <- mutate(filt, id = NA)
+        filt <- distinct(filt, id, ini, fin, tipo)
+        filt$id <- 1:nrow(filt)
+        
         # Guardar
-        newfiltro <- list(header = newhead, filter = filterRDS()$filter)
+        newfiltro <- list(header = newhead, filter = filt)
         saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
+        
+        # ----- Listo ----- #
         removeModal()
     })
     
     
     
-    # | ------ Fin del registro ------   
+    # | ------ Fin del registro ------ 
+    # UI para seleccionar el fin del registro
     output$inifin.finUI <- renderUI({
         validate(need(input$perChoose, "Esperando input!"))
-        
-        # Debe ser un final de vigilia
-        valor <- filter(tablaEstados(), estado == "W")
-        valor <- valor$termino
-        
-        selectInput("inifin.fin", label = NULL, choices = valor)
+        # Debe ser un final de episodio no mas 
+        selectInput("inifin.fin", label = NULL, choices = tablaEstados()$termino)
     })
 
-    # Funcion modal fin
+    # inifin.fin: Funcion Modal 
     warnModal.fin <- function(){
         modalDialog(
             title = "Confirmar Término del Registro",
@@ -552,230 +558,82 @@ server <- function(input, output, session){
         )
     }
     
-    # Mostrar modal fin
+    # inifin.fin: Mostrar modal 
     observeEvent(input$inifin.finset, {
         showModal(warnModal.fin())
     })
     
-    # Acciones a tomar
+    # inifin.fin: Acciones a tomar
     observeEvent(input$inifin.finOK, {
-        # "Termina: "
-        newhead <- filterRDS()$header
-        newhead[5] <- ""
+        # ----- Actualizar el header ----- #
+        filt <- readRDS(paste0(awdfile(), ".edit.RDS"))
+        newhead <- filt$header
         newhead[5] <- paste0("Termina: ", input$inifin.fin)
+        
+        # ----- Actualizar ACVedit ----- #
+        acvedit <- readRDS(paste0(awdfile(), ".acvedit.RDS"))
+        
+        # Borrarle los filtros "Fin" que contenga
+        acvedit$filter[acvedit$filter == "Fin"] <- NA
+        
+        # Capturar limites del final (sirven para el lo siguiente igual)
+        ini <- dmy_hm(input$inifin.fin)
+        fin <- max(acvedit$time)
+        
+        # Escribir el acvedit
+        range <- which(acvedit$time > ini & acvedit$time <= fin)
+        acvedit$filter[range] <- "Fin"
+        saveRDS(acvedit,  paste0(awdfile(), ".acvedit.RDS"))
+
+        # ---- Actualizar filtro ----- # 
+        # Sacar la linea de "Fin" del filtro
+        filt <- filt$filter
+        filt <- filter(filt, tipo != "Fin")
+        
+        # Agregar la nueva linea
+        temp <- data.frame(id = as.numeric(NA), 
+                           ini = format(ini,  format = "%d-%m-%Y %H:%M"), 
+                           fin = format(fin,  format = "%d-%m-%Y %H:%M"), 
+                           tipo = "Fin", stringsAsFactors = FALSE)
+        filt <- bind_rows(filt, temp)
+        filt <- arrange(filt, ini)
+        filt <- mutate(filt, id = NA)
+        filt <- distinct(filt, id, ini, fin, tipo)
+        filt$id <- 1:nrow(filt)
+        
         # Guardar
-        newfiltro <- list(header = newhead, filter = filterRDS()$filter)
+        newfiltro <- list(header = newhead, filter = filt)
         saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
+        
+        # ----- Listo ----- #
         removeModal()
     })
-    
-    
-    
-    # | -- 2. Editar periodo --------------------------------------------------
-    # Fecha en curso
-    output$selectedPer1 <- renderPrint({
-        validate(need(input$perChoose, "Esperando input!"))
-        # Procesar las fechas
-        periodo <- str_split(input$perChoose, " - ", simplify = TRUE)[1]
-        minfec <- min(acveditRDS()[["semiper"]][[periodo]][, "time"])
-        maxfec <- max(acveditRDS()[["semiper"]][[periodo]][, "time"])
-        fechas <- c(format(as_date(minfec), format = "%A %d-%m-%Y"),
-                    format(as_date(maxfec), format = "%A %d-%m-%Y"))
-        cat(fechas[1], "\n", fechas[2], sep = "")
-    })
-    
-    # | ------ reactive filterPeriod() -----
-    # Esto tiene la info del filtro a aplicar, es una lista con el id, filtro y tipo
-    filterPeriod <- reactive({
-        # Esperar esto y ver si el periodo tiene dia, noche o ambos
-        validate(need(input$perChoose, "Esperando input!"))
-        
-        gdata <- acveditRDS()$semiper[[str_sub(input$perChoose, 1, 5)]]
-        
-        time <- gdata$xscale
-        corte <- 24 + as.numeric(set()$inidia)/3600
-        nnoc <- sum(time < corte)
-        ndia <- sum(time >= corte)
-        
-        if (nnoc == 0 & ndia > 0){
-            dn <-"d"
-        } else if (nnoc > 0 & ndia == 0){
-            dn <-"n"
-        } else {
-            dn <- "a"
-        }
 
-        # Checar que existan periodos a editar
-        if (class(input$perChoose) == "NULL"){
-            list(msg = "Debe existir un sujeto en edición", action = 0)
-        
-        # Hay para editar
-        } else {
-        
-            # Si aprieta y no hay selección
-            if (class(input$dianoc) == "NULL"){
-                list(msg = "Debe seleccionar día, noche o ambos", action = 0)
     
-            # Si selecciona Ambos
-            } else if (length(input$dianoc) == 2 & sum(input$dianoc == c("Noche", "Dia")) == 2){
-                
-                # Si solo tiene 1 avisar y action 0
-                if (dn != "a"){
-                    list(msg = "El periodo solo tiene dia o noche", action = 0)
-                    
-                # Tiene ambos días tons action 2 (para el n del vector luego)
-                } else {
-                    noc1 <- min(gdata$time)
-                    noc2 <- gdata$time[which(gdata$xscale == corte)-1]
-                    nocF <- data.frame(id = NA, ini = noc1, fin = noc2, tipo = 2)
-                    
-                    dia1 <- gdata$time[which(gdata$xscale == corte)]
-                    dia2 <- max(gdata$time)
-                    diaF <- data.frame(id = NA, ini = dia1, fin = dia2, tipo = 2)
-                    
-                    msg <- c(paste0("Noc: ", noc1, " a ", noc2), 
-                             paste0("Dia: ", dia1, " a ", dia2))
-                    list(msg = msg, action = 1, filtro = bind_rows(nocF, diaF))
-                }
-            
-            # Si selecciona Noche
-            } else if (length(input$dianoc) == 1 & input$dianoc == "Noche"){
-                if (dn == "d"){
-                    list(msg = "El periodo solo tiene día", action = 0)
-                } else {
-                    noc1 <- min(gdata$time)
-                    noc2 <- gdata$time[which(gdata$xscale == corte)-1]
-                    nocF <- data.frame(id = NA, ini = noc1, fin = noc2, tipo = 2)
-                    
-                    msg <- paste0("Noc: ", noc1, " a ", noc2)
-                    list(msg = msg, action = 1, filtro = nocF)
-                }
-
-            # Si selecciona Dia
-            } else if (length(input$dianoc) == 1 & input$dianoc == "Dia"){
-                if (dn == "n"){
-                    list(msg = "El periodo solo tiene dia", action = 0)
-                } else {
-                    # Si es el primer dia puede que no comience en el corte
-                    if (length(gdata$time[which(gdata$xscale == corte)]) == 0){
-                        dia1 <- min(gdata$time)
-                    } else {
-                        dia1 <- gdata$time[which(gdata$xscale == corte)]
-                    }
-                    
-                    dia2 <- max(gdata$time)
-                    diaF <- data.frame(id = NA, ini = dia1, fin = dia2, tipo = 2)
-
-                    msg <- paste0("Dia:   ", dia1, " a ", dia2)
-                    list(msg = msg, action = 1, filtro = diaF)
-                }
-    
-            # Si algo pasa rarisimo
-            } else {
-                stop("Full de error")
-            }
-        }
-    })
-
-    # Mostrar el filtro a aplicar 
-    output$toFilter1 <- renderPrint({
-        validate(need(input$perChoose, "Esperando input!"))
-        cat(paste(filterPeriod()$msg, collapse = "\n"))
-    })
-
-    # Modal de confirmación 
-    warnModal <- function(){
-        # Configurar el mensaje (1 o 2 periodos)
-        if (length(filterPeriod()$msg) == 2){
-            show <- filterPeriod()$msg
-        } else {
-            show <- c(filterPeriod()$msg, " ")
-        }
-        
-        modalDialog(
-            title = "Confirmar filtros",
-            size = "m",
-            easyClose = TRUE,
-            
-            div(span(code(show[1])), br(), span(code(show[2]))),
-
-            footer = tagList(
-                modalButton("Cancelar"),
-                actionButton("ok", "Confirmar")
-            )
-        )
-    }
-    
-    # Mostrar el modal cuando se aprieta el modificiar filtro
-    observeEvent(input$cambia_periodo,{
-        # Si se va a superponer un filtro 2 en un 1
-        test <- filterPeriod()$filtro
-        test <- test$ini
-        
-        filtro <- filterRDS()$filter
-        filtro <- filtro$ini
-        
-        temp <- test %in%filtro
-        
-        if (sum(temp) == 1 | sum(temp) == 2){
-            showNotification("No se pueden superponer filtros", closeButton = FALSE, type = "error")
-        } else if (filterPeriod()$action == 1){
-            showModal(warnModal())
-        }
-    })
-    
-    # Decidir que hacer cuando el modal input$ok
-    observeEvent(input$ok,{
-        showNotification("Procesando...")
-        # Primero checar que tenga action = 1
-        if (filterPeriod()$action == 1){
-            # Hacer update al filtro
-            filt <- bind_rows(filterRDS()$filter, filterPeriod()$filtro)
-            filt <- arrange(filt, ini)
-            filt <- mutate(filt, id = NA)
-            filt <- distinct(filt, id, ini, fin, tipo)
-            filt$id <- 1:nrow(filt)
-            newfiltro <- list(header = filterRDS()$header, filter = filt)
-            
-            # Hacer el update del acvedit (codigo prestado de create.acvedit)
-            acvedit <- readRDS(paste0(awdfile(), ".acv.edit.RDS"))
-            acvedit$filter <-NA
-            for (f in 1:nrow(filt)){
-                if (filt$tipo[f] != 4){   # el de mueve la noche
-                    ini <- filt$ini[f]
-                    fin <- filt$fin[f]
-                    range <- which(acvedit$time >= ini & acvedit$time <= fin)
-                    acvedit$filter[range] <- filt$tipo[f]
-                }
-            }
-            
-            # Guarda ahora los dos
-            saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
-            saveRDS(acvedit,  paste0(awdfile(), ".acv.edit.RDS"))
-        }
-        removeModal()
-    })
-    
-    
-    # | -- 3. Editar actividad ------------------------------------------------
+    # | -- 2. Editar actividad ------------------------------------------------
     # El ui de los periodos de sueño
     output$editActUI <- renderUI({
         data <- filter(tablaEstados(), estado == "S")
-        data <- c(paste(data$inicio, " a ", data$termino))
+        data <- c(paste(data$inicio, " - ", data$termino))
         radioButtons("editAct.data", label = NULL, choices = data)
     })
     
     # Mostrar la duración
     output$editActDur <- renderPrint({
-        # Tomar la tabla y filtrar
-        data <- str_split(input$editAct.data, " a ", simplify = TRUE)
+        # tomar el input, parsearlo y buscar duracion en la tabla de estados
+        data <- str_split(input$editAct.data, " - ", simplify = TRUE)
         data <- dmy_hm(data[1])
         data <- format(data,  format = "%d-%m-%Y %H:%M")
         data <- filter(tablaEstados(), inicio == data)
         cat(data$duracion)
     })
+
+    # Boton editar actividad
+    observeEvent(input$editAct.btn, {
+        showModal(warnModal.editAct())
+    })
     
-    # Modal de confirmación
+    # Modal editar actividad
     warnModal.editAct <- function(){
         modalDialog(
             title = "Modificar actividad",
@@ -791,19 +649,15 @@ server <- function(input, output, session){
         )
     }
 
-    # Mostrar modal al apretar boton
-    observeEvent(input$editAct.btn, {
-        showModal(warnModal.editAct())
-    })
-    
-    
-    # Ejecutar si se confirma
+    # Ejecutar editar actividad
     observeEvent(input$editAct.mdl, {
         # Transformar el input en data.frame test <- "15-07-2014 16:52 a 15-07-2014 16:58"
-        data <- str_split(input$editAct.data, " a ", simplify = TRUE)
-        ini <- dmy_hm(data[1])
-        fin <- dmy_hm(data[2])
-        data <- data.frame(id = NA, ini = ini, fin = fin, tipo = 3)
+        data <- str_split(input$editAct.data, " - ", simplify = TRUE)
+        # ini <- dmy_hm(data[1])
+        # fin <- dmy_hm(data[2])
+        ini <- data[1]
+        fin <- data[2]
+        data <- data.frame(id = NA, ini = ini, fin = fin, tipo = "Actividad", stringsAsFactors = FALSE)
         
         # Update del filterRDS()
         filt <- bind_rows(filterRDS()$filter, data)
@@ -813,45 +667,48 @@ server <- function(input, output, session){
         newfiltro <- list(header = filterRDS()$header, filter = filt)
         
         # Update al acv.edit 
-        acvedit <- readRDS(paste0(awdfile(), ".acv.edit.RDS"))
+        acvedit <- readRDS(paste0(awdfile(), ".acvedit.RDS"))
         acvedit$filter <-NA
+        
+        # Quedo en NA la variable "filter" para re calcular
         for (f in 1:nrow(filt)){
             # Edita la variable "filter"
-            ini <- filt$ini[f]
-            fin <- filt$fin[f]
+            ini <- dmy_hm(filt$ini[f])
+            fin <- dmy_hm(filt$fin[f])
             range <- which(acvedit$time >= ini & acvedit$time <= fin)
             acvedit$filter[range] <- filt$tipo[f]
             
-            if (filt$tipo[f] == 3){
-                # Edita la actividad en variable "act.edit"
+            if (filt$tipo[f] == "Actividad"){
+                # Calcula media y sd para simular actividad
                 df <- filter(acvedit, act.edit > 0)
                 mu <- mean(df$act.edit, na.rm = TRUE)
                 de <- sd(df$act.edit, na.rm = TRUE)
                 
+                # Agrega la actividad en variable "act.edit"
                 newActiv <- rnorm(n = length(range), mean = floor(mu), sd = floor(de*0.8))
                 newActiv <- ifelse(newActiv < 0, de, newActiv)
                 acvedit$act.edit[range] <- newActiv
                 
-                # Edita el estado en la variable "st.edit"
+                # Cambia el estado en la variable "st.edit"
                 acvedit$st.edit[range] <- "W"
             }
         }
         
         # Guarda ahora los dos
         saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
-        saveRDS(acvedit,  paste0(awdfile(), ".acv.edit.RDS"))
+        saveRDS(acvedit,  paste0(awdfile(), ".acvedit.RDS"))
         removeModal()
     })
     
     
     
-    # | -- 4. En mover noche --------------------------------------------------
+    # | -- 3. En mover noche --------------------------------------------------
     # el ui que muestra las horas disponibles
     output$moveNightUI <- renderUI({
         validate(need(input$perChoose, "Esperando input!"))
         
-        # Validar qué mostrar
-        if (input$moveNightEscena == "Inicio Vigilia"){
+        # Validar que mostrar
+        if (input$moveNightEscena == "Mover Dia"){
             if (nrow(filter(tablaEstados(), estado == "W")) == 0){
                 radioButtons("moveNight.data", label = NULL, choices = c("No hay episodios"))
             } else {
@@ -860,16 +717,7 @@ server <- function(input, output, session){
                 radioButtons("moveNight.data", label = NULL, choices = valor)
             }
             
-        } else if (input$moveNightEscena == "Fin Vigilia"){
-            if (nrow(filter(tablaEstados(), estado == "W")) == 0){
-                radioButtons("moveNight.data", label = NULL, choices = c("No hay episodios"))
-            } else {
-                valor <- filter(tablaEstados(), estado == "W")
-                valor <- valor$termino
-                radioButtons("moveNight.data", label = NULL, choices = valor)
-            }
-            
-        } else if (input$moveNightEscena == "Inicio Sueño"){
+        } else if (input$moveNightEscena == "Mover Noche"){
             if (nrow(filter(tablaEstados(), estado == "S")) == 0){
                 radioButtons("moveNight.data", label = NULL, choices = c("No hay episodios"))
             } else {
@@ -877,15 +725,9 @@ server <- function(input, output, session){
                 valor <- valor$inicio
                 radioButtons("moveNight.data", label = NULL, choices = valor)
             }
-            
-        } else if (input$moveNightEscena == "Fin Sueño"){
-            if (nrow(filter(tablaEstados(), estado == "S")) == 0){
-                radioButtons("moveNight.data", label = NULL, choices = c("No hay episodios"))
-            } else {
-                valor <- filter(tablaEstados(), estado == "S")
-                valor <- valor$termino
-                radioButtons("moveNight.data", label = NULL, choices = valor)
-            }
+        
+        } else {
+            stop("error en seleccion de episodios disponibles")
         }
     })
     
@@ -899,11 +741,8 @@ server <- function(input, output, session){
         
         if (input$moveNight.data == "No hay episodios"){
             cat("No hay actividad")
-        } else if (input$moveNightEscena == "Inicio Vigilia" | input$moveNightEscena == "Inicio Sueño"){
+        } else if (input$moveNightEscena == "Mover Dia" | input$moveNightEscena == "Mover Noche"){
             data <- filter(tablaEstados(), inicio == data)
-            cat(data$duracion)
-        } else if (input$moveNightEscena == "Fin Vigilia" | input$moveNightEscena == "Fin Sueño"){
-            data <- filter(tablaEstados(), termino == data)
             cat(data$duracion)
         } else {
             cat("0m 0s")
@@ -911,7 +750,16 @@ server <- function(input, output, session){
         
     })
 
-    # Modal de confirmación
+    # Mover noche: Boton confirmar en la UI
+    observeEvent(input$moveNight.btn, {
+        if (input$moveNight.data == "No hay episodios"){
+            showNotification("Periodo no es válido", closeButton = FALSE, type = "message")
+        } else {
+            showModal(warnModal.moveNight())
+        }
+    })
+    
+    # Mover noche: Modal de confirmacion
     warnModal.moveNight <- function(){
         modalDialog(
             title = "Determinar hora inicio noche",
@@ -927,21 +775,11 @@ server <- function(input, output, session){
             )
         )
     }
-    
-    # Mostrar modal al apretar boton Mover Noche
-    observeEvent(input$moveNight.btn, {
-        if (input$moveNight.data == "No hay episodios"){
-            showNotification("Periodo no es válido", closeButton = FALSE, type = "message")
-        } else {
-            showModal(warnModal.moveNight())
-        }
-    })
-    
+
     # Acciones a tomar: Agregar al filtro Mover Noche <"18-07-2014 02:33">
     observeEvent(input$moveNight.OK, {
         # Crear el data.frame primero
-        data <- dmy_hm(input$moveNight.data)
-        data <- data.frame(id = NA, ini = data, fin = NA, tipo = 4)
+        data <- data.frame(id = NA, ini = input$moveNight.data, fin = NA, tipo = "Mover", stringsAsFactors = FALSE)
         
         # Update del filterRDS()
         filt <- bind_rows(filterRDS()$filter, data)
@@ -953,103 +791,447 @@ server <- function(input, output, session){
         saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
         removeModal()
     })
-
     
-    # | -- 5. Borrar filtro ---------------------------------------------------
-    # Mostrar el filtro a borrar
-    output$dropChoose <- renderUI({
-        # Sacar ambos datos
-        gdata <- acveditRDS()$semiper[[str_sub(input$perChoose, 1, 5)]]["time"]
-        gdata <- format(ymd_hms(gdata$time), format = "%d-%m-%Y  %H:%M")
+    
+    
+    # | -- 4. Excluir seccion --------------------------------------------------
+    # | ---- Horas, episodio y duracion -----
+    # Excluir: UI radio buttons horas disponibles
+    output$ExcludeUI <- renderUI({
+        validate(need(input$perChoose, "Esperando input!"))
         
-        filtro <- filterRDS()$filter[["ini"]]
-        filtro <- format(ymd_hms(filtro), format = "%d-%m-%Y  %H:%M")
-        
-        # Ver qué combina y sacar el id
-        indx <- filtro %in% gdata
-        id <- filterRDS()$filter[["id"]]
-        id <- id[indx]
-        
-        # Ajuste por si no hay filtros
-        if (sum(id) == 0){
-            radioButtons("todrop", choices = c("Periodo sin filtros"), label = NULL)
-            
+        # Validar que mostrar
+        if (nrow(tablaEstados()) == 0){
+            radioButtons("Exclude.data", label = NULL, choices = c("No hay episodios"))
         } else {
-            # Sección del filtro real
-            temp <- filterRDS()$filter[id, ]
-            temp$ini <- format(temp$ini, format = "%d-%m-%Y  %H:%M")
-            temp$fin <- format(temp$fin, format = "%d-%m-%Y  %H:%M")
-            
-            # Construir vector de choose
-            btnChoose <- NULL
-            for (i in 1:length(id)){
-                btn <- c(temp[i,])
-                btn <- paste(btn, collapse = " | ")
-                btnChoose <- c(btnChoose, btn)
-            }
-            radioButtons("todrop", choices = btnChoose, label = NULL)
+            radioButtons("Exclude.data", label = NULL, choices = tablaEstados()[["termino"]])
+        }
+    })
+    
+    # Excluir: Mostrar tipo de episodio
+    output$Exclude.stInfo <- renderPrint({
+        validate(need(input$perChoose, "Esperando input!"))
+        
+        # Determinar la linea en tabla estados
+        linea <- which(tablaEstados()[["termino"]] == input$Exclude.data)
+        linea <- tablaEstados()[["estado"]][linea]
+        
+        # Mostrar segun corresponda
+        if (length(linea) == 0){
+            cat("No Disp.")
+        } else if (linea == "W"){
+            cat("Vigilia")
+        } else if (linea == "S"){
+            cat("Sueño")
+        } else {
+            cat("Error")
+        }
+    })
+    
+    # Excluir: Mostrar duracion
+    output$Exclude.durInfo <- renderPrint({
+        validate(need(input$perChoose, "Esperando input!"))
+        
+        # Determinar la linea en tabla estados
+        linea <- which(tablaEstados()[["termino"]] == input$Exclude.data)
+        linea <- tablaEstados()[["duracion"]][linea]
+        linea <- as.character(as.period(linea) + minutes(1))
+        
+        # Mostrar segun corresponda
+        if (length(linea) == 0){
+            cat("No Disp.")
+        } else {
+            cat(linea)
+        }
+    })
+    
+    # ----------------------------------------------------------------------- #
+    # | ---- Id Filtro, inicio y fin -----
+    # Excluir: UI de Ids filtros disponibles
+    output$ExcludeFiltros <- renderUI({
+        validate(need(input$perChoose, "Esperando input!"))
+        
+        dataFiltro <- filter(filterRDS()$filter, tipo == "Excluir")
+        dataFiltro <- as.character(dataFiltro$id)
+        
+        # Evaluar si no hay nada
+        if (length(dataFiltro) == 0){
+            radioButtons("Exclude.filterdata", label = NULL, choices = "Nuevo")
+        } else {
+            radioButtons("Exclude.filterdata", label = NULL, choices = c("Nuevo", dataFiltro))
+        }
+        
+    })
+    
+    # Excluir: Mostrar inicio filtro
+    output$Exclude.IniText <- renderPrint({
+        validate(need(input$perChoose, "Esperando input!"))
+        validate(need(input$Exclude.filterdata, "Wait!"))
+        
+        if (input$Exclude.filterdata == "Nuevo"){
+            cat("Sin datos")
+        } else {
+            # Filtros "Excluir" en el RDS
+            dataFiltro <- filter(filterRDS()$filter, tipo == "Excluir")
+            dataFiltro <- mutate(dataFiltro, id = as.character(id))
+            dataFiltro <- filter(dataFiltro, id == input$Exclude.filterdata)
+            dataFiltro <- dataFiltro$ini    # Inicio OJO
+            cat(dataFiltro)
         }
     })
 
-    # Modal de confirmación
-    warnModal.borrar <- function(){
-        # Mensaje
-        show <- str_split(input$todrop, " | ", simplify = TRUE)
-        show <- show[1]
+    # Excluir: Mostrar final del filtro
+    output$Exclude.FinText <- renderPrint({
+        validate(need(input$perChoose, "Esperando input!"))
+        validate(need(input$Exclude.filterdata, "Wait!"))
         
-        # Dialogo
+        if (input$Exclude.filterdata == "Nuevo"){
+            cat("Sin datos")
+        } else {
+            # Filtros "Excluir" en el RDS
+            dataFiltro <- filter(filterRDS()$filter, tipo == "Excluir")
+            dataFiltro <- mutate(dataFiltro, id = as.character(id))
+            dataFiltro <- filter(dataFiltro, id == input$Exclude.filterdata)
+            dataFiltro <- dataFiltro$fin    # Inicio OJO
+            cat(dataFiltro)
+        }
+    })
+
+    # ----------------------------------------------------------------------- #
+    # | ---- Set Inicio -----
+    # Excluir: Boton Setear el inicio 
+    observeEvent(input$Exclude.IniSet, {
+        validate(need(input$Exclude.data, "wait"))
+        validate(need(input$Exclude.filterdata, "Wait!"))
+        
+        if (input$Exclude.data == "No hay episodios"){
+            showNotification("Periodo no es válido", closeButton = FALSE, type = "message")
+        
+        # Filtro nuevo
+        } else if (input$Exclude.filterdata == "Nuevo") {
+            showModal(warnModal.ExcludeIni())
+        
+            # Hay filtro seleccionado    
+        } else {
+            # Inicio
+            dataFiltro <- filter(filterRDS()$filter, tipo == "Excluir")
+            dataFiltro <- filter(dataFiltro, id == as.numeric(input$Exclude.filterdata))
+            ini <- dataFiltro$ini 
+            fin <- dataFiltro$fin
+            
+            # Si solo hay un valor
+            if (is.na(ini) == TRUE & is.na(fin) == FALSE){
+                showModal(warnModal.ExcludeIni())
+            } else {
+                ini <- dmy_hm(ini)
+                fin <- dmy_hm(fin)
+                if (ini >= fin){
+                    showNotification("Error: Inicio menor a Fin", closeButton = FALSE, type = "error")
+                } else {
+                    showModal(warnModal.ExcludeIni())
+                }
+            }
+        }
+    })
+    
+    # Modal de setear el inicio
+    warnModal.ExcludeIni <- function(){
         modalDialog(
-            title = "Confirmar borrar filtro",
+            title = "Determinar inicio de Exclusión",
             size = "m",
             easyClose = TRUE,
-            div(span("Filtro a borrar ID = ", code(show))),
-            footer = tagList(modalButton("Cancelar"), actionButton("borraFiltroOk", "Confirmar"))
+            div(span(p("La exclusión de datos comienza a partir de:"), code(input$Exclude.data))),
+            footer = tagList(
+                modalButton(label = "Cancelar"),
+                actionButton("ExcludeIniOK", label = "Confirmar")
+            )
         )
     }
     
-    # Mostrar modal al apretar boton
+    # Acciones de setear el inicio
+    observeEvent(input$ExcludeIniOK, {
+        # ----- Update el filterRDS ------------------------------------------------ #
+        # Si no hay filtros crear un registro
+        if (input$Exclude.filterdata == "Nuevo"){
+            filt <- data.frame(id = NA, ini = input$Exclude.data, fin = NA, tipo = "Excluir", stringsAsFactors = FALSE)
+            filt <- bind_rows(filterRDS()$filter, filt)
+            filt <- arrange(filt, ini)
+            filt <- mutate(filt, id = NA)
+            filt <- distinct(filt, id, ini, fin, tipo)
+            filt$id <- 1:nrow(filt)
+            
+            newfiltro <- list(header = filterRDS()$header, filter = filt)
+            saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
+            
+        # Si es numero, solo reemplazar el trozo que corresponde, con precision
+        } else {
+            # Exclude.filterdata = id del filtro               # Exclude.data = fecha seleccionada
+            filt <- filterRDS()$filter
+            filt$ini[filt$id == input$Exclude.filterdata] <- input$Exclude.data
+            
+            newfiltro <- list(header = filterRDS()$header, filter = filt)
+            saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
+        }
+        
+        
+        # ----- Update el acv.edit ------------------------------------------------- #
+        acvedit <- readRDS(paste0(awdfile(), ".acvedit.RDS"))
+        
+        # Borrarle los filtros "Excluir" que contenga
+        acvedit$filter[acvedit$filter == "Excluir"] <- NA
+        
+        # Tomar el newfiltro y filtrar los "Excluir"
+        filt <- newfiltro$filter
+        filt <- filter(filt, tipo == "Excluir")
+        
+        # Escribir cada linea de filtroen el acvedit
+        for (exc in 1:nrow(filt)){
+            # Primero revisar que esten las dos fechas
+            tempIni <- filt$ini[exc]
+            tempFin <- filt$fin[exc]
+            
+            # Revisar que tengan los 2, si no pasa
+            if (is.na(tempIni) == FALSE & is.na(tempFin) == FALSE){
+                # Editar la variable "filter" en "acvedit"
+                ini <- dmy_hm(filt$ini[exc])
+                fin <- dmy_hm(filt$fin[exc])
+                range <- which(acvedit$time > ini & acvedit$time <= fin)
+                acvedit$filter[range] <- filt$tipo[exc]
+            }
+        }
+        
+        # Listo y guarda
+        saveRDS(acvedit,  paste0(awdfile(), ".acvedit.RDS"))
+        
+        
+        removeModal()
+    })
+    
+
+    # ----------------------------------------------------------------------- #
+    # | ---- Set Final -----
+    # Excluir: Boton Setear el final 
+    observeEvent(input$Exclude.FinSet, {
+        validate(need(input$Exclude.data, "wait"))
+        validate(need(input$Exclude.filterdata, "Wait!"))
+        
+        if (input$Exclude.data == "No hay episodios"){
+            showNotification("Periodo no es válido", closeButton = FALSE, type = "message")
+            
+        # Filtro nuevo
+        } else if (input$Exclude.filterdata == "Nuevo") {
+            showModal(warnModal.ExcludeFin())
+            
+        # Hay filtro seleccionado    
+        } else {
+            # data de Inicio
+            dataFiltro <- filter(filterRDS()$filter, tipo == "Excluir")
+            dataFiltro <- filter(dataFiltro, id == as.numeric(input$Exclude.filterdata))
+            ini <- dataFiltro$ini 
+            fin <- dataFiltro$fin
+            
+            # Con un NA
+            if (is.na(fin) == TRUE & is.na(ini) == FALSE){
+                showModal(warnModal.ExcludeFin())
+            } else {
+                ini <- dmy_hm(ini)
+                fin <- dmy_hm(fin)
+                if (ini >= fin){
+                    showNotification("Error: Inicio menor a Fin", closeButton = FALSE, type = "error")
+                } else {
+                    showModal(warnModal.ExcludeFin())
+                }
+            }
+        }
+        
+        
+    })
+    
+    # Modal de setear el final
+    warnModal.ExcludeFin <- function(){
+        modalDialog(
+            title = "Determinar final de Exclusión",
+            size = "m",
+            easyClose = TRUE,
+            div(span(p("La exclusión de datos termina en :"), code(input$Exclude.data))),
+            footer = tagList(
+                modalButton(label = "Cancelar"),
+                actionButton("ExcludeFinOK", label = "Confirmar")
+            )
+        )
+    }
+    
+    # Acciones de setear el inicio
+    observeEvent(input$ExcludeFinOK, {
+        
+        # Si no hay filtros crear un registro
+        if (input$Exclude.filterdata == "Nuevo"){
+            filt <- data.frame(id = NA, ini = NA, fin = input$Exclude.data, tipo = "Excluir", stringsAsFactors = FALSE)
+            filt <- bind_rows(filterRDS()$filter, filt)
+            filt <- arrange(filt, ini)
+            filt <- mutate(filt, id = NA)
+            filt <- distinct(filt, id, ini, fin, tipo)
+            filt$id <- 1:nrow(filt)
+            
+            newfiltro <- list(header = filterRDS()$header, filter = filt)
+            saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
+            
+        # Si es numero, solo reemplazar el trozo que corresponde, con precision
+        } else {
+            # Exclude.filterdata = id del filtro   # Exclude.data = fecha seleccionada
+            filt <- filterRDS()$filter
+            filt$fin[filt$id == as.numeric(input$Exclude.filterdata)] <- input$Exclude.data
+            
+            newfiltro <- list(header = filterRDS()$header, filter = filt)
+            saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
+        }
+        
+        # ----------------------------------------------------------# 
+        # Update el acv.edit
+        acvedit <- readRDS(paste0(awdfile(), ".acvedit.RDS"))
+        
+        # Borrarle los filtros "Excluir" que contenga
+        acvedit$filter[acvedit$filter == "Excluir"] <- NA
+        
+        # Tomar el newfiltro y filtrar los "Excluir"
+        filt <- newfiltro$filter
+        filt <- filter(filt, tipo == "Excluir")
+        
+        # Escribir cada linea de filtroen el acvedit
+        for (exc in 1:nrow(filt)){
+            # Primero revisar que esten las dos fechas
+            tempIni <- filt$ini[exc]
+            tempFin <- filt$fin[exc]
+            
+            # Revisar que tengan los 2, si no pasa
+            if (is.na(tempIni) == FALSE & is.na(tempFin) == FALSE){
+                # Editar la variable "filter" en "acvedit"
+                ini <- dmy_hm(filt$ini[exc])
+                fin <- dmy_hm(filt$fin[exc])
+                range <- which(acvedit$time > ini & acvedit$time <= fin)
+                acvedit$filter[range] <- filt$tipo[exc]
+            }
+        }
+        
+        # Listo y guarda
+        saveRDS(acvedit,  paste0(awdfile(), ".acvedit.RDS"))
+        
+        
+        removeModal()
+    })
+    
+    
+    
+    
+    # | -- 5. Borrar filtro ---------------------------------------------------
+    # Mostrar id de filtro a borrar
+    output$dropChoose <- renderUI({
+        validate(need(input$perChoose, "Esperando input!"))
+        
+        # Capturar ids de filtro
+        filt <- filterRDS()$filter
+        filt <- filt$id
+        
+        if (length(filt) == 0){
+            radioButtons("todrop", choices = c("Periodo sin filtros"), label = NULL)
+        } else {
+            radioButtons("todrop", choices = as.numeric(filt), label = NULL)
+        }
+    })
+
+    # Mostrar info del filtro seleccionado
+    output$todrop.info <- renderTable({
+        validate(need(input$perChoose, "Esperando input!"))
+        validate(need(input$todrop, "wait"))
+        
+        # Capturar linea
+        filt <- filterRDS()$filter
+        filt <- filter(filt, id == input$todrop)
+        names(filt) <- c("Id", "Inicio", "Final ", "Tipo")
+        filt
+        
+    }, digits = 0, align = "c", striped = TRUE, hover = TRUE, width = "100%")
+
+    # Mostrar modal borrar filtro
     observeEvent(input$borraFiltroBtn, {
-        if (length(filterRDS()) != 2){
-            cat("No hay nada de filtro")
-        } else if (input$todrop == "Periodo sin filtros"){
+        # Para verificar que haiga filtros
+        filt <- filterRDS()$filter
+        filt <- filt$id
+        
+        if (length(filt) == 0){
             showNotification("Período no tiene filtros", closeButton = FALSE, type = "message")
         } else {
             showModal(warnModal.borrar())
         }
     })
-    
-    # Si confirma se borra filtro y actualiza el acv.edit()
-    observeEvent(input$borraFiltroOk, {
-        showNotification("Procesando...")
-        # El numero del filtro
-        borraFiltroNum <- str_split(input$todrop, " | ", simplify = TRUE)
-        borraFiltroNum <- as.numeric(borraFiltroNum[1])
-        
-        # Que el archivo de filtro tenga al menos 1 registro
-        if (nrow(filterRDS()$filter) >= 0){
-            # ---Update del acvedit---
-            acvedit <- readRDS(paste0(awdfile(), ".acv.edit.RDS"))
-            filtroDrop <- filterRDS()$filter[borraFiltroNum,]
-            ini <- filtroDrop$ini[1]
-            fin <- filtroDrop$fin[1]
-            range <- which(acvedit$time >= ini & acvedit$time <= fin)
-            tipo <- filtroDrop$tipo[1]
-            # Aplicar
-            if (tipo == 3){
-                acvedit$st.edit[range] <- acvedit$st.stable[range]
-                acvedit$act.edit[range] <- acvedit$act.smooth[range]
-                acvedit$filter[range] <- NA
-            } else {
-                acvedit$filter[range] <- NA
-            }
-            saveRDS(acvedit,  paste0(awdfile(), ".acv.edit.RDS"))
 
+    # Modal de borrar filtro
+    warnModal.borrar <- function(){
+        modalDialog(
+            title = "Confirmar borrar filtro",
+            size = "m",
+            easyClose = TRUE,
+            div(span("Filtro a borrar ID = ", code(input$todrop))),
+            footer = tagList(
+                modalButton("Cancelar"), 
+                actionButton("borraFiltroOk", "Confirmar")
+            )
+        )
+    }
+
+    # Si confirma se borra filtro
+    observeEvent(input$borraFiltroOk, {
+        showNotification("Borrando...", closeButton = FALSE, duration = 1)
+        
+        # Captura la linea a borrar
+        linea <- filterRDS()$filter
+        linea <- filter(linea, id == as.numeric(input$todrop))
+        
+        # Si la linea es actividad primero modificar 
+        if (linea$tipo == "Actividad"){
+            # Los limites
+            ini <- dmy_hm(linea$ini)
+            fin <- dmy_hm(linea$fin)
+            
+            # Cargar acvedit y estimar el rango
+            acvedit <- readRDS(paste0(awdfile(), ".acvedit.RDS"))
+            range <- which(acvedit$time >= ini & acvedit$time <= fin)
+            
+            # Modificar datos originales
+            acvedit$filter[range] <- NA
+            acvedit$st.edit[range] <- "S"
+            acvedit$act.edit[range] <- acvedit$act.smooth[range]
+            
+            # Guarda el acvedit restaurado
+            saveRDS(acvedit,  paste0(awdfile(), ".acvedit.RDS"))
+            
+            # Ahora replica la instruccion de borrar la linea en el filtro
             # Update al filtro
-            filt <- filterRDS()$filter[-borraFiltroNum,]
+            filt <- filterRDS()$filter
+            filt <- filter(filt, id != as.numeric(input$todrop))
             filt <- arrange(filt, ini)
             filt <- mutate(filt, id = NA)
             filt <- distinct(filt, id, ini, fin, tipo)
-            if (nrow(filt) > 0){filt$id <- 1:nrow(filt)}
+            
+            # Si queda filtro numerar y guardar
+            if (nrow(filt) > 0){
+                filt$id <- 1:nrow(filt)
+            }
+            newfiltro <- list(header = filterRDS()$header, filter = filt)
+            saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
+            
+        } else {
+            # Update al filtro
+            filt <- filterRDS()$filter
+            filt <- filter(filt, id != as.numeric(input$todrop))
+            filt <- arrange(filt, ini)
+            filt <- mutate(filt, id = NA)
+            filt <- distinct(filt, id, ini, fin, tipo)
+            
+            # Si queda filtro numerar y guardar
+            if (nrow(filt) > 0){
+                filt$id <- 1:nrow(filt)
+            }
             newfiltro <- list(header = filterRDS()$header, filter = filt)
             saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
         }
@@ -1057,12 +1239,62 @@ server <- function(input, output, session){
     })
 
     
-    # | -- 6. Mostrar estados ------
-    output$estadosTabla <- renderTable({
-        validate(need(input$perChoose, "Esperando input!"))
-        stagesTable(acveditRDS(), input$perChoose)
+    # | -- 6. Estados ------
+    # | ---- Header Filtro ----
+    output$filtroH <- renderPrint({
+        # Si el filtroFinal no tiene length=2 es que no existe y carga el inicial
+        if (length(filterRDS()) != 2){
+            cat("No se ha seleccionado un sujeto")
+        } else {
+            cat(paste(filterRDS()$header[2:3], collapse = "\n"))
+        }
     })
     
+    # | ---- Tabla de estados ----
+    output$estadosTabla <- renderTable({
+        validate(need(input$perChoose, "Esperando input!"))
+        
+        # Calcular tabla
+        tabla <- stagesTable(acveditRDS(), input$perChoose)
+        tabla <- select(tabla, -filtro)
+        tabla <- mutate(tabla, duracion = as.character(as.period(duracion) + minutes(1)))
+        names(tabla) <- c("Inicio", "Final", "Estado", "Duracion")
+        
+        # Duracion todo
+        if (input$tablaLength == "Todo"){
+            # Todo estado
+            if (input$tablaStage == "Todo"){
+                tabla
+            # S
+            } else if (input$tablaStage == "S"){
+                filter(tabla, Estado == "S")
+            # W
+            } else if (input$tablaStage == "W"){
+                filter(tabla, Estado == "W") 
+            }
+            
+        # Duracion mayor a    
+        } else {
+            # Calcular nueva tabla
+            mindur <- (set()$dursleep + set()$durawake)/2
+            mindur <- as.period(mindur, unit = "minute")
+            mindur <- as.period(tabla$Duracion) > mindur
+            tabla2 <- tabla[mindur,]
+            
+            # Todo estado
+            if (input$tablaStage == "Todo"){
+                tabla2
+                # S
+            } else if (input$tablaStage == "S"){
+                filter(tabla2, Estado == "S")
+                # W
+            } else if (input$tablaStage == "W"){
+                filter(tabla2, Estado == "W") 
+            }
+        }
+
+    }, digits = 0, align = "c", striped = TRUE, hover = TRUE, width = "100%", spacing = "s")
+
     
     
     
@@ -1143,16 +1375,15 @@ server <- function(input, output, session){
     width = "100%", digits = 1, align = "c")
 
     
-    # | ----
-    # Panel - ESTADISTICAS -------------------------------- -------------------
+    # _________________________________________ -------------------------------
+    # Panel - ESTADISTICAS ----------------------------------------------------
     output$test1 <- renderPrint({
+        validate(need(input$perChoose, "Esperando input!"))
 
-        filter(tablaEstados(), estado == "W")
-        
     })
     
     output$test2 <- renderPrint({
-        filterRDS()
+        validate(need(input$perChoose, "Esperando input!"))
     })
     
 

@@ -52,7 +52,7 @@ create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
     if (finSubj == "-No determinado- "){
         finSubj <- NA
     } else {
-        finSubj <- dmy_hm(finSubj)
+        finSubj <- dmy_hm(finSubj) + minutes(1)
         if (finSubj %in% gdata$time){
             finSubj <- gdata$xscale[which(gdata$time == finSubj)]
         } else {
@@ -60,14 +60,15 @@ create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
         }
     }
     
-    # También ver si hay un Tipo = 4 en el filtro 
-    tipoCuatro <- dplyr::filter(filterRDS$filter, tipo == 4)
-    if (nrow(tipoCuatro) > 0){
-        tipoCuatro <- tipoCuatro[["ini"]]
-        tipoCuatro <- tipoCuatro[tipoCuatro %in% gdata$time]
-        tipoCuatro <- gdata$xscale[tipoCuatro == gdata$time]
+    # Filtro tipo "Mover noche" ------
+    moverND <- dplyr::filter(filterRDS$filter, tipo == "Mover")
+    if (nrow(moverND) > 0){
+        moverND <- moverND[["ini"]]
+        moverND <- dmy_hm(moverND)
+        moverND <- moverND[moverND %in% gdata$time]
+        moverND <- gdata$xscale[moverND == gdata$time]
     } else {
-        tipoCuatro <- NA
+        moverND <- NA
     }
     
     
@@ -138,26 +139,24 @@ create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
     wdata <- mutate(wdata, ini = gdata$xscale[ini], fin = gdata$xscale[fin])
 
 
-    # ---- Coloreado de Filtros -------------------------------------------------- #
-    # Filtro automático
-    fdata <- find.segment(gdata, filter, 1)
+    # ---- Coloreado de Filtros -------------------------------------------------- # 
+    # Filtro tipo "Excluir" ------
+    fdata <- find.segment(gdata, filter, "Excluir")
     if (nrow(fdata) > 0){
-        fdata <- mutate(fdata, ini = gdata$xscale[ini],
-                        fin = gdata$xscale[fin])
+        fdata <- mutate(fdata, ini = gdata$xscale[ini], fin = gdata$xscale[fin])
     }
 
-    # Filtro periodos agregados en la app
-    f2sleep <- find.segment(gdata, filter, 2)
+    # Filtro lo externo al inicio y al fin
+    f2sleep <- rbind(find.segment(gdata, filter, "Ini"),
+                     find.segment(gdata, filter, "Fin"))
     if (nrow(f2sleep) > 0){
-        f2sleep <- mutate(f2sleep, ini = gdata$xscale[ini],
-                          fin = gdata$xscale[fin])
+        f2sleep <- mutate(f2sleep, ini = gdata$xscale[ini], fin = gdata$xscale[fin])
     }
 
-    # Filtro para sleep to Wake = 3 (cuando se agrega actividad)
-    f2wake <- find.segment(gdata, filter, 3)
+    # Filtro agregar actividad
+    f2wake <- find.segment(gdata, filter, "Actividad")
     if (nrow(f2wake) > 0){
-        f2wake <- mutate(f2wake, ini = gdata$xscale[ini],
-                         fin = gdata$xscale[fin])
+        f2wake <- mutate(f2wake, ini = gdata$xscale[ini], fin = gdata$xscale[fin])
     }
 
 
@@ -178,17 +177,18 @@ create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
              col = rgb(0.9333,0.7882,0.0000,0.5), border = "gold2")
     }
 
-    # FILTRO 1: indicadores para el filtro = 1 dia o noche completo
+    # FILTRO "Excluir"
     if (nrow(fdata) > 0){
         for (i in 1:nrow(fdata)){
-            rect(fdata$ini[i], 0, fdata$fin[i], limY[2], col = rgb(1, 0, 0, 0.3), border = "red")
+            rect(fdata$ini[i], 0, fdata$fin[i], limY[2], col = rgb(1, 0, 0, 0.3), border = rgb(1, 0, 0, 0.3))
         }
     }
 
-    # FILTRO 2: Agregados en la app
+    # FILTRO "Inicio y Final"
     if (nrow(f2sleep) > 0){
         for (i in 1:nrow(f2sleep)){
-            rect(f2sleep$ini[i], 0, f2sleep$fin[i], limY[2], col = rgb(0, 0.3921, 0, 0.3))
+            # rect(f2sleep$ini[i], 0, f2sleep$fin[i], limY[2], col = rgb(0, 0.3921, 0, 0.3))
+            rect(f2sleep$ini[i], 0, f2sleep$fin[i], limY[2], col = rgb(0, 1, 0, 0.4), border = rgb(0, 1, 0, 0.3))
         }
     }
 
@@ -205,14 +205,14 @@ create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
          col='grey20', ylab='', axes=FALSE, xlim=limX, ylim=limY)
 
     # Linea de incio dia
-    abline(v = ylinea, col = "red", lwd = 2)
+    abline(v = ylinea, col = "red", lwd = 1)
     
-    # FILTRO 4: Linea de mover noche
-    abline(v = tipoCuatro, col = "green", lwd = 2)
+    # FILTRO 4: Mover noche
+    abline(v = moverND, col = "magenta", lwd = 2)
     
     # Linea de inicio y fin de período
-    abline(v = iniSubj, col = "magenta", lwd = 2)
-    abline(v = finSubj, col = "magenta", lwd = 2)
+    abline(v = iniSubj, col = "green4", lwd = 2)
+    abline(v = finSubj, col = "green4", lwd = 2)
 
     # Fechas en los ylabel
     yfec <- paste(format(date(gdata$time[1]), "%a"), format(date(gdata$time[1]), "%d-%m"), sep = "\n")
