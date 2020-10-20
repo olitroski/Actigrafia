@@ -1,6 +1,5 @@
 # ----------------------------------------------------------------------------- #
-# ----- Funcion necesaria para cargar desde el formato libreria que sera ------ #
-# ----- el final, hay que revisar los nombres aun ----------------------------- #
+# ----- Funcion necesaria para cargar desde el formato package ---------------- #
 # ----------------------------------------------------------------------------- #
 olitoSleep <- function(){
     # Acá se dirige al path

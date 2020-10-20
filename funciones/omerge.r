@@ -22,9 +22,9 @@
 #' @import dplyr
 #'
 omerge <- function(xdf = NULL, ydf = NULL, byvar = NULL, keep = FALSE, output = TRUE){
-    fromX <- fromY <- NULL
-    
-    # Guardar nombres variables
+    fromX <- fromY <- Status <- indx <- NULL
+
+    # Guardar nombres variables "ola k ase"
     xnames <- names(xdf)
     ynames <- names(ydf)
 
@@ -38,17 +38,30 @@ omerge <- function(xdf = NULL, ydf = NULL, byvar = NULL, keep = FALSE, output = 
     df <- select(df, -fromX, -fromY)
     df$merge <- factor(df$merge, levels = c(1,2,3), labels = c("Only in master", "Only in using", "Matched observations"))
 
+
+    # Tabla reporte
+    tabla <- group_by(df, merge) %>% summarise(Conteo = n())
+    tabla <- mutate(tabla, merge = as.character(merge)) %>% rename(Status = merge)
+    tabla <- as.data.frame(tabla)
+
+    # Por si falta
+    labels <- c("Only in master", "Only in using", "Matched observations")
+    labels <- labels[!(labels %in% tabla$Status)]
+
+    if (length(labels) > 0){
+        tabla <- bind_rows(tabla, data.frame(Status = labels, Conteo = 0, stringsAsFactors = FALSE))
+    }
+
+    # Terminar la tabla
+    tabla <- arrange(tabla, desc(Status))
+    tabla$indx <- c(2, 1, 3)
+    tabla <- arrange(tabla, indx) %>% select(-indx)
+    n <- sum(tabla$Conteo, na.rm = TRUE)
+    tabla[4, "Status"] <- "--- Total ---"
+    tabla[4, "Conteo"] <- n
+
     # Reporte
     if (output){
-        # Tabla reporte
-        tabla <- group_by(df, merge) %>% summarise(Conteo = n())
-        tabla <- mutate(tabla, merge = as.character(merge)) %>% rename(Status = merge)
-        tabla <- as.data.frame(tabla)
-        n <- sum(tabla$Conteo, na.rm = TRUE)
-        tabla[4, "Status"] <- "--- Total ---"
-        tabla[4, "Conteo"] <- n
-
-        # Reporte
         cat("--- Reporte variables merge --- \n")
         cat("Key:    ", byvar, "\n",sep = "")
         cat("Master: ", paste(xnames[-grep(byvar, xnames)], collapse = ", "), " \n", sep = "")
