@@ -21,6 +21,9 @@
 #' @importFrom dplyr summarize
 #' @importFrom lubridate as_date
 #' @importFrom lubridate as.period
+#' @importFrom stringr str_extract
+#' @importFrom lubridate wday
+#' @importFrom lubridate second
 
 
 # |---------------------------------------------------------------------------------| #

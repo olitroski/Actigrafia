@@ -1,6 +1,6 @@
 Package: olitosleep
 Title: Analisis del ciclo sueno y vigilia mediante actividad motora
-Version: 0.0.912
+Version: 0.0.913
 Authors@R: person("Oliver", "Rojas", email = "oliver.rojas.b@gmail.com", role = c("aut", "cre"))
 Description: Analisis del ciclo sueno y vigilia mediante actividad motora de una dimension en archivos AWD mediante algoritmo Minimitter de Actiwatch. Abarca todo el proceso de edicion desde marcar y etiquetar los     periodos y horas para luego calcular estadisticas de resumen.
 Depends: R (>= 3.1)
@@ -8,7 +8,7 @@ License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 Imports: 
     tibble,
     Hmisc,
