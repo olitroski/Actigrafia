@@ -1,7 +1,12 @@
+#' @title Lanza la aplicacion olitosleep
+#' @description Esta funcion carga la aplicacion de shiny.
+#' @export
+#' @examples
+#' # olitosleep()
 # ----------------------------------------------------------------------------- #
 # ----- Funcion necesaria para cargar desde el formato package ---------------- #
 # ----------------------------------------------------------------------------- #
-olitoSleep <- function(){
+olitosleep <- function(){
     # Acá se dirige al path
     appDir <- system.file("acti", package = "olitosleep")
     
