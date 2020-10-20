@@ -2,6 +2,7 @@
 #' @description Toma plot simple y crea un actogama
 #' @param semiper corresponde al resutlado de la funcion check.acvfilter en especial el elemento 'semiper'
 #' @param fy es el factor de expansion de y
+#' @param filterRDS es la lista del poll de fitro que carga la app
 #' @param set Settings file
 #' @return un grafico
 #' @export

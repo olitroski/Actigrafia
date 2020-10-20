@@ -1,6 +1,7 @@
 #' @title Crea plot de edicion
 #' @description Crea un plot para cada periodo todo lindo para la parte de la edicion
 #' @param gdata el periodo que sale de check.acvedit
+#' @param filterRDS lista del poll de los filtros en la app
 #' @param pct.y el valor de ponderacion del eje y
 #' @param set el objeto de settings
 #' @return un plot
@@ -27,7 +28,7 @@
 # Toma un data.frame de la lista "semiper" y con eso hace el grafico para actograma
 create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
     options(warn = 2)
-    hrdec <- ini <- fin <- NULL
+    hrdec <- ini <- fin <- tipo <-NULL
     
     # ---- Inicio y fin de registro + filtro tipo 4 ------------------------------ #
     # Inicio del registro

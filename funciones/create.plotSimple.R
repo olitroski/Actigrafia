@@ -1,10 +1,11 @@
 #' @title Plot simple para periodo.
 #' @description Hace un plot individual para un periodo en version simple para el actograma
 #' @param gdata datos que saca el check.acvfilter
+#' @param set Settings file
+#' @param filterRDS lista del poll de los filtros en la app
 #' @param pct.y Factor de multiplicacion para el eje y
 #' @param limites Vector de limites para el eje x
 #' @param lw Numeric de weight para las bandas del grafico
-#' @param set Settings file
 #' @return plot de un periodo
 #' @export
 #' @examples
@@ -27,7 +28,7 @@
 create.plotSimple <- function(gdata, set, filterRDS, pct.y = 1, limites = NULL, lw = 1){
     options(warn = 2)
     # nulos de paquete
-    st.edit <- fin <- ini <- NULL
+    st.edit <- fin <- ini <- tipo <- NULL
     
     
     # ---- Inicio y fin de registro + filtro tipo 4 ------------------------------ #

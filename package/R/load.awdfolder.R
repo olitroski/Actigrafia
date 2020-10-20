@@ -19,7 +19,7 @@
 load.awdfolder <- function(filelist = NULL){
     N.Files <- Finalizado <- Sujeto <- NULL
     
-    # capturar archivos
+    # El argumento es la lista de files del folder.
     # archivos <- dir()
     archivos <- filelist
 
@@ -31,26 +31,27 @@ load.awdfolder <- function(filelist = NULL){
         basename <- str_replace(awdfiles, "[.][Aa][Ww][Dd]$", "")
         
         # N de archivos por sujeto
-        # nbase <- map(basename, function(x) {length(grep(x, archivos))}) %>% set_names(basename)
-        # nbase <- t(bind_rows(nbase))[,1]
         nbase <- sapply(basename, function(x) length(grep(x, archivos)))
         
         # Terminados    
-        terminados <- archivos[grep(".finish.RDS", archivos)]
-        terminados <- str_replace(terminados, ".finish.RDS", "")
+        terminados <- archivos[grep(".finished.RDS", archivos)]
+        terminados <- str_replace(terminados, ".finished.RDS", "")
         terminados <- basename %in% terminados
         
         # Terminar el output
-        statusdf <- data.frame(Sujeto = basename, N.Files = nbase, Finalizado = terminados, stringsAsFactors = FALSE)
+        statusdf <- data.frame(Sujeto = basename, 
+                               N.Files = nbase, 
+                               Finalizado = terminados, 
+                               stringsAsFactors = FALSE)
         row.names(statusdf) <- NULL
         
         # Asignar status
-        statusdf <- mutate(statusdf, Status = ifelse(N.Files == 1 & Finalizado == FALSE, 1,
-                                                     ifelse(N.Files > 1  & Finalizado == FALSE, 2,
-                                                            ifelse(N.Files > 1  & Finalizado == TRUE,  3, 4)))) %>% arrange(Sujeto)
-        statusdf$Status <- factor(statusdf$Status, 
-                                  levels = c(1, 2, 3, 4), 
-                                  labels = c("No procesado", "En edicion", "Terminado", "Con error"))
+        statusdf <- mutate(statusdf, 
+                           Status = ifelse(N.Files == 1, "No procesado",
+                                           ifelse(N.Files > 1  & Finalizado == FALSE, "En edicion",
+                                                  ifelse(N.Files > 1  & Finalizado == TRUE, "Terminado", 
+                                                         "Error")))) 
+        statusdf <- arrange(statusdf, Sujeto)
         return(statusdf)
     
     # Si no hubiera nada de awd    

@@ -2,12 +2,15 @@
 #' @description Este es el archivo master que usa todo para crear los episodios con los cuales se calculan las estadisticas.
 #' @param acvedit el objeto que sale de check.acvfilter
 #' @param filter es el archivo de filtro guardado RDS
+#' @param set es la lista de settings del archivo sleep.config
+#' @param dia0 logico que indica si se conserva el dia 0 o no en el epi final
 #' @return data frame
 #' @export
 #' @examples
 #' # setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
+#' # set <- getset(getwd())
 #' # awdfile <- "2058-001-368 JRG Baseline"
-#' # acvedit <- check.acvfilter(awdfile)
+#' # acvedit <- check.acvfilter(awdfile, set)
 #' # filter <- readRDS(paste0(awdfile, ".edit.RDS"))
 #' @importFrom dplyr rename
 #' @importFrom lubridate hours
@@ -31,22 +34,15 @@
 # acveditRDS se carga desde <<return(check.acvfilter(awdfile()))>>
 # y el filtro se carga directo con <<return(readRDS(fichero))>>
 
-create.epi <- function(acvedit = NULL, filter = NULL){
-    # Nulos de paquete
-    data <- dinofinal <- indx <- name <- estado <- periodo <- set <- hrdec <- nper <- NULL
-    nseq <- duracion <- dianoc <- NULL
+create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = FALSE){
+    # Nulos para libreria
+    data <- dinofinal <- indx <- name <- estado <- periodo <- hrdec <- nper <- NULL
+    nseq <- duracion <- dianoc <- ini <- stage <- st.edit <- act.edit <- ini.time <- NULL
 
+    # Los filtros
+    filtro <- filter$filter
 
-    # Vectorizacion de secuencia
-    vectSeq <- Vectorize(seq.default, vectorize.args = c("from", "to"))
-
-    # Separar los datos de filtro
-    rango <- filter$header[4:5]
-    rango <- str_split(rango, "a:", simplify = TRUE)[, 2]
-    rango <- dmy_hm(rango)
-    filtro <- filter$filter   # filtro <- filtro[-12,]
-
-    # | - 1. dianoc previo ----
+    # | - 1. Crear dia noche y juntar periodos ----------------------------------
     # Crear el tag Dia|Noche en los semiperiodos, para asegurar que existan y
     # no secundarios al estado de sueno como en actividorm
     i <- as.numeric(set$inidia)/3600
@@ -55,22 +51,14 @@ create.epi <- function(acvedit = NULL, filter = NULL){
                       dianoc = ifelse(hrdec >= i & hrdec < f, "Dia", "Noche"))
     rm(i, f)
 
-
-    # | - 2. Numerar periodos ----
     # Los periodos en secuencia son los mismos nombres de la lista por lo cual basta
     # pasar los nombres al combinar.
     acvdata <- bind_rows(acvdata, .id = "nper")
     acvdata <- mutate(acvdata, nper = str_replace(nper, "per", ""))
 
-
-    # --------------------------------------------------------------------------------- #
-    # --- 3. Determinar dia y noche ---------------------------------------------------
-    # --------------------------------------------------------------------------------- #
-    # Lo mejor sera determinar bien antes que todo cuando es dia y noche asi luego
-    # solo ser haria un group_by, por noche y por estado de sueno. Por capas de variables.
-
-    # | --- duracion de cada episodio -------------------------------------------------
-    # Numerar los episodios primero y su index
+    
+    # | - 2. Data mangement ---------------------------------------------------
+    # Hacer los episodios S|W correlativos 
     wsegm <- find.segment(acvdata, "st.edit", filtro = "W")
     wsegm <- mutate(wsegm, stage = "W", nseq = seq_along(ini),
                     nseq = ifelse(nseq < 10, paste0("0", nseq), nseq),
@@ -81,315 +69,416 @@ create.epi <- function(acvedit = NULL, filter = NULL){
                     nseq = ifelse(nseq < 10, paste0("0", nseq), nseq),
                     nstage = paste(stage, nseq, sep = "-")) %>% select(-nseq, -stage)
 
+    # Los indices de los episodios
     swIndex <- bind_rows(wsegm, ssegm)
     swIndex <- arrange(swIndex, ini)
     rm(wsegm, ssegm)
 
-    # Para cada index
+    # Agregar la duracion de los episodios
     acvdata$seqStage <- NA
     acvdata$duracion <- NA
     for (i in 1:nrow(swIndex)){
         # El sw secuencial
-        acvdata$seqStage[swIndex$ini[i]:swIndex$fin[i]] <- swIndex$nstage[i]
-
-        # La duracion
-        dur <- acvdata$time[swIndex$fin[i]] - acvdata$time[swIndex$ini[i]]
-        dur <- as.numeric(as.period(dur))/60
+        acvdata[["seqStage"]][swIndex$ini[i]:swIndex$fin[i]] <- swIndex$nstage[i]
+        
+        # La duracion (depende de las horas y no de las filas del swIndex)
+        dur <- as.period(acvdata$time[swIndex$fin[i]] - acvdata$time[swIndex$ini[i]])
+        dur <- dur + minutes(1)   # porque el fin debiera ser el ini del periodo siguiente
+        dur <- hour(dur)*60 + minute(dur) + second(dur)/60
         acvdata[["duracion"]][swIndex$ini[i]:swIndex$fin[i]] <- dur
     }
+    rm(swIndex, i, dur)
 
 
+    # | - 3. Tabla de episodios -----------------------------------------------
+    # Hacer una tabla de episodios para no operar sobre la base de detecciones
+    # debiera ser mas rapido asi
+    
+    # rehacer el index
+    acvdata <- mutate(acvdata, indx = indx - 1)
 
-
-
-    # Determinar el 1er episodio de mas de x minutos
-    acvdata <- mutate(acvdata, )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # | ---- Data Vigilia ----
-    # Segementos e indices
-    segm <- find.segment(data, "st.edit", filtro = "W")
-    ranges <- vectSeq(from = segm$ini, to = segm$fin, by = 1)
-    # Stats
-    ini     <- lapply(ranges, function(x) min(data$time[x]))
-    fin     <- lapply(ranges, function(x) max(data$time[x]))
-    meanAct <- lapply(ranges, function(x) mean(data$act.edit[x]))
-    filtro  <- lapply(ranges, function(x) unique(data$filter[x]))
-    # Reordenar la data
-    dataWake <- data.frame(i = 1:length(ranges),
-                           ini = paste(ini, sep = ","),
-                           fin = paste(fin, sep = ","),
-                           meanAct = paste(meanAct, sep = ";"),
-                           filtro = paste(filtro, sep = ","), stringsAsFactors = FALSE)
-    dataWake$i <- paste(ifelse(dataWake$i < 10,
-                               paste0("W-0", dataWake$i),
-                               paste0("W-", dataWake$i)))
-    rm(segm, ranges, ini, fin, meanAct, filtro)
-
-
-    # | ---- Data Sueno ----
-    # Indices y segmentos
-    segm <- find.segment(data, "st.edit", filtro = "S")
-    ranges <- vectSeq(from = segm$ini, to = segm$fin, by = 1)
-    # Stats
-    ini     <- lapply(ranges, function(x) min(data$time[x]))
-    fin     <- lapply(ranges, function(x) max(data$time[x]))
-    meanAct <- lapply(ranges, function(x) mean(data$act.edit[x]))
-    filtro  <- lapply(ranges, function(x) unique(data$filter[x]))
-    # Reordenar la data
-    dataSleep <- data.frame(i = 1:length(ranges),
-                            ini = paste(ini, sep = ","),
-                            fin = paste(fin, sep = ","),
-                            meanAct = paste(meanAct, sep = ";"),
-                            filtro = paste(filtro, sep = ","), stringsAsFactors = FALSE)
-    dataSleep$i <-paste(ifelse(dataSleep$i < 10,
-                               paste0("S-0", dataSleep$i),
-                               paste0("S-", dataSleep$i)))
-    rm(segm, ranges, ini, fin, meanAct, filtro)
-
-    # | ---- Data Combinada S|W----
-    epi <- bind_rows(dataWake, dataSleep)
-    rm(dataWake, dataSleep)
-
-    # Data management
-    epi <- mutate(epi,
-                  ini = as_datetime(as.numeric(ini)),
-                  fin = as_datetime(as.numeric(fin)),
-                  dur = as.numeric(fin - ini),
-                  name = data[1, "nombre"],
-                  file = data[1, "filename"],
-                  meanAct = round(as.numeric(meanAct), 2),
-                  estado = str_sub(i, 1, 1))
-    epi <- rename(epi, duracion = dur) %>% arrange(ini)
-    epi <- mutate(epi, indx = 1:nrow(epi))
-    rm(data)
-
-
-    # Funcion pa sacar el tiempo en formato intervalos de lubridate
-    hr <- function(time) {hours(hour(time)) + minutes(minute(time))}
-
-    # Trozo 1: DINO by setting ----
-    # Determinar dia o noche segun las horas de setting (ininoc e inidia)
-    # y marca 1 si duracion <> durawake
-    epi <- mutate(epi,
-                  # Variable dino = dia|noche segun los valores del setting
-                  dino = ifelse(hr(ini) >= hm("00:00") & hr(ini) < set$inidia,
-                                "Noche",
-                                ifelse(hr(ini) >= set$inidia & hr(ini) < set$ininoc,
-                                       "Dia",
-                                       ifelse(hr(ini) >= set$ininoc & hr(ini) < hms("23:59:59"),
-                                              "Noche", "Error"))),
-                  # Variable dur = 1 si el episodio dura mas que durawake o sleep segun settings
-                  dur = ifelse(dino == "Dia" & duracion >= set$durawake,
-                               1,
-                               ifelse(dino == "Noche" & duracion >= set$dursleep,
-                                      1, 0)))
-
-
-    # Trozo 2: DINO Correlativo ----
-    # Index para c/ dia-noche para contruir dia01 dia02 etc.
-    dia <- find.segment(epi, "dino", "Dia")
-    dia <- mutate(dia, n = 1:nrow(dia), dino = "Dia", fin = fin + 1)
-    noc <- find.segment(epi, "dino", "Noche")
-    noc <- mutate(noc, n = 1:nrow(noc), dino = "Noche", fin = fin + 1)
-    dnIndx <- bind_rows(dia, noc) %>% arrange(ini)
-    dnIndx$fin[nrow(dnIndx)] <- nrow(epi)
-    rm(dia, noc)
-
-    # Correlativo de dianoc construido onda "Dia 01"
-    for (i in 1:nrow(dnIndx)){
-        epi[dnIndx$ini[i]:dnIndx$fin[i], "dnIndx"] <- dnIndx$n[i]
+    # ---- Tabla de episodios
+    tabepi <- group_by(acvdata, seqStage)
+    tabepi <- summarize(tabepi, 
+                        duracion = unique(duracion),
+                        min.index = min(indx), max.index = max(indx),
+                        ini.time = min(time), 
+                        filtro = paste(unique(filter), collapse = ","),
+                        estado = paste(unique(st.edit), collapse = ","),
+                        actividad = sum(act.edit, na.rm = TRUE))
+    tabepi <- arrange(tabepi, ini.time)
+    tabepi <- mutate(tabepi, fin.time = lead(ini.time))
+    
+    # Variable tiempo final
+    tabepi[["fin.time"]][nrow(tabepi)] <- tabepi[["ini.time"]][nrow(tabepi)] + minutes(tabepi[["duracion"]][nrow(tabepi)])
+    tabepi <- as.data.frame(tabepi)     # muahaha... ahora no salen errores fucking tibbles
+    
+    
+    # Variables adicionales a la tabla de episodios
+    # dia o noche del inicio del episodio
+    tabepi[["dianoc"]] <- NA
+    for (i in 1:nrow(tabepi)){
+        index <- tabepi[["min.index"]][i]
+        tabepi[["dianoc"]][i] <- acvdata[["dianoc"]][index]
     }
-    epi <- mutate(epi, dnIndx = ifelse(dnIndx < 10,
-                                      paste("0", dnIndx, sep = ""),
-                                      dnIndx),
-                       dianoc = paste(dino, dnIndx))
-    rm(i, dnIndx)
+    
+    # Limpiar y ordenar
+    tabepi <- select(tabepi, 
+                     min.index, max.index, ini.time, fin.time,
+                     seqStage, estado, duracion, dianoc, filtro, actividad)
+    rm(i, index)
+    
 
+    # | - 4. Dia|Noche segun settings -----------------------------------------
+    # Loopear cada linea para decidir noche o dia segun los settings 
+    tabepi$dianoc2 <- NA
+    stage.i <- tabepi$dianoc[1]
+    ininoc <- hour(set$ininoc) + minute(set$ininoc)/60
+    inidia <- hour(set$inidia) + minute(set$inidia)/60
 
-    # Trozo 3: Existe dursleep|durawake ----
-    # Evaluar si existe (dia|noche) > (dursleep|durwake) si no hay pasa de largo la deteccion
-    maxdur <- group_by(epi, dianoc)
-    maxdur <- summarize(maxdur, maxdur = max(dur), indx = min(dnIndx), dino = unique(dino))
-    maxdur <- filter(maxdur, maxdur == 0)     # Estos no tienen la dur minima para determinar
-
-    # Esto es en caso de encontrar un dianoc sin dur sleep|wake suficiente.
-    # Crea variable="dur2": la idea es que no queden "Dia" etiquetados como "Noche" porque
-    # no se encontro un episodio que durara mas de sleep|wake dur.
-    epi$dur2 <- 0
-    if (nrow(maxdur) > 0){
-        for (i in 1:nrow(maxdur)){
-            # Para el dia
-            if (maxdur$dino[i] == "Dia"){
-                ifix <- min(epi[epi$dianoc == maxdur$dianoc[i] & epi$estado == "W", "indx"])
-                epi$dur2[ifix] <- 1    # Aca se pone el inicio falso after inidia
-
-            # para la noche
-            } else if (maxdur$dino[i] == "Noche"){
-                ifix <- min(epi[epi$dianoc == maxdur$dianoc[i] & epi$estado == "S", "indx"])
-                epi$dur2[ifix] <- 1    # Aca se pone el inicio falso after inidia
-
+    for (i in 1:nrow(tabepi)){      # i <- 1
+        # Evaluar si cambia de "Dia a Noche"
+        if (stage.i == "Dia"){
+            # Para que cambie a noche la hora debe estar entre "ininoc" y "inidia"
+            hr <- tabepi$ini.time[i]
+            hr <- hour(hr) + minute(hr)/60
+            
+            if (hr >= ininoc & hr < 23.9999){
+                hora <- TRUE
+            } else if (hr >= 0 & hr < inidia) {
+                hora <- TRUE
             } else {
-                stop("algo paso, dianoc sin stage > dursleep|durwake")
+                hora <- FALSE
             }
+            
+            # Pruebas logicas
+            if (tabepi[["duracion"]][i] >= set$dursleep & hora == TRUE & tabepi$estado[i] == "S"){
+                tabepi$dianoc2[i] <- "Noche"
+                stage.i <- "Noche"
+            } else {
+                tabepi$dianoc2[i] <- "Dia"
+            }
+        
+        # Evaluar cambio de "Noche a Dia"
+        } else if (stage.i == "Noche"){
+            # Para que cambie a "Dia" la hora debe estar entre "inidia" y "ininoc"
+            hr <- tabepi$ini.time[i]
+            hr <- hour(hr) + minute(hr)/60
+            
+            if (hr >= inidia & hr < ininoc){
+                hora <- TRUE
+            } else {
+                hora <- FALSE
+            }
+            
+            # Buscar sueno hasta que cambie
+            if (tabepi[["duracion"]][i] >= set$durawake & hora == TRUE & tabepi$estado[i] == "W"){
+                tabepi$dianoc2[i] <- "Dia"
+                stage.i <- "Dia"
+            } else {
+                tabepi$dianoc2[i] <- "Noche"
+            }
+            
+        # Por si hay algun error
+        } else {
+            stop("algo paso en dianoc2")
         }
     }
-    rm(maxdur, ifix)
 
-    ######### temporal ############# ------
-    epi <- mutate(epi, fin = as_date(ini))
-    # View(epi)
+    # Limpiar
+    rm(stage.i, hr, hora, i)    ###### inidia, ininoc
+    tabepi <- select(tabepi, -dianoc) %>% rename(dianoc = dianoc2)
+    
+    
+    # | - 5. Mover noche ------------------------------------------------------
+    # Capturar el filtro
+    moveData <- filter(filtro, tipo == "Mover") 
+    moveData <- pull(moveData, ini)
+    moveData <- dmy_hm(moveData)
+    
+    # Procesar si hubiera     i <- 1
+    if (length(moveData) > 0){
+        tabepi$mover <- NA
+        
+        for (i in length(moveData)){
+            # Marcar ocurrencia y capturar stage
+            i.move <- which(tabepi$ini.time == moveData[i])
+            tabepi$mover[i.move] <- TRUE
+            st.epi <- tabepi$estado[i.move]
+            
+            # ---- Inicio Episodio, Sueno ---- #
+            if (st.epi == "S") {
+                # Se mueve el inicio de la noche
+                # 
+                # | Dia
+                # | Dia
+                # | Noche
+                # |---------+
+                # | * Noche |
+                # | Noche   |
+                # |         v
+                # 
+                # Hacia atras si hay algun "Noche" lo pasa a "Dia", por si se movio
+                i.move <- which(tabepi$ini.time == moveData[i])
+                i.move <- i.move - 1
+                change <- TRUE
+                while (change == TRUE){
+                    if (tabepi[["dianoc"]][i.move] == "Noche"){
+                        tabepi[["dianoc"]][i.move] <- "Dia"
+                        i.move <- i.move - 1
+                    } else {
+                        change <- FALSE
+                    } 
+                } # Hacia delante debiera ser todo "Noche"
 
-    # | --- set -----------
-    # Ya tenemos todos los dia noc con stage marcado con comienzo no importa si no tiene stage > 30
-    # Ahora detectar el 1er stage mayor a durawake y dursleep
-    epi$dur3 <- 0
-    st <- epi$dino[1]
+            # ----Inicio Episodio, Vigilia ---- #
+            } else if (st.epi == "W"){
+                # Se mueve inicio del dia.
+                # 
+                # | Noche
+                # | Noche
+                # | Dia
+                # |---------+
+                # | * Dia   |
+                # | Dia     |
+                # |         v
+                # 
+                # Hacia atras si hay algun "Dia" lo pasa a "Noche"
+                i.move <- which(tabepi$ini.time == moveData[i])
+                i.move <- i.move - 1
+                change <- TRUE
+                while (change == TRUE){
+                    if (tabepi[["dianoc"]][i.move] == "Dia"){
+                        tabepi[["dianoc"]][i.move] <- "Noche"
+                        i.move <- i.move - 1
+                    } else {
+                        change <- FALSE
+                    } 
+                } # Hacia adelante debiera estar todo ok "Dia"
+            }
+        }
+        
+        rm(i, i.move, st.epi)
+    }
+    
+    # Limpiar
+    rm(moveData)
+    
+    
+    # | - 6. Secuenciar Dia|noche + drop --------------------------------------
+    # Marcar los extremos
+    tabepi <- mutate(tabepi, seqDianoc = ifelse(filtro == "Ini", "Drop",
+                                                ifelse(filtro == "Fin", "Drop",
+                                                       ifelse(filtro == "Excluir", "Drop", NA))))
+    
+    # Determinar desde donde partir
+    start <- which(is.na(tabepi$seqDianoc))
+    start <- min(start)
+    
+    # Numero secuencial inicial
+    if (tabepi$dianoc[start] == "Dia"){
+        seqnum <- 0
+        tabepi$seqDianoc[start] <- seqnum
+        start <- start + 1
+    } else {
+        seqnum <- 1
+        tabepi$seqDianoc[start] <- seqnum
+        start <- start + 1
+    }
+
+    # Loopear cada linea - Solo cambia "seqnum"
+    for (i in start:nrow(tabepi)){
+        # Valores de varaible
+        valLine <- tabepi$seqDianoc[i]
+        valPrev <- tabepi$seqDianoc[i - 1]
+        
+        # Valores de dia|noche
+        valLineDN <- tabepi$dianoc[i]
+        valPrevDN <- tabepi$dianoc[i - 1]
+        
+        # Si el actual es "drop" y aumenta el i
+        if (is.na(valLine) == FALSE){
+            tabepi$seqDianoc[i] <- "Drop"
+            i <- i + 1
+            
+        # Si hay valor
+        } else if (is.na(valLine) == TRUE){
+            # Cuando se conserva porque el anterior es igual
+            if (valLineDN == valPrevDN & is.na(valLine) == TRUE & valPrev == as.character(seqnum)){
+                tabepi$seqDianoc[i] <- as.character(seqnum)
+                i <- i + 1
+                
+            # Se viene de un drop, se aumenta el "seqnum"
+            } else if (valPrev == "Drop"){
+                seqnum <- seqnum + 1
+                tabepi$seqDianoc[i] <- as.character(seqnum)
+                i <- i + 1
+                
+            # Cambio de dianoc y no hay "drops"
+            } else if (valLineDN != valPrevDN & is.na(valLine) == TRUE & valPrev == as.character(seqnum)){
+                seqnum <- seqnum + 1
+                tabepi$seqDianoc[i] <- as.character(seqnum)
+                i <- i + 1
+                
+            # Algun error    
+            } else {
+                stop("algo pasa #1 al asignar el secuencial")
+            }
+            
+        # Algo pasa
+        } else {
+            stop("algo pasa #2 al asignar el secuencial")
+        }
+    }
+    
+    # la variable secuencial
+    tabepi <- mutate(tabepi, 
+                     temp = ifelse(seqDianoc == "Drop", as.character(666), seqDianoc), 
+                     temp = as.numeric(temp),
+                     temp = ifelse(temp == 666, "Drop", ifelse(temp < 10, paste0("0", temp), as.character("temp"))),
+                     temp = ifelse(temp == "Drop", "Drop", paste(dianoc, temp)))
+
+    # Limpiar
+    rm(i, seqnum, start, valLine, valLineDN, valPrev, valPrevDN)    
+    
+    
+    # | - 7. Crar periodos Dia-Noche (DN) y Noche-Dia (ND) --------------------
+    # Con una tabla auxiliar mejor
+    periodo <- group_by(filter(tabepi, temp != "Drop"), temp)
+    periodo <- summarize(periodo, ini = min(ini.time), fin = max(fin.time))
+    periodo <- arrange(periodo, ini)
+    periodo <- mutate(periodo, dianoc = str_split(periodo$temp, " ", simplify = TRUE)[,1])
+    
+    # Marcar consecutivos "Dia-Noche"
+    if (periodo$dianoc[1] == "Dia"){
+        seqnum <- 0
+    } else {
+        seqnum <- 1
+    }
+
+    periodo$perDN <- NA
+    change <- TRUE
     i <- 1
-    while (i < nrow(epi)){
-        dino  <- epi$dino[i]
-        dur  <- epi$dur[i]
-        dur2 <- epi$dur2[i]
-        stage <- epi$estado[i]
-
-
-        # Si la linea dura mas de 30 mins
-        if ((dino == st & dur == 1) | (dino == st & dur2 == 1)){
-            # El primer dia queda mal puesto porque siempre parte despues de del "inidia", se arregla despues.
-
-            # Como ya encontramos i > durWake|durSleep, cambia valor "st" para que en la siguiente iteracion
-            # solo avance, en algun momento cambiara el dino original y volvera a hacer match
-            # y seguira buscando hasta que encuentre una linea que tenga la duracion adecuada, volvera
-            # a cambiar el st y repita el proceso
-
-            # Si la linea es "Dia" el > que "durDia" debe ser "W"
-            if (dino == "Dia" & stage == "W"){
-                epi$dur3[i] <- 1
-                if (st == "Dia"){
-                    st <- "Noche"
-                } else if (st == "Noche"){
-                    st <- "Dia"
-                }
-                i <- i + 1
-
-            # Si la linea es "noche" el > que "durSleep debe ser "S"
-            } else if (dino == "Noche" & stage == "S"){
-                epi$dur3[i] <- 1
-                if (st == "Dia"){
-                    st <- "Noche"
-                } else if (st == "Noche"){
-                    st <- "Dia"
-                }
-                i <- i + 1
-
-            # Si no... avanzamos
-            } else {
-                i <- i + 1
-            }
-
-        # Si encontramos que la linea tiene duracion < durSW pasa y anota cero
-        } else {
-            # Como "dino!=st" o "dur1|dur2 != 1" asigna valor 0 y avanza
-            epi$dur3[i] <- 0
+    while (change == TRUE){
+        if (is.na(periodo$dianoc[i + 1] == "Noche") == TRUE){     # Para la ultima linea
+            periodo$perDN[i] = seqnum
             i <- i + 1
+        } else if (periodo$dianoc[i] == "Noche" & periodo$dianoc[i + 1] == "Dia" & periodo$fin[i] == periodo$ini[i + 1]){
+            periodo$perDN[i] = seqnum
+            periodo$perDN[i + 1] = seqnum
+            seqnum <- seqnum + 1
+            i <- i + 2
+        } else {
+            periodo$perDN[i] = seqnum
+            seqnum <- seqnum + 1
+            i <- i + 1
+        }
+        # Detiene el loop
+        if (i > nrow(periodo)){
+            change <- FALSE
         }
     }
 
-
-
-
-    # Borrar lo que ya no sirve
-    epi <- select(epi, -dur, -dur2, -dianoc)
-
-
-
-
-
-
-
-
-
-
-    # Fabricar el dianoc final, ya se hicieron las correcciones y todo -----
-    # Indices el correlativo de dia noc
-    dia <- find.segment(epi, "dino", "Dia")
-    dia <- mutate(dia, n = 1:nrow(dia), dino = "Dia", fin = fin + 1)
-    noc <- find.segment(epi, "dino", "Noche")
-    noc <- mutate(noc, n = 1:nrow(noc), dino = "Noche", fin = fin + 1)
-    dnIndx <- bind_rows(dia, noc); rm(dia, noc)
-    dnIndx <- select(dnIndx, dino, n, ini, fin) %>% arrange(ini)
-    dnIndx$fin[nrow(dnIndx)] <- nrow(epi)
-
-    # Correlativo de dianoc construido onda "Dia 01"
-    for (i in 1:nrow(dnIndx)){
-        epi[dnIndx$ini[i]:dnIndx$fin[i], "dnIndx"] <- dnIndx$n[i]
+    # Crar periodos Noche-Dia (ND), sipis, lo hago separado del DN... 
+    if (periodo$dianoc[1] == "Dia"){
+        seqnum <- 0
+    } else {
+        seqnum <- 1
     }
-    rm(dnIndx)
-
-
-
-
-    # Corregir el epi$dino porque puede estar descuadrado -----
-    epi$dinofinal <- NA
-    i <- min(which(epi$dur3 == 1))
-    epi$dinofinal[i] <- epi$dino[i]     # El primer episodio
-
-    i <- i + 1
-    st <- epi$dino[i]
-    while (i <= nrow(epi)){
-        dino  <- epi$dino[i]
-        dur3  <- epi$dur3[i]
-
-        # Hace el cambio si es diferente al encontrar dur3=1
-        if (dino != st & dur3 == 1){
-            if (st == "Dia"){
-                st <- "Noche"
-            } else if (st == "Noche"){
-                st <- "Dia"
-            }
-            # Asigna el valor
-            epi$dinofinal[i] <- st
+    
+    periodo$perND <- NA
+    change <- TRUE
+    i <- 1
+    while (change == TRUE){
+        if (is.na(periodo$dianoc[i + 1] == "Noche") == TRUE){     # Para la ultima linea
+            periodo$perND[i] = seqnum
             i <- i + 1
+        } else if (periodo$dianoc[i] == "Dia" & periodo$dianoc[i + 1] == "Noche" & periodo$fin[i] == periodo$ini[i + 1]){
+            periodo$perND[i] = seqnum
+            periodo$perND[i + 1] = seqnum
+            seqnum <- seqnum + 1
+            i <- i + 2
         } else {
-            # Continua hasta que encuentre dur3 == 1 con el mismo st
-            epi$dinofinal[i] <- st
+            periodo$perND[i] = seqnum
+            seqnum <- seqnum + 1
             i <- i + 1
         }
+        # Detiene el loop
+        if (i > nrow(periodo)){
+            change <- FALSE
+        }
     }
+    
 
+    # Hermosear
+    periodo <- as.data.frame(periodo)
+    periodo <- mutate(periodo,
+                      perDN = ifelse(perDN < 10, paste0("0", perDN), perDN),
+                      perDN = paste(dianoc, perDN),
+                      perND = ifelse(perND < 10, paste0("0", perND), perND),
+                      perND = paste(dianoc, perND))
+    periodo <- rename(periodo, periodoSeq = temp, periodoDN = perDN, periodoND = perND)
+    periodo <- select(periodo, periodoSeq, periodoDN, periodoND)
+    
+    
+    # Limpiar
+    rm(i, change, seqnum)
+    
+    
+    
+    # | - 8. Juntar todo ------------------------------------------------------
+    tabepi <- rename(tabepi, periodoSeq = temp)
+    tabepi <- base::merge(tabepi, periodo, by = "periodoSeq", all = TRUE)
+    
+    # Mover los drop
+    tabepi <- mutate(tabepi, periodoDN = ifelse(seqDianoc == "Drop", "Drop", periodoDN),
+                             periodoND = ifelse(seqDianoc == "Drop", "Drop", periodoND))
+    tabepi <- arrange(tabepi, ini.time)
+    tabepi <- select(tabepi, -seqDianoc, -min.index, -max.index)
+    
+    # Me quedo al reves el DN y ND
+    tabepi <- rename(tabepi, periodoND = periodoDN, periodoDN = periodoND)
+    
+    
+    # Pegarle al "acvedata" algunas cosas
+    acvdata <- merge(acvdata, select(tabepi, seqStage, periodoSeq, periodoND, periodoDN), by = "seqStage")
+    acvdata <- select(acvdata, -nper)
 
-
-    # Resta 1 a al index del periodo (dia 1) de dia para que empiece del 0 cuando parte de dia
-    # solo se le hace al dia
-    epi <- mutate(epi, dnIndx = as.numeric(dnIndx),
-                  dnIndx = ifelse(dinofinal == "Dia", dnIndx - 1, dnIndx))
-
-    # Hace el dianocfinal
-    epi <- mutate(epi, dnIndx = ifelse(dnIndx < 10,
-                                           paste0("0", as.character(dnIndx)),
-                                           as.character(dnIndx)))
-    epi <- mutate(epi, periodo = paste(dinofinal, dnIndx)) %>% rename(dianoc = dinofinal)
-
-    # Limpiar y entregar
-    epi <- filter(epi, is.na(dianoc) == FALSE)
-    epi <- select(epi, indx, i, name, ini, fin, meanAct, estado, duracion, dianoc, periodo, filtro, file)
+    
+    # Crear data.frame para pasar a las stats que asemeja el epi viejo
+    Sys.setlocale("LC_ALL", "English")
+    epiviejo <- tabepi
+    epiviejo <- filter(epiviejo, periodoSeq != "Drop")
+    epiviejo <- mutate(epiviejo, id = acvdata$filename[1], 
+                                 meanActividad = round(actividad/duracion, 1),
+                                 seqPer = str_extract(periodoND, "[0-9][0-9]"),
+                                 horaDec = round(hour(ini.time) + minute(ini.time)/60, 3),
+                                 horaAbs = floor(horaDec),
+                                 weekday = as.character(wday(ini.time, label = TRUE)))
+    
+    # Botar el dia cero, igual se deja la opcion por si las moscas
+    if (dia0 == FALSE){
+        epiviejo = filter(epiviejo, periodoND != "Dia 00")
+    }
+    
+    # Dejar listo para que pase el resto de scripts
+    epiviejo <- select(epiviejo, id, 
+                                 fec.hora = ini.time,
+                                 estado = estado,
+                                 dur_min = duracion, 
+                                 mean_act = meanActividad,
+                                 dia.noc = dianoc,
+                                 seq.dia = seqPer,
+                                 hora = horaDec, 
+                                 dia = weekday,
+                                 hora.abs = horaAbs)
+    
+    
+    # Combinar todo en una lista
+    epi <- list(acvdata = acvdata, epitab = tabepi, epi = epiviejo)
     return(epi)
 }
+# final -----
 
-# library(tictoc)
-# tic(); test <- create.epi(semiper); toc()
+
+

@@ -10,14 +10,50 @@
 # Sensibilidad: 20.0
 
 
-# ----- Cargar funciones, settings --------------------------------------------
+# ----- Cargar carpeta de trabajo --------------------------------------------- #
 rm(list = ls())
 mainfolder <- "D:/OneDrive/INTA/Actigrafia"
 setwd(mainfolder)
-source("appLoader.R")
 
+
+# ----- Cargar todo para hacer pruebas ---------------------------------------- #
+# Cargar y/o Instalar librerias
+# Listar lo instalado
+packlist <- c("utf8", "sourcetools","tidyselect","fastmap","xtable", "httpuv","zip",
+              "backports","assertthat","tibble","pkgconfig","R6", "kableExtra", "Hmisc",
+              "openxlsx", "fs", "shinyFiles","shiny","rmarkdown","haven","stringr",
+              "purrr","lubridate","dplyr")
+new.packages <- packlist[!(packlist %in% installed.packages()[,"Package"])]
+
+# Instalar si no estan
+if (length(new.packages) > 0) {
+    install.packages(new.packages) 
+}
+# Cargar
+for (lib in packlist) {
+    eval(parse(text = paste0("library(",lib,")")))
+}
+# limpiar
+rm(packlist, new.packages, lib)
+
+
+# | -- Cargar funciones al Gloval Env --------------------------------------- #
+# Cargar el folder
+cat("---Cargando funciones---\n")
+setwd(file.path(mainfolder, "funciones"))
+funciones <- dir()[grep("[.Rr]$", dir())]
+# Cargar
+for (fun in funciones) {
+    print(paste("Loading function", fun))
+    source(fun)
+}    
+# Limpiar
+rm(fun, funciones)
+setwd(mainfolder)
+
+# ----- Cargar funciones, settings -------------------------------------------- #
 # Cargar App
-# runApp(display.mode = "normal")
+runApp(display.mode = "normal")
 stop()
 
 

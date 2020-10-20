@@ -2,6 +2,8 @@
 #' @description Este es el archivo master que usa todo para crear los episodios con los cuales se calculan las estadisticas.
 #' @param acvedit el objeto que sale de check.acvfilter
 #' @param filter es el archivo de filtro guardado RDS
+#' @param set es la lista de settings del archivo sleep.config
+#' @param dia0 logico que indica si se conserva el dia 0 o no en el epi final
 #' @return data frame
 #' @export
 #' @examples
@@ -35,7 +37,7 @@
 create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = FALSE){
     # Nulos para libreria
     data <- dinofinal <- indx <- name <- estado <- periodo <- hrdec <- nper <- NULL
-    nseq <- duracion <- dianoc <- NULL
+    nseq <- duracion <- dianoc <- ini <- stage <- st.edit <- act.edit <- ini.time <- NULL
 
     # Los filtros
     filtro <- filter$filter

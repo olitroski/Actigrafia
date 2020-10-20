@@ -142,7 +142,7 @@ server <- function(input, output, session){
         nopro <- filter(subjectDF(), Status == "No procesado") %>% select(Sujeto)
         
         if (nrow(nopro) == 0){
-            showNotification("No existen sujetos para procesar", type = "error")
+            showNotification("No hay sujetos para procesar", type = "error", duration = 1, closeButton = FALSE)
         } else {
             showModal(warnModal.mass())
         }

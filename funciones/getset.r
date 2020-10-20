@@ -1,6 +1,6 @@
 #' @title Leer Settings
 #' @description Evalua si existe o no un archivo de settings, sino crea uno y lo carga en el globalenv.
-#' @param awdpath el directorio seleccionado en la app que debiera ser el awdfolder() o algo asi.
+#' @param awdpath el directorio seleccionado en la app 
 #' @return una lista con los parametros
 #' @export
 #' @importFrom stringr str_split

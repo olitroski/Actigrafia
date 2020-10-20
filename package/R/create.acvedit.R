@@ -20,22 +20,16 @@
 # ------------------------------------------------------------------------------------- #
 
 create.acvedit <- function(awdfile, acv.filter, filter.stats){
-    # cat(paste("exec(create.acvedit)", awdfile, "\n"))
-	# str(filter.stats)
-    # acv.filter <- acv
-    # head(acv.filter)
-    # f <- 1
-
     # Buscar seccion para filtrar y editar variable
-    for (f in 1:nrow(filter.stats)){
-        ini <- filter.stats$ini[f]
-        fin <- filter.stats$fin[f]
+    # for (f in 1:nrow(filter.stats)){
+    #     ini <- filter.stats$ini[f]
+    #     fin <- filter.stats$fin[f]
+    # 
+    #     range <- which(acv.filter$time >= ini & acv.filter$time <= fin)
+    #     acv.filter$filter[range] <- 1
+    # }
 
-        range <- which(acv.filter$time >= ini & acv.filter$time <= fin)
-        acv.filter$filter[range] <- 1
-    }
-
-    rdsname <- str_replace(awdfile, ".[Aa][Ww][Dd]$", ".acv.edit.RDS")
+    rdsname <- str_replace(awdfile, ".[Aa][Ww][Dd]$", ".acvedit.RDS")
     saveRDS(acv.filter, rdsname)
     return(acv.filter)
 }
