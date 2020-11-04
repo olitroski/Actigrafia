@@ -283,7 +283,7 @@ ui <- navbarPage(
                                         fluidRow(
                                             # Fines de episodios
                                             column(3,
-                                                strong("Selección último episodio"),
+                                                # strong("Selección último episodio"),
                                                 uiOutput("ExcludeUI")
                                             ),
                                                 
@@ -319,8 +319,8 @@ ui <- navbarPage(
                                                 ),
                                                 hr(),
                                                 fluidRow(
-                                                    strong("Importante: Respetar las indicaciones del archivo de configuracion."),
-                                                    p("Es decir, en la cola de una exclusión el período siguiente debe comenzar con un episodio (adecuado) mayor o igual la duración mínima")
+                                                    strong("Importante: Respetar las reglas del archivo de configuracion."),
+                                                    p("El período que sigue a una exclusión debe comenzar con un episodio (adecuado) mayor o igual la duración mínima")
                                                 )
                                             )
                                         ),

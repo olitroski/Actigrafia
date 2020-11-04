@@ -12,6 +12,8 @@
 
 # ----- Cargar carpeta de trabajo --------------------------------------------- #
 # Actualizar el Package
+# mainfolder <- "D:/OneDrive/INTA/Actigrafia"
+# setwd(mainfolder)
 # source("D:/OneDrive/INTA/Actigrafia/compiApp.R")
 
 # Espacio de trabajo

@@ -53,7 +53,7 @@ create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
     if (finSubj == "-No determinado- "){
         finSubj <- NA
     } else {
-        finSubj <- dmy_hm(finSubj) + minutes(1)
+        finSubj <- dmy_hm(finSubj) # + minutes(1)
         if (finSubj %in% gdata$time){
             finSubj <- gdata$xscale[which(gdata$time == finSubj)]
         } else {

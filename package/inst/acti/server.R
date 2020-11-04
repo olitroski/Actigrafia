@@ -225,20 +225,32 @@ server <- function(input, output, session){
             title = "Falta acción",
             size = "m",
             easyClose = TRUE,
-            div(h4("No se ha determinado el inicio y final del registro")),
+            div(h4("No se ha determinado el inicio y final"), h4("O hay un excluir mal configurado")),
             footer = tagList(
                 modalButton("Cancelar"),
-                # actionButton("finalOK", "Finalizar")  # El valor resultante
             )
         )
     }
     
     # edFin.btn: Botón para mostrar el modal
     observeEvent(input$edFin.btn, {
-        # Asegurar que esté el inicio y fin
-        rango <- filterRDS()$header
+        # Antecedentes
+        head <- filterRDS()$header
         
-        if (rango[4] == "Inicia:  -No determinado- " | rango[5] == "Termina: -No determinado- "){
+        filt <- filterRDS()$filter
+        filt <- filter(filt, tipo == "Excluir")
+        test <- TRUE
+        if (length(filt) > 0){
+            if (nrow(filt) > 0){
+                for (i in 1:nrow(filt)){
+                    if (is.na(filt$ini[i]) | is.na(filt$fin[i])){
+                        test <- FALSE
+                    }
+                }
+            }
+        }
+            
+        if (head[4] == "Inicia:  -No determinado- " | head[5] == "Termina: -No determinado- " | test == FALSE){
             showModal(edFin.modalNO())
         } else {
             showModal(edFin.modal())
@@ -247,9 +259,15 @@ server <- function(input, output, session){
 
     # edFin.btn: Mostrar el modal y ejecutar acciones
     observeEvent(input$finalOK,{
-        filename <- paste0(awdfile(), ".finish.RDS")
+        # Archivo de terminado
+        filename <- paste0(awdfile(), ".finished.RDS")
         txt <- c("Sujeto terminado", awdfile(), "Fecha", now())
         saveRDS(txt, file = file.path(awdfolder(), filename))
+        
+        # Archivo epi
+        epi <- create.epi(acveditRDS(), filterRDS(), set())
+        saveRDS(epi, file = paste0(awdfile(), ".epi.RDS"))
+        
         showNotification(paste("Terminando", awdfile()), closeButton = FALSE, type = "message")
         removeModal()
     })
@@ -494,18 +512,20 @@ server <- function(input, output, session){
         
         # ----- Actualizar ACVedit ----- #
         acvedit <- readRDS(paste0(awdfile(), ".acvedit.RDS"))
-        
-        # Borrarle los filtros "Fin" que contenga
         acvedit$filter[acvedit$filter == "Ini"] <- NA
         
-        # Capturar limites del final (sirven para el lo siguiente igual)
+        # Capturar limites del final 
         ini <- min(acvedit$time)
         fin <- dmy_hm(input$inifin.ini)
-        
-        # Escribir el acvedit
         range <- which(acvedit$time >= ini & acvedit$time < fin)
-        acvedit$filter[range] <- "Ini"
-        saveRDS(acvedit,  paste0(awdfile(), ".acvedit.RDS"))
+        
+        if (length(range) == 0){
+            acvedit$filter[1] <- "Ini"
+            saveRDS(acvedit,  paste0(awdfile(), ".acvedit.RDS"))
+        } else {
+            acvedit$filter[range] <- "Ini"
+            saveRDS(acvedit,  paste0(awdfile(), ".acvedit.RDS"))
+        }
         
         # ---- Actualizar filtro ----- # 
         # Sacar la linea de "Ini" del filtro
@@ -582,9 +602,15 @@ server <- function(input, output, session){
         
         # Escribir el acvedit
         range <- which(acvedit$time > ini & acvedit$time <= fin)
-        acvedit$filter[range] <- "Fin"
-        saveRDS(acvedit,  paste0(awdfile(), ".acvedit.RDS"))
-
+        
+        if (length(range) == 0){
+            acvedit$filter[nrow(acvedit)] <- "Fin"
+            saveRDS(acvedit,  paste0(awdfile(), ".acvedit.RDS"))
+        } else {
+            acvedit$filter[range] <- "Fin"
+            saveRDS(acvedit,  paste0(awdfile(), ".acvedit.RDS"))
+        }
+        
         # ---- Actualizar filtro ----- # 
         # Sacar la linea de "Fin" del filtro
         filt <- filt$filter
@@ -639,9 +665,7 @@ server <- function(input, output, session){
             title = "Modificar actividad",
             size = "m",
             easyClose = TRUE,
-            
             div(span(p("Va a modificar la actividad entre: ", code(input$editAct.data)))),
-            
             footer = tagList(
                 modalButton("Cancelar"),
                 actionButton("editAct.mdl", "Confirmar")
@@ -661,7 +685,7 @@ server <- function(input, output, session){
         
         # Update del filterRDS()
         filt <- bind_rows(filterRDS()$filter, data)
-        filt <- arrange(filt, fin)
+        filt <- arrange(filt, ini)
         filt <- distinct(filt, id, ini, fin, tipo)
         filt$id <- 1:nrow(filt)
         newfiltro <- list(header = filterRDS()$header, filter = filt)
@@ -1127,11 +1151,9 @@ server <- function(input, output, session){
     # Mostrar id de filtro a borrar
     output$dropChoose <- renderUI({
         validate(need(input$perChoose, "Esperando input!"))
-        
         # Capturar ids de filtro
         filt <- filterRDS()$filter
         filt <- filt$id
-        
         if (length(filt) == 0){
             radioButtons("todrop", choices = c("Periodo sin filtros"), label = NULL)
         } else {
@@ -1157,7 +1179,6 @@ server <- function(input, output, session){
         # Para verificar que haiga filtros
         filt <- filterRDS()$filter
         filt <- filt$id
-        
         if (length(filt) == 0){
             showNotification("Período no tiene filtros", closeButton = FALSE, type = "message")
         } else {
@@ -1187,7 +1208,7 @@ server <- function(input, output, session){
         linea <- filterRDS()$filter
         linea <- filter(linea, id == as.numeric(input$todrop))
         
-        # Si la linea es actividad primero modificar 
+        # ------- Si es actividad --------------------------------------- # 
         if (linea$tipo == "Actividad"){
             # Los limites
             ini <- dmy_hm(linea$ini)
@@ -1219,7 +1240,78 @@ server <- function(input, output, session){
             }
             newfiltro <- list(header = filterRDS()$header, filter = filt)
             saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
+        
+        # --------- Si es Excluir -------------------------------- #
+        } else if (linea$tipo == "Excluir") {    
+            # Los limites
+            ini <- dmy_hm(linea$ini)
+            fin <- dmy_hm(linea$fin)
             
+            # Cargar acvedit y borrar el trozo
+            acvedit <- readRDS(paste0(awdfile(), ".acvedit.RDS"))
+            range <- which(acvedit$time >= ini & acvedit$time <= fin)
+            acvedit$filter[range] <- NA
+            saveRDS(acvedit,  paste0(awdfile(), ".acvedit.RDS"))
+            
+            # Ahora con el filtro
+            filt <- filterRDS()$filter
+            filt <- filter(filt, id != as.numeric(input$todrop))
+            filt <- arrange(filt, ini)
+            filt <- mutate(filt, id = NA)
+            filt <- distinct(filt, id, ini, fin, tipo)
+            
+            # Si queda filtro numerar y guardar
+            if (nrow(filt) > 0){filt$id <- 1:nrow(filt)}
+            newfiltro <- list(header = filterRDS()$header, filter = filt)
+            saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
+            
+        # --------- Si es inicio --------------------------------- #
+        } else if (linea$tipo == "Ini") { 
+            # Cargar datos y borrarle el filtro
+            acvedit <- readRDS(paste0(awdfile(), ".acvedit.RDS")) 
+            acvedit <- mutate(acvedit, filter = ifelse(filter == "Ini", NA, filter))
+            saveRDS(acvedit,  paste0(awdfile(), ".acvedit.RDS"))
+            
+            # Borrar del data.frame del filtro
+            filt <- filterRDS()$filter
+            filt <- filter(filt, id != as.numeric(input$todrop))
+            filt <- arrange(filt, ini)
+            filt <- mutate(filt, id = NA)
+            filt <- distinct(filt, id, ini, fin, tipo)
+            if (nrow(filt) > 0){filt$id <- 1:nrow(filt)}
+            
+            # Borrar del encabezado
+            encabe <- filterRDS()$header
+            encabe[4] <- "Inicia:  -No determinado- "
+            
+            # Guardar el filtro
+            newfiltro <- list(header = encabe, filter = filt)
+            saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
+            
+        # --------Si es final ------------------------------------- #
+        } else if (linea$tipo == "Fin") {    
+            # Cargar datos y borrarle el filtro
+            acvedit <- readRDS(paste0(awdfile(), ".acvedit.RDS")) 
+            acvedit <- mutate(acvedit, filter = ifelse(filter == "Fin", NA, filter))
+            saveRDS(acvedit,  paste0(awdfile(), ".acvedit.RDS"))
+            
+            # Borrar del data.frame del filtro
+            filt <- filterRDS()$filter
+            filt <- filter(filt, id != as.numeric(input$todrop))
+            filt <- arrange(filt, ini)
+            filt <- mutate(filt, id = NA)
+            filt <- distinct(filt, id, ini, fin, tipo)
+            if (nrow(filt) > 0){filt$id <- 1:nrow(filt)}
+            
+            # Borrar del encabezado
+            encabe <- filterRDS()$header
+            encabe[5] <- "Termina: -No determinado- "
+            
+            # Guardar el filtro
+            newfiltro <- list(header = encabe, filter = filt)
+            saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))  
+            
+        # ----- Queda el mover noche ----------------------------------- #        
         } else {
             # Update al filtro
             filt <- filterRDS()$filter
@@ -1229,12 +1321,11 @@ server <- function(input, output, session){
             filt <- distinct(filt, id, ini, fin, tipo)
             
             # Si queda filtro numerar y guardar
-            if (nrow(filt) > 0){
-                filt$id <- 1:nrow(filt)
-            }
+            if (nrow(filt) > 0){ filt$id <- 1:nrow(filt) }
             newfiltro <- list(header = filterRDS()$header, filter = filt)
             saveRDS(newfiltro, paste0(awdfile(), ".edit.RDS"))
         }
+        
         removeModal()
     })
 

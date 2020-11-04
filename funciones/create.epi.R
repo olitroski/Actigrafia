@@ -41,6 +41,13 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = FALSE){
     # Nulos para libreria
     data <- dinofinal <- indx <- name <- estado <- periodo <- hrdec <- nper <- NULL
     nseq <- duracion <- dianoc <- ini <- stage <- st.edit <- act.edit <- ini.time <- NULL
+    
+    actividad <- dianoc2 <- fin.time <- horaAbs <- horaDec <- NULL
+    max.index <- meanActividad <- min.index <- perDN <- perND <- NULL
+    periodoDN <- periodoND <- periodoSeq <- seqDianoc <- seqPer  <- NULL
+    seqStage <- temp <- time <- tipo <- weekday <- NULL
+    
+    
 
     # Los filtros
     filtro <- filter$filter
