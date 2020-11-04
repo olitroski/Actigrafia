@@ -55,10 +55,11 @@ for (fun in funciones) {
 rm(fun, funciones)
 setwd(mainfolder)
 
-# ----- Cargar funciones, settings -------------------------------------------- #
+# ----- Ejecutar la aplicacion ---------------------------------------------- # 
 # Cargar App
-runApp(display.mode = "normal")
+# runApp(display.mode = "normal")
 stop()
+
 
 
 
@@ -95,6 +96,7 @@ acveditRDS$timelist
 stop()
 
 
+
 # --- Revisar create.plotActo -------------------------------------------------
 setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
 set <- getset(getwd())
@@ -117,6 +119,19 @@ create.plotActo(gdata, set, filterRDS)
 
 
 # Crear un plot simple para edicion
+
+
+
+# --- revisar archivos RDS ---------------------------------------------------
+setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
+awd <- c("2058-001-368 JRG Baseline", "2058-002-298 MLR Baseline", "2058-004-433 AJM Baseline",
+         "2058-007-464 JMH Baseline", "2058-009-577 KNC Baseline", "2058-012-833 DFW Visit3")
+set <- getset(getwd())
+
+i <- 2
+acv <- readRDS(paste0(awd[i], ".acvedit.RDS"))
+head(acv)
+tail(acv)
 
 
 
@@ -151,7 +166,14 @@ for (i in 1:length(awd)){
     epi <- create.epi(acvedit, filter, set)
 }
 
+# Revisar contenido
+names(epi)
+head(epi$epi)
 
+# Chequear que pase la funcion de los epis viejos
+source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/00_function_check.epidata.R")
+check.epidata()
+check.epidata(epi$epi)
 
 
 
