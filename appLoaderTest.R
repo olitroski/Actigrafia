@@ -118,9 +118,13 @@ gdata <- acveditRDS[["per00"]]
 create.plotActo(gdata, set, filterRDS)
 
 
+# Tamaño
+w <- 1400
+h <- (length(acveditRDS) * 110 + 220) * 1.5
+png("plot.png", width = w, height = h, pointsize = 20)
+create.actogram(semiper = acveditRDS, set = set, filterRDS = filterRDS)
+dev.off()
 
-
-# Crear un plot simple para edicion
 
 
 
@@ -142,40 +146,74 @@ tail(acv)
 
 # --- Construcción del EPI ----------------------------------------------------
 setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
+set <- getset(getwd())
 awd <- c("2058-001-368 JRG Baseline", "2058-002-298 MLR Baseline", "2058-004-433 AJM Baseline",
          "2058-007-464 JMH Baseline", "2058-009-577 KNC Baseline", "2058-012-833 DFW Visit3")
 
-
 # Probar
-set <- getset(getwd())
 acvedit <- check.acvfilter(paste0(awd[1], ".AWD"), set)
 filter <-  readRDS(paste0(awd[1], ".edit.RDS"))
 epi <- create.epi(acvedit, filter, set)
+epi <- epi$epiviejo
 
-library(microbenchmark)
-microbenchmark(create.epi(acvedit, filter, set), times = 50)
+# library(microbenchmark)
+# microbenchmark(create.epi(acvedit, filter, set), times = 50)
+# 
+# # Probar en loop
+# for (i in 1:length(awd)){
+#     # Datos necesarios
+#     # i <- 1
+#     print(i)
+#     set <- getset(getwd())
+#     acvedit <- check.acvfilter(paste0(awd[i], ".AWD"), set)
+#     filter <-  readRDS(paste0(awd[i], ".edit.RDS"))
+# 
+#     # Lista la funcion
+#     epi <- create.epi(acvedit, filter, set)
+# }
+# 
+# # Revisar contenido
+# names(epi)
+# head(epi$epi)
 
-# Probar en loop
-for (i in 1:length(awd)){
-    # Datos necesarios
-    # i <- 1
-    print(i)
-    set <- getset(getwd())
-    acvedit <- check.acvfilter(paste0(awd[i], ".AWD"), set)
-    filter <-  readRDS(paste0(awd[i], ".edit.RDS"))
-
-    # Lista la funcion
-    epi <- create.epi(acvedit, filter, set)
-}
-
-# Revisar contenido
-names(epi)
-head(epi$epi)
-
-# Chequear que pase la funcion de los epis viejos
+# Cargar funciones de analisis
 source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/00_function_check.epidata.R")
-check.epidata()
-check.epidata(epi$epi)
+source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/00_function_expand.epidata.R")
+source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/01_function_readfolder_epi.R")
+source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/02_function_readfolder_arq.R")
+source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/04_function_ValidEvents.R")
+source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/05_function_hi.R")
+source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/06_function_conteo.R")
+source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/07_function_duration.R")
+source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/08_function_maxdur.R")
+source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/09_function_latencia.R")
+source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/10_function_24h.R")
+source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/11_function_combi24h.R")
+
+
+# Pre-procesar
+epi <- function_ValidEvents(epi)                # 1
+drop <- epi$drop
+epi <- epi$datos
+
+# Validar que se puede analizar
+epi <- select(epi, -actividad)
+check.epidata(epi)                              # 2
+
+# Pasar las funciones
+horaini <- function_hi(epi)                     # 3
+conteo <- function_conteo(epi)                  # 4
+duracion <- function_duration(epi)              # 5
+maximos <- function_duracionMax(epi)            # 6
+latencia <- function_latencia(epi)              # 7
+CausaEfecto <- function_combi24h(epi)           # 8
+
+
+# NO pasa si es NULL
+par24horas <- function_24h(epi)                 # 9
+drop <- bind_rows(drop, par24horas$sinpar)
+par24horas <- par24horas$conpar
+
 
 
 
