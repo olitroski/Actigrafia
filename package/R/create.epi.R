@@ -37,7 +37,7 @@
 # acveditRDS se carga desde <<return(check.acvfilter(awdfile()))>>
 # y el filtro se carga directo con <<return(readRDS(fichero))>>
 
-create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = FALSE){
+create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = TRUE){
     # Nulos para libreria
     data <- dinofinal <- indx <- name <- estado <- periodo <- hrdec <- nper <- NULL
     nseq <- duracion <- dianoc <- ini <- stage <- st.edit <- act.edit <- ini.time <- NULL
@@ -47,8 +47,8 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = FALSE){
     periodoDN <- periodoND <- periodoSeq <- seqDianoc <- seqPer  <- NULL
     seqStage <- temp <- time <- tipo <- weekday <- NULL
     
+    periodo2 <- dur_min <- mean_act_min <- num_epi <- epi_estado <- NULL
     
-
     # Los filtros
     filtro <- filter$filter
 
@@ -103,7 +103,7 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = FALSE){
     # | - 3. Tabla de episodios -----------------------------------------------
     # Hacer una tabla de episodios para no operar sobre la base de detecciones
     # debiera ser mas rapido asi
-    
+    # browser()
     # rehacer el index
     acvdata <- mutate(acvdata, indx = indx - 1)
 
@@ -446,8 +446,11 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = FALSE){
     tabepi <- arrange(tabepi, ini.time)
     tabepi <- select(tabepi, -seqDianoc, -min.index, -max.index)
     
-    # Me quedo al reves el DN y ND
+    
+    # #### IMPORTANTE  ####################################################
+    # <<< --- OJO --- >>> Me quedo al reves el DN y ND <<< --- OJO ---- >>>
     tabepi <- rename(tabepi, periodoND = periodoDN, periodoDN = periodoND)
+    # #### IMPORTANTE  ####################################################
     
     
     # Pegarle al "acvedata" algunas cosas
@@ -455,37 +458,41 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = FALSE){
     acvdata <- select(acvdata, -nper)
 
     
+    # ----- EPI Viejo -------------------------------------------------------------------------------------
     # Crear data.frame para pasar a las stats que asemeja el epi viejo
-    Sys.setlocale("LC_ALL", "English")
     epiviejo <- tabepi
     epiviejo <- filter(epiviejo, periodoSeq != "Drop")
-    epiviejo <- mutate(epiviejo, id = acvdata$filename[1], 
-                                 meanActividad = round(actividad/duracion, 1),
-                                 seqPer = str_extract(periodoND, "[0-9][0-9]"),
-                                 horaDec = round(hour(ini.time) + minute(ini.time)/60, 3),
-                                 horaAbs = floor(horaDec),
-                                 weekday = as.character(wday(ini.time, label = TRUE)))
     
-    # Botar el dia cero, igual se deja la opcion por si las moscas
-    if (dia0 == FALSE){
-        epiviejo = filter(epiviejo, periodoND != "Dia 00")
-    }
+    # Dejar solo el periodo Noche -> Dia
+    epiviejo <- select(epiviejo, -periodoSeq, -periodoDN)
+    epiviejo <- rename(epiviejo, periodo = periodoND)
     
-    # Dejar listo para que pase el resto de scripts
-    epiviejo <- select(epiviejo, id, 
-                                 fec.hora = ini.time,
-                                 estado = estado,
-                                 dur_min = duracion, 
-                                 mean_act = meanActividad,
-                                 dia.noc = dianoc,
-                                 seq.dia = seqPer,
-                                 hora = horaDec, 
-                                 dia = weekday,
-                                 hora.abs = horaAbs)
+    # Recomponer version vieja del periodo que comienza en "Dia 01"
+    temp <- str_split(epiviejo$periodo, " ", simplify = TRUE)
+    temp <- as.data.frame(temp, stringsAsFactors = FALSE)
+    names(temp) <- c("dianoc", "nper")
+    temp <- mutate(temp, 
+                   nper = as.numeric(nper) + 1,
+                   nper = ifelse(nper < 10, paste0("0", nper), as.character(nper)),
+                   periodo = paste(dianoc, nper))
+    epiviejo$periodo2 <- temp$periodo
+    epiviejo <- select(epiviejo, -periodo) %>% rename(periodo = periodo2)
+    
+    # Recomponer el epi_estado (solo nombre, ya ser vera si es nacesario)
+    epiviejo <- rename(epiviejo, epi_estado = seqStage, hora = ini.time, dur_min = duracion)
+    epiviejo <- arrange(epiviejo, hora) %>% mutate(num_epi = 1:nrow(epiviejo))
+    
+    # Crear ultimas variables
+    epiviejo <- mutate(epiviejo, mean_act_min = round(actividad/dur_min, 1), id = acvdata$filename[1], actividad = round(actividad, 0))
+    epiviejo <- select(epiviejo, id, periodo, hora, estado, actividad, dur_min, mean_act_min, num_epi, epi_estado)
     
     
+    # ### Botar el dia cero, igual se deja la opcion por si las moscas ####
+    if (dia0 == FALSE){epiviejo = filter(epiviejo, periodoND != "Dia 00") }
+    # ################################################################### #
+
     # Combinar todo en una lista
-    epi <- list(acvdata = acvdata, epitab = tabepi, epi = epiviejo)
+    epi <- list(acvdata = acvdata, epitab = tabepi, epiviejo = epiviejo)
     return(epi)
 }
 # final -----

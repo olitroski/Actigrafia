@@ -1,27 +1,43 @@
-###########################################################################################
-## ---- Funcion captura periodos validos por sujeto ------------------------------------- #
-###########################################################################################
-# Funcion que captura todo sin distncion dia, noche y eventos, para replicar analisis 
-# que hice a las wawas de las encuestas, pero ahora en un epi, asume datos filtrados de 
-# actigrafos validos con el ARQ. Recorta en varias caracteristicas
-# 
-# 1. Filter "Dia 01"
-# 2. Drop lineas Repetidos
-# 3. Al menos 3 eventos por d?a o noche
-# 4. Primer evento correcto seg?n dia o noche
-# 
-# Actualizacion: Guarda los valores de lo que se saque.
-# 
-# setwd("D:/OneDrive/INTA/Patricio Peirano/2018.09 Vigilia EPI/6 meses bebes")
-# data <- readRDS("epi.data.rds")
-# id <- 10207
+#' @title Eventos o Episodios validos
+#'
+#' @description Funcion que toma un archivo EPI con el formato del actividorm
+#'   con ligeras modificaciones y excluye algunos periodos con base en: 
+#'   1. Descarta el "Dia 01", aunque hay existe la opcion "drop"
+#'   2. Borra las lineas repetidas (considerar que esta funcion viene de analizar los epi antiguos)
+#'   3. Evalua que los periodos tengan al menos 3 episodios
+#'   4. Evalua que el primer episodio sea correcto
+#'
+#' @param epi Corresponde al objeto EPI 
+#' @param drop Por defecto en FALSE determina si incluye o no el "Dia 01"
+#' @return Devuelve una lista con los datos correctos con data management y los excluidos
+#' 
+#' @export
+#' @examples
+#' # Calcular los antecedentes, ojo el el edit.RDS proviene del analisis hecho en la aplicacion,
+#' # ir a esa funcion para ver como usar por fuera del programa
+#' # setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
+#' # set <- getset(getwd())
+#' # acvedit <- check.acvfilter("2058-001-368 JRG Baseline.AWD", set)
+#' # filter <-  readRDS("2058-001-368 JRG Baseline.edit.RDS")
+#' # epi <- create.epi(acvedit, filter, set)
+#' # epi <- epi$epiviejo
+#' #
+#' # Y evaluar como queda
+#' # epi <- function_ValidEvents(epi)               
+#' # drop <- epi$drop
+#' # epi <- epi$datos
+#' #
+#' @importFrom utils data
+#' 
 
 function_ValidEvents <- function(epi = NULL, drop = TRUE){
-    data <- epi
-    
+    N <- data <- days <- dia.noc <- epi_estado <- fec.hora <- hi <- hidate <- inidate <- periodo <- realini <- seq.dia <- transito <- NULL
+    mean_act_min <- hora <- dur_min <- NULL
 	## <<< Funcion para sacar datos por sujeto >>> 
     # id <- 10648; subjdata <- epi; p <- "Noche 02"
+    
     epi.todo <- function(subjdata = NULL, id = NULL){
+        hora <- dur_min <- mean_act_min <- actividad <- num_epi <- str_split_fixed <- X1 <- X2 <- N <- NULL
         # print(id)
         # Nulo para registrar Dropeos del id
         id.drop <- NULL
@@ -34,34 +50,27 @@ function_ValidEvents <- function(epi = NULL, drop = TRUE){
         # <<< 1. Dia 01 >>> WRONG porque el Dia 01 viene despues de la Noche 01 ---------
         # Se saca el periodo "Dia 01" porque no es un dia completo.
         # --- 20.08.2020 --- Modificacion incluye Dia 01--
-        # if (nrow(datos) == 0){
-        #     next()
-        # } else {
-        #     datos <- filter(datos, periodo != "Dia 01")
-        #     id.drop <- bind_rows(id.drop, 
-        #                          data.frame(id = id, drop = "Dia 01", stringsAsFactors = FALSE))
-        # }
+        if (drop == TRUE){
+            datos <- filter(datos, periodo != "Dia 01")
+            id.drop <- bind_rows(id.drop, data.frame(id = id, drop = "Dia 01", stringsAsFactors = FALSE))
+        }
         
         
         # <<< 2. Repetidos >>> se evaluan los repetidos segun hora y dia ----------------
         # Se ordena por la fechora, se crea una 2da var desplazada 1 fila pa abajo, por si hay repetido
-        if (nrow(datos) == 0){
-            next()
-        } else {
-            temp <- nrow(datos)
-            datos <- arrange(datos, id, periodo, hora)
-            datos <- distinct(datos, id, periodo, hora, estado, dur_min, .keep_all = TRUE)
-            
-            # Registrar si hay repetidos
-            if (temp > nrow(datos)){
-                id.drop <- bind_rows(id.drop, 
-                                     data.frame(id = id, drop = paste0(temp, " -> ", nrow(datos)), stringsAsFactors = FALSE))
-            }
-            rm(temp)
+        temp <- nrow(datos)
+        datos <- arrange(datos, id, periodo, hora)
+        datos <- distinct(datos, id, periodo, hora, estado, dur_min, .keep_all = TRUE)
+        
+        # Registrar si hay repetidos
+        if (temp > nrow(datos)){
+            id.drop <- bind_rows(id.drop, 
+                                 data.frame(id = id, drop = paste0(temp, " -> ", nrow(datos)), stringsAsFactors = FALSE))
         }
+        rm(temp)
         
         
-        # 3. Crear variables del periodo
+        # <<< 3. Crear variables del periodo -------
         datos <- select(datos, -num_epi)
         datos <- bind_cols(datos, data.frame(str_split_fixed(datos$periodo, " ", n = 2), stringsAsFactors=FALSE))
         datos <- rename(datos, dia.noc = X1, seq.dia = X2)
@@ -70,29 +79,21 @@ function_ValidEvents <- function(epi = NULL, drop = TRUE){
         # <<< 4. Minimo 3 eventos por dia o noche >>> -----------------------------------
         # Se quita, ahora se usa todo, pero se registra
         # Cada periodo (dia o noche completo) debe tener minimo 3 episodios para poder hacer calculos
-        if (nrow(datos) == 0){
-            next()
-        } else {
-            datos <- group_by(datos, periodo)
-            datos <- mutate(datos, count = n())
-            
-            # Registrar los periodos con menos de 3 episodios
-            temp <- summarize(datos, N = n())
-            temp <- filter(temp, N < 3)
-            if (nrow(temp) > 0){
-                id.drop <- bind_rows(id.drop,
-                                     data.frame(id = id, 
-                                                drop = paste(temp$periodo, "=", temp$N, collapse = " - "), 
-                                                stringsAsFactors = FALSE))
-            }
-            rm(temp)
-            
-            # Devolver a data.frame
-            datos <- as.data.frame(datos)
-            # datos <- filter(datos, count >= 3)
-            datos <- select(datos, -count)      
+        datos <- group_by(datos, periodo)
+        datos <- mutate(datos, count = n())
+        
+        # Registrar los periodos con menos de 3 episodios
+        temp <- summarize(datos, N = n())
+        temp <- filter(temp, N < 3)
+        if (nrow(temp) > 0){
+            id.drop <- bind_rows(id.drop,
+                                 data.frame(id = id, 
+                                            drop = paste(temp$periodo, "=", temp$N, collapse = " - "), 
+                                            stringsAsFactors = FALSE))
         }
-
+        rm(temp)
+        datos <- as.data.frame(datos)
+        datos <- select(datos, -count)      
         
         # <<< 5. Primer evento correcto segun dia o noche >>>
         # Esta cosa (actividorm) determina noche o dia cuando ocurre un periodo despues de cierta hora
@@ -142,6 +143,7 @@ function_ValidEvents <- function(epi = NULL, drop = TRUE){
 
     
     # ---- Parsear a todos los sujetos ----------------------------------------
+    data <- epi
     sujetos <- unique(data$id)
     datos.todo <- NULL
     datos.drop <- NULL
@@ -202,5 +204,3 @@ function_ValidEvents <- function(epi = NULL, drop = TRUE){
         return(list(datos = datos.todo, drop = datos.drop))
     }
 }
-
-# test <- function_ValidEvents(data, drop = TRUE)

@@ -47,6 +47,8 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = TRUE){
     periodoDN <- periodoND <- periodoSeq <- seqDianoc <- seqPer  <- NULL
     seqStage <- temp <- time <- tipo <- weekday <- NULL
     
+    periodo2 <- dur_min <- mean_act_min <- num_epi <- epi_estado <- NULL
+    
     # Los filtros
     filtro <- filter$filter
 
@@ -101,7 +103,7 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = TRUE){
     # | - 3. Tabla de episodios -----------------------------------------------
     # Hacer una tabla de episodios para no operar sobre la base de detecciones
     # debiera ser mas rapido asi
-    
+    # browser()
     # rehacer el index
     acvdata <- mutate(acvdata, indx = indx - 1)
 

@@ -156,6 +156,16 @@ filter <-  readRDS(paste0(awd[1], ".edit.RDS"))
 epi <- create.epi(acvedit, filter, set)
 epi <- epi$epiviejo
 
+# Pre-procesar
+epi <- function_ValidEvents(epi)                # 1 
+drop <- epi$drop
+epi <- epi$datos
+
+# Validar que se puede analizar
+epi <- select(epi, -actividad)
+check.epidata(epi)                              # 2
+
+
 # library(microbenchmark)
 # microbenchmark(create.epi(acvedit, filter, set), times = 50)
 # 
@@ -191,14 +201,6 @@ source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/10_function_24h.R")
 source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/11_function_combi24h.R")
 
 
-# Pre-procesar
-epi <- function_ValidEvents(epi)                # 1
-drop <- epi$drop
-epi <- epi$datos
-
-# Validar que se puede analizar
-epi <- select(epi, -actividad)
-check.epidata(epi)                              # 2
 
 # Pasar las funciones
 horaini <- function_hi(epi)                     # 3

@@ -4,7 +4,7 @@
 \alias{create.epi}
 \title{Crea archivo de episodios EPI}
 \usage{
-create.epi(acvedit = NULL, filter = NULL, set = NULL, dia0 = FALSE)
+create.epi(acvedit = NULL, filter = NULL, set = NULL, dia0 = TRUE)
 }
 \arguments{
 \item{acvedit}{el objeto que sale de check.acvfilter}

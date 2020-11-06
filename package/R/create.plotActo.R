@@ -27,6 +27,7 @@
 ## ------------------------------------------------------------------------------- #
 # Toma un data.frame de la lista "semiper" y con eso hace el grafico para actograma
 create.plotActo <- function(gdata, set, filterRDS, pct.y = 1){
+    # browser()
     options(warn = 2)
     hrdec <- ini <- fin <- tipo <-NULL
     

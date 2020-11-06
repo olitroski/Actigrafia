@@ -257,7 +257,7 @@ server <- function(input, output, session){
         }
     })
 
-    # edFin.btn: Mostrar el modal y ejecutar acciones
+    # edFin.btn: Mostrar el modal y ejecutar acciones 
     observeEvent(input$finalOK,{
         # Archivo de terminado
         filename <- paste0(awdfile(), ".finished.RDS")
@@ -267,6 +267,14 @@ server <- function(input, output, session){
         # Archivo epi
         epi <- create.epi(acveditRDS(), filterRDS(), set())
         saveRDS(epi, file = paste0(awdfile(), ".epi.RDS"))
+        
+        # Guardar actograma ------
+        w <- 1400
+        h <- (length(acveditRDS()[["semiper"]]) * 110 + 220) * 1.5
+        filename <- paste0(awdfile(), ".actogram.png")
+        png(filename, width = w, height = h, pointsize = 20)
+            create.actogram(acveditRDS()[["semiper"]], set = set(), filterRDS = filterRDS())
+        dev.off()
         
         showNotification(paste("Terminando", awdfile()), closeButton = FALSE, type = "message")
         removeModal()

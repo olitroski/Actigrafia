@@ -1,9 +1,16 @@
-# ----------------------------------------------------------------------------------------------- #
-# ----- Funcion que chequea que el archivo es un epi.file de esos ya depurados y listos --------- #
-# ----------------------------------------------------------------------------------------------- #
-# data <- epi.data
-# check.epidata(epi.data)
-# check.epidata()
+#' @title Checador de archivo EPI
+#' @description Esta funcion entrega guias de como debe estar el archivo EPI
+#'   para pase por las funciones de analisis. Ojo que ya debiera venir medio
+#'   modificado desde la funcion validEvents
+#' @param data Es el objeto data.frame proveniente de la funcion validEvents
+#' @return Nada, solo informacion
+#' @export
+#' @examples
+#' # Revisar como debiera ser el archivo epi
+#' # check.epidata()
+#' #
+#' # Revisar un epi preprocesado
+#' # check.epidata(epi)
 
 check.epidata <- function(data = NULL){
     # Muestra un ejemplo, no requiere datos

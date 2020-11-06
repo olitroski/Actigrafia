@@ -14,7 +14,8 @@ maindir <- "D:/OneDrive/INTA/Actigrafia"
 setwd(maindir)
 
 # Preguntar para confirmar
-confirmar <- readline("Va a modificar la librería 'olitoSleep', continuar? [y|n]: ")
+# confirmar <- readline("Va a modificar la librería 'olitoSleep', continuar? [y|n]: ")
+confirmar <- "Y"
 if (confirmar %in% c("Y", "y", "yes", "YES", "Yes", "si", "s", "S", "Si", "SI", "si")){
     # ---- Respaldar librería -------------------------------------------------
 
@@ -38,20 +39,20 @@ if (confirmar %in% c("Y", "y", "yes", "YES", "Yes", "si", "s", "S", "Si", "SI", 
     # ---- Cambiar versión ----------------------------------------------------
     options(warn = -1)
     # Capturar y validar nueva version
-    new.version <- readline(paste("Versión actual", version, "indicar valor nuevo: "))
-
+    # new.version <- readline(paste("Versión actual", version, "indicar valor nuevo: "))
+    new.version <- "0.0.921"
     check.new <- str_split(new.version, "\\.", simplify = TRUE)
     check.new <- as.numeric(check.new)
 
     if (sum(is.na(check.new)) > 0){
         stop(paste("Error, version no numérica", new.version))
 
-    } else if (new.version <= version) {
+    } else if (new.version < version) {
         stop(paste("Error, la nueva version debe ser superior la actual:", version))
 
     } else {
-        conf.ver <- readline(paste("Confirmar versión", new.version, "[y|n]: "))
-            
+        # conf.ver <- readline(paste("Confirmar versión", new.version, "[y|n]: "))
+        conf.ver <- "y"
         if (conf.ver != "y"){
             # Salir
             stop("...Cancelando actualización...")
@@ -137,8 +138,8 @@ if (confirmar %in% c("Y", "y", "yes", "YES", "Yes", "si", "s", "S", "Si", "SI", 
         # Un confirme primero
         cat("Archivos a copiar: \n")
         print(archivos$file)
-        confirmar <- readline("Copiar los archivos, continuar? [y|n]: ")
-        
+        # confirmar <- readline("Copiar los archivos, continuar? [y|n]: ")
+        confirmar <- "y"
         if (confirmar == "y"){
             # Los de la app van a otro directorio
             app <- filter(archivos, app == TRUE)

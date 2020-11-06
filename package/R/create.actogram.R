@@ -23,7 +23,6 @@
 ## -------------------------------------------------------------------------------- #
 # La idea es tomar un acv y mostrarlos de 20 a 20 horas asi aseguramos todos los dias
 create.actogram <- function(semiper, set, filterRDS, fy = 1){
-
     # Valores
     xscale2 <- seq(as.numeric(set$ininoc)/3600, length.out = 25)
     xlabel2 <- ifelse(xscale2 >= 48, xscale2 - 48, ifelse(xscale2 >= 24, xscale2 - 24, xscale2))
