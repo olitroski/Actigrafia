@@ -1,15 +1,19 @@
-# ----------------------------------------------------------------------------------------------- #
-# ---- Funcion para captuara la data de la hora de inicio de cada periodo en dia y noche -------- #
-# ---- v1.0 08.03.2019 -------------------------------------------------------------------------- #
-# ----------------------------------------------------------------------------------------------- #
-# Se entiende como hora de inicio y seg?n el ppt al Wakeup time, sleep time como la hora del primer
-# evento sueno o vigilia del d?a o noche seg?n corresponda.
+#' @title Calculos Hora de Inicio
+#' @description Funcion para capturar la data de la hora de inicio de cada
+#'   periodo en dia y noche. Se entiende como hora de inicio y segun el ppt al
+#'   Wakeup time, sleep time como la hora del primer evento sueno o vigilia del
+#'   dia o noche segun corresponda. v1.0 08.03.2019.
+#' @param epi Un objeto data.frame epi que haya pasado la funcion de chequeo
+#' @return data.frame con los resultados
+#' @export
+#' @examples
+#' # check.epidata(epi)
+#' # HI <- function_hi(epi)
 
 function_hi <- function(epi){
-    # Checar la data
-    library(lubridate)
-    check.epidata(epi)
-        
+    # Nulos
+    dia.noc <- fec.hora <- key <- period <- periodo <- seq.dia <- NULL
+    
     # Capturar sujetos y crear contenedor en blanco
     sujetos <- unique(epi$id)
     hi.data <- NULL

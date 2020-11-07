@@ -1,15 +1,23 @@
-# ----------------------------------------------------------------------------------------------- #
-# ---- Funcion para capturar N de Siestas y Despertares para cada semi periodo en epi.data ------ #
-# ---- v1.0 14.03.2019 -------------------------------------------------------------------------- #
-# ----------------------------------------------------------------------------------------------- #
-# Usa un epi data. Hace el calculo para un semi periodo y asigna siesta en dia y despertar en noche, 
-# tambien si es posible hace asignaci?n a mitad o tercio, no usa la data expandida, en su lugar 
-# expande luego de filtrar el suejto.
+#' @title Calculo de cantidades o conteos de episodios para cada periodo
+#' @description  Funcion para capturar N de Siestas y Despertares para cada semi
+#'   periodo en epi.data v1.0 14.03.2019. Usa un epi data. Hace el calculo para
+#'   un semi periodo y asigna siesta en dia y despertar en noche, tambien si es
+#'   posible hace asignaci?n a mitad o tercio, no usa la data expandida, en su
+#'   lugar  expande luego de filtrar el suejto.
+#' @param epi es el data.frame que arroja el validEvents
+#' @return data.frame con los analisis
+#' @export
+#' @examples
+#' # conteo <- function_conteo(epi)
+#' #
 
 function_conteo <- function(epi){
+    # Nulos
+    dia.noc <- dur_min <- estado <- fec.hora <- finDesp <- hora <- horafin <- iniAntes <- key <- periodo <- semi <- seq.dia <- ver1 <- ver2 <- NULL
+    
     # Checar la data y expand function
     options(warn = 2)
-    check.epidata(epi)
+    # check.epidata(epi)
 
     # ----  For testing ---------------------------------------------- #
     # s <- 10013; p <- "Noche 02"                                      #
@@ -21,6 +29,8 @@ function_conteo <- function(epi){
     # ---- Funcion Capturar info -------------------------------------------------------- #
     # Si ya se que no es necesaria, es lenta, pero ya estaba hecha, no la voy a borrar
     getInfo <- function(periodData){
+        id <- semi <- periodo <- semi <- periodo <- wday <- info <- NULL
+            
         id <- unique(periodData$id)
         semi <- unique(periodData$dia.noc)
         periodo <- unique(periodData$periodo)
@@ -33,6 +43,8 @@ function_conteo <- function(epi){
     # ---- Funcion Conteos globales ----------------------------------------------------- #
     # getCount(periodData)
     getCount <- function(periodData){
+        nS <- nW <- nTot <- pS <- pW <- pTot <- nTotal <- NULL
+        
         nS <- length(which(periodData$estado == "S"))
         nW <- length(which(periodData$estado == "W"))
         nTot <- nS + nW
@@ -47,6 +59,8 @@ function_conteo <- function(epi){
     # ---- Funcion asignar mitad v1&2 por hora ------------------------------------------ #
     # assignMitad(periodData)
     assignMitad <- function(periodData){
+        
+        
         # Calcular mitad
         fecmin <- min(periodData$fec.hora)
         fecmax <- max(periodData$fec.hora) 

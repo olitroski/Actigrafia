@@ -165,6 +165,11 @@ epi <- epi$datos
 epi <- select(epi, -actividad)
 check.epidata(epi)                              # 2
 
+# Hacer los analisis
+horaini <- function_hi(epi)                     # 3
+conteo <- function_conteo(epi)                  # 4
+duracion <- function_duration(epi)              # 5
+
 
 # library(microbenchmark)
 # microbenchmark(create.epi(acvedit, filter, set), times = 50)
@@ -187,14 +192,6 @@ check.epidata(epi)                              # 2
 # head(epi$epi)
 
 # Cargar funciones de analisis
-source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/00_function_check.epidata.R")
-source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/00_function_expand.epidata.R")
-source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/01_function_readfolder_epi.R")
-source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/02_function_readfolder_arq.R")
-source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/04_function_ValidEvents.R")
-source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/05_function_hi.R")
-source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/06_function_conteo.R")
-source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/07_function_duration.R")
 source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/08_function_maxdur.R")
 source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/09_function_latencia.R")
 source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/10_function_24h.R")
@@ -203,9 +200,6 @@ source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/11_function_combi24h
 
 
 # Pasar las funciones
-horaini <- function_hi(epi)                     # 3
-conteo <- function_conteo(epi)                  # 4
-duracion <- function_duration(epi)              # 5
 maximos <- function_duracionMax(epi)            # 6
 latencia <- function_latencia(epi)              # 7
 CausaEfecto <- function_combi24h(epi)           # 8

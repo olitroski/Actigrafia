@@ -1,21 +1,35 @@
-# ----------------------------------------------------------------------------------------------- #
-# ---- Funcion para capturar Duracion de Siestas y Despertares para cada semi periodo ----------- #
-# ---- en epi.data ------ v1.0 01.04.2019 ------------------------------------------------------- #
-# ----------------------------------------------------------------------------------------------- #
-# Usa un epi data. Hace el calculo para un semi periodo y calcula el tiempo de vigilia o sueno 
-# segun corresponda y asigna a todo, mitad y tercio.  Para ello usa la data expandida y lo hace
-# de por sujeto. 
-# Futuro desarrollador... si sé que la función es lenta, pero si uso la librería data.table caga todo
-# porque se superpone a dplyr y funciones del base y adaptar me dio lata enorme.
+#' @title Estadisticas de duracion de episodios en periodos
+#' @description Funcion para capturar Duracion de Siestas y Despertares para
+#'   cada semi periodo en epi.data v1.0 01.04.2019. Usa un epi data. Hace el
+#'   calculo para un semi periodo (solo dia o noche) y calcula el tiempo de vigilia o sueno  segun
+#'   corresponda y asigna a todo, mitad y tercio.  Para ello usa la data
+#'   expandida y lo hace de por sujeto. Futuro desarrollador... si se que la
+#'   función es lenta, pero si uso la librería data.table caga todo porque se
+#'   superpone a dplyr y funciones del base y adaptar me dio una laaaaaaaata enorme.
+#' @param epi data.frame preprocesado con el validEvents
+#' @return data.frame con los analisis
+#' @export
+#' @examples
+#' # function_duracion(epi)
+#' #
+#' #
+#' @importFrom stats time
 
 function_duration <- function(epi){
+    # Nulos
+    M1S <- M1W <- M1tot <- M2S <- M2W <- M2tot <- MStage <- Stime <- T1S <- T1W <- T1tot <- T2S <- T2W <- T2tot <- NULL
+    T3S <- T3W <- T3tot <- TStage <- Ttime <- Wtime <- dia <- dia.noc <- estado <- fec.hora <- key <- mit <- NULL
+    nS <- nTot <- nW <- periodo <- semi <- seq.dia <- ter <- time <- NULL
+    
     # Checar la data y expand function
     options(warn = 2)    
-    check.epidata(epi)
+    # check.epidata(epi)
     contador <- 0
     
     # ---- Funcion Conteos globales ----------------------------------------------------- #
     getCount <- function(periodData){
+        nS <- nW <- nTot <- pS <- pW <- pTot <- ntotal <- NULL
+        
         nS <- length(which(periodData$estado == "S"))
         nW <- length(which(periodData$estado == "W"))
         nTot <- nS + nW
