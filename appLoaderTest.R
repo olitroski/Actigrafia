@@ -12,9 +12,9 @@
 
 # ----- Cargar carpeta de trabajo --------------------------------------------- #
 # Actualizar el Package
-# mainfolder <- "D:/OneDrive/INTA/Actigrafia"
-# setwd(mainfolder)
-# source("D:/OneDrive/INTA/Actigrafia/compiApp.R")
+mainfolder <- "D:/OneDrive/INTA/Actigrafia"
+setwd(mainfolder)
+source("D:/OneDrive/INTA/Actigrafia/compiApp.R")
 
 # Espacio de trabajo
 rm(list = ls())
@@ -156,20 +156,6 @@ filter <-  readRDS(paste0(awd[1], ".edit.RDS"))
 epi <- create.epi(acvedit, filter, set)
 epi <- epi$epiviejo
 
-# Pre-procesar
-epi <- function_ValidEvents(epi)                # 1 
-drop <- epi$drop
-epi <- epi$datos
-
-# Validar que se puede analizar
-epi <- select(epi, -actividad)
-check.epidata(epi)                              # 2
-
-# Hacer los analisis
-horaini <- function_hi(epi)                     # 3
-conteo <- function_conteo(epi)                  # 4
-duracion <- function_duration(epi)              # 5
-
 
 # library(microbenchmark)
 # microbenchmark(create.epi(acvedit, filter, set), times = 50)
@@ -191,24 +177,67 @@ duracion <- function_duration(epi)              # 5
 # names(epi)
 # head(epi$epi)
 
-# Cargar funciones de analisis
-source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/08_function_maxdur.R")
-source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/09_function_latencia.R")
-source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/10_function_24h.R")
-source("D:/OneDrive/INTA/AplicacionesVarias/Stats EPI - ARQ/11_function_combi24h.R")
 
 
+# --- Funciones de analisis ----------------------------------------------------
+setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
+set <- getset(getwd())
+awd <- c("2058-001-368 JRG Baseline", "2058-002-298 MLR Baseline", "2058-004-433 AJM Baseline",
+         "2058-007-464 JMH Baseline", "2058-009-577 KNC Baseline", "2058-012-833 DFW Visit3")
 
-# Pasar las funciones
+# Epi
+acvedit <- check.acvfilter(paste0(awd[1], ".AWD"), set)
+filter <-  readRDS(paste0(awd[1], ".edit.RDS"))
+
+
+epi <- create.epi(acvedit, filter, set)
+epi <- epi$epiviejo
+
+# Pre-procesar
+epi <- function_ValidEvents(epi)                # 1 
+drop <- epi$drop
+epi <- epi$datos
+
+# Validar que se puede analizar
+epi <- select(epi, -actividad)
+check.epidata(epi)                              # 2
+
+# Hacer los analisis
+horaini <- function_hi(epi)                     # 3
+conteo <- function_conteo(epi)                  # 4
+duracion <- function_duration(epi)              # 5
 maximos <- function_duracionMax(epi)            # 6
 latencia <- function_latencia(epi)              # 7
 CausaEfecto <- function_combi24h(epi)           # 8
 
-
-# NO pasa si es NULL
+# Y los peridos de 24 horas
 par24horas <- function_24h(epi)                 # 9
 drop <- bind_rows(drop, par24horas$sinpar)
 par24horas <- par24horas$conpar
+
+# Combinar resultado
+stats <- list(epi = epi,
+              drop = drop,
+              horaini = horaini, 
+              conteo = conteo,
+              duracion = duracion,
+              maximos = maximos,
+              latencia = latencia,
+              CausaEfecto = CausaEfecto,
+              par24horas = par24horas)
+saveRDS(file = paste0(awd[1], ".stats.RDS"), object = stats)
+
+# Crear el Excel
+excel <- createWorkbook()
+hojas <- names(stats)
+for (xls in hojas){
+    addWorksheet(excel, xls)
+    eval(parse(text = paste0("writeData(excel, '", xls, "', ", xls, ")")))
+    eval(parse(text = paste0("freezePane(excel, '", xls, "', firstRow = TRUE)")))
+    eval(parse(text = paste0("c <- ncol(", xls, ")")))
+    eval(parse(text = paste0("setColWidths(excel, '", xls, "', cols = 1:", c, ", widths = 'auto')")))
+}
+saveWorkbook(excel, paste0(awd[1], ".stats.xlsx"), overwrite=TRUE)
 
 
 

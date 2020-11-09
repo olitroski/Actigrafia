@@ -1,21 +1,25 @@
-# ----------------------------------------------------------------------------------------------- #
-# ---- Funcion para capturar el episodio mas largo en cada semi periodo (Dia o Noche) para ------ #
-# ---- sueno y vigilia - v1.0 11.03.2019 -------------------------------------------------------- #
-# ----------------------------------------------------------------------------------------------- #
-# Usa un epi data. Hace el calculo para un semi periodo, no es necesario expandir y se hace por 
-# maximos no mas. Mmmm, hay que usar data expandida para calcular a que parte de la noche pertenece
-# se puede mas facil pero hay que picar.
+#' @title Capturar el episodio mas largo de un periodo
+#' @description Captura el episodio mas largo en cada periodo (Dia o Noche)
+#'   para sueno y vigilia - v1.0 11.03.2019.
+#'   Usa un epi data. hay que usar data expandida para calcular a que parte
+#'   de la noche pertenece, se puede mas eficiente pero hay que hacerlo   :)
+#' @param epi data.frame de epi tipo validEvents
+#' @return data.frame con los resultados
+#' @export
+#' @examples
+#' # function_duracionMax(epi)
+#' #
+#' @importFrom stats runif
 
 function_duracionMax <- function(epi){
+    # Nulos
+    dia <- dia.noc <- dur_min <- estado <- fec.hora <- finDesp <- hora <- horafin <- iniAntes <- key <- NULL
+    locSmax <- locWmax <- periodo <- runif <- semi <- seq.dia <- temp <- ver1 <- ver2 <- NULL
+    
     # Checar la data y expand function
     options(warn = 2)
-    check.epidata(epi)
     contador <- 0
-        
-    # ---- Data de Test ---- #
-    # s <- 10207; p <- "Noche 07"
-    # ---------------------- #
-        
+
     ## Loopeo sobre los sujetos
     sujetos <- unique(epi$id)
     max.todo <- NULL

@@ -232,6 +232,32 @@ server <- function(input, output, session){
         )
     }
     
+    # Modales de procesado
+    epiModal <- function(){
+        modalDialog(
+            title = "Procesando...", size = "s", easyClose = FALSE, strong("Procesando Episodios"), footer = NULL, fade = FALSE
+        )
+    }
+    
+    actModal <- function(){
+        modalDialog(
+            title = "Procesando...", size = "s", easyClose = FALSE, strong("Procesando Actograma"), footer = NULL, fade = FALSE
+        )
+    }
+    
+    statModal <- function(){
+        modalDialog(
+            title = "Procesando...", size = "s", easyClose = FALSE, strong("Procesando Estadísticas"), footer = NULL, fade = FALSE
+        )
+    }
+    
+    xlsxModal <- function(){
+        modalDialog(
+            title = "Procesando...", size = "s", easyClose = FALSE, strong("Exportando Excel"), footer = NULL, fade = FALSE
+        )
+    }
+    
+    
     # edFin.btn: Botón para mostrar el modal
     observeEvent(input$edFin.btn, {
         # Antecedentes
@@ -259,7 +285,11 @@ server <- function(input, output, session){
 
     # edFin.btn: Mostrar el modal y ejecutar acciones 
     observeEvent(input$finalOK,{
-        # Archivo de terminado
+        removeModal()
+        cat(paste("Terminando sujeto", awdfile(), "....\n"))
+        
+        # ------ Archivo de terminado y epi
+        showModal(epiModal())
         filename <- paste0(awdfile(), ".finished.RDS")
         txt <- c("Sujeto terminado", awdfile(), "Fecha", now())
         saveRDS(txt, file = file.path(awdfolder(), filename))
@@ -267,17 +297,79 @@ server <- function(input, output, session){
         # Archivo epi
         epi <- create.epi(acveditRDS(), filterRDS(), set())
         saveRDS(epi, file = paste0(awdfile(), ".epi.RDS"))
+        removeModal()
         
-        # Guardar actograma ------
+        
+        # ------ Guardar actograma 
+        showModal(actModal())
         w <- 1400
         h <- (length(acveditRDS()[["semiper"]]) * 110 + 220) * 1.5
         filename <- paste0(awdfile(), ".actogram.png")
         png(filename, width = w, height = h, pointsize = 20)
             create.actogram(acveditRDS()[["semiper"]], set = set(), filterRDS = filterRDS())
         dev.off()
-        
-        showNotification(paste("Terminando", awdfile()), closeButton = FALSE, type = "message")
         removeModal()
+        
+        # ----- Calcular STATS ---------------------------------------------------------
+        showModal(statModal())
+        epi <- create.epi(acveditRDS(), filterRDS(), set())
+        epi <- epi$epiviejo
+        
+        # Pre-procesar
+        cat("Procesando eventos válidos...")
+        epi <- function_ValidEvents(epi)                # 1 
+        drop <- epi$drop
+        epi <- epi$datos
+        
+        # Validar que se puede analizar
+        cat("Revisando EPI...")
+        epi <- select(epi, -actividad)
+        check.epidata(epi)                              # 2
+        
+        # Hacer los analisis
+        horaini <- function_hi(epi)                     # 3
+        conteo <- function_conteo(epi)                  # 4
+        duracion <- function_duration(epi)              # 5
+        maximos <- function_duracionMax(epi)            # 6
+        latencia <- function_latencia(epi)              # 7
+        CausaEfecto <- function_combi24h(epi)           # 8
+        
+        # Y los peridos de 24 horas
+        par24horas <- function_24h(epi)                 # 9
+        drop <- bind_rows(drop, par24horas$sinpar)
+        par24horas <- par24horas$conpar
+        
+        # Combinar resultado
+        stats <- list(epi = epi,
+                      drop = drop,
+                      horaini = horaini, 
+                      conteo = conteo,
+                      duracion = duracion,
+                      maximos = maximos,
+                      latencia = latencia,
+                      CausaEfecto = CausaEfecto,
+                      par24horas = par24horas)
+        saveRDS(file = paste0(awdfile(), ".stats.RDS"), object = stats)
+        removeModal()
+        
+        # Crear el Excel
+        showModal(xlsxModal())
+        excel <- createWorkbook()
+        hojas <- names(stats)
+        for (xls in hojas){
+            addWorksheet(excel, xls)
+            eval(parse(text = paste0("writeData(excel, '", xls, "', ", xls, ")")))
+            eval(parse(text = paste0("freezePane(excel, '", xls, "', firstRow = TRUE)")))
+            eval(parse(text = paste0("c <- ncol(", xls, ")")))
+            eval(parse(text = paste0("setColWidths(excel, '", xls, "', cols = 1:", c, ", widths = 'auto')")))
+        }
+        saveWorkbook(excel, paste0(awdfile(), ".stats.xlsx"), overwrite=TRUE)
+        removeModal()
+        
+        # ----- Listo finalizar 
+        showNotification(paste("Listo :)", awdfile()), closeButton = FALSE, type = "message")
+        cat(paste("Sujeto:", awdfile(), "terminado\n"))
+        
     })
     
 

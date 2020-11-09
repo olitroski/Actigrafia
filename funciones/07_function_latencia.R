@@ -1,21 +1,24 @@
-# ----------------------------------------------------------------------------------------------- #
-# ---- Funcion para capturar la latencia al primer W y al 2do si es que hay, ademas del --------- #
-# ---- tiempo 2do sueno si es que hay - v1.0 12.04.2019 ------------------------------------------ #
-# ----------------------------------------------------------------------------------------------- #
-# Usa un epi data. Hace el calculo para un periodo y calcula latencias como se describe en la 
-# documentacion.
+#' @title Latencia al primer W
+#' @description Funcion para capturar la latencia al primer W y al 2do si es que
+#'   hay, ademas del tiempo 2do sueno si es que hay - v1.0 12.04.2019
+#'   calcula latencias como se describe en la documentacion.
+#' @param epi data.frame de epi tipo validEvents
+#' @return data.frame con los resultados
+#' @export
+#' @examples
+#' # function_duracionMax(epi)
+#' #
+#' 
 
 function_latencia <- function(epi){
+    # Nulos
+    dia <- dia.noc <- fec.hora <- key <- lat1_hora <- lat2_hora <- lat3_hora <- latU_hora <- NULL
+    periodo <- semi <- seq.dia <- NULL
+    
     # Checar la data y expand function
     options(warn = 2)
-    check.epidata(epi)
     contador <- 0
 
-    # ----Datos para prueba --------- #
-    # s <- 11465; p <- "Noche 02"     #
-    # ------------------------------- #
-    
-    
     ## Loopeo sobre los sujetos
     waso.todo <- NULL
     sujetos <- unique(epi$id)

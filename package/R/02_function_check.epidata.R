@@ -47,14 +47,15 @@ check.epidata <- function(data = NULL){
 		
 	} else {
 	    cat("\n")
-	    cat("<<<----------Revisando archivo de datos----------->>>\n")
+	    # cat("<<<----------Revisando archivo de datos----------->>>\n")
 
 		# Chequear nombre de variables
 		checkvar <- c("id", "fec.hora", "estado", "dur_min", "mean_act", "dia.noc", "seq.dia", "hora", "dia", "hora.abs")
 		varmatch <- sum(names(data) %in% checkvar)
 
 		if (length(checkvar) == varmatch){
-			cat("      Chequeando nombres de las variables... Ok\n")
+			# cat("      Chequeando nombres de las variables... Ok\n")
+		    cat("Chequeo variables, ")
 		} else {
 			cat("Nombres de variables no provienen de un epi.data, se necesitan estas:\n")
 			cat(checkvar, sep = " - "); cat("\n")
@@ -85,7 +86,8 @@ check.epidata <- function(data = NULL){
             stop("Revisar datos  :)")
             
         } else if (sum(format == formatok) == 10){
-			cat("      Chequeando formato de las variables... Ok\n")
+			# cat("      Chequeando formato de las variables... Ok\n")
+            cat("Chequeo Formatos... Ok \n")
 			
 		} else {
 			cat("Class de las variables no hace match con un epi.data, se necesitan estas:\n")
@@ -93,6 +95,6 @@ check.epidata <- function(data = NULL){
 			stop()
 		}
 		
-		cat("<<<------Archivo de episodios (EPI) correcto------>>>\n")
+		# cat("<<<------Archivo de episodios (EPI) correcto------>>>\n")
 	}
 }

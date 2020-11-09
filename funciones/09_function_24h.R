@@ -1,13 +1,22 @@
-# ----------------------------------------------------------------------------------------------- #
-# ---- Funcion para captuar data de 24 horas, lo mas relevante y lo juntamos en una sola -------- #
-# ---- v1 20.06.2020 - Hay que reciclar las funciones ya creadas -------------------------------- #
-# ----------------------------------------------------------------------------------------------- #
-# 24 horas se entiende como la presencia de períodos consecutivos.
-# test <- function_24h(epi) 
+#' @title Analisis de tipo 24h
+#' @description Funcion para analizar data de 24 horas
+#'   24 horas se entiende como la presencia de períodos consecutivos.
+#'   calcula latencias como se describe en la documentacion. v1 20.06.2020.
+#' @param epi data.frame de epi tipo validEvents
+#' @return data.frame con los resultados
+#' @export
+#' @examples
+#' # test <- function_24h(epi) 
+#' #
+#' 
 
 function_24h <- function(epi){
+    # Nulos
+    Stime <- Ttime <- V1 <- V2 <- Var1 <- Var2 <- Wtime <- dia.noc <- dur_min <- estado <- fec.hora <- NULL
+    filtro1 <- filtro2 <- periodo <- seq.dia <- tipo <- NULL
+    
     # Capturar sujetos y crear contenedor en blanco
-    check.epidata(epi)
+    # check.epidata(epi)
     contador <- 0
     
     # Función pa sacar conteos

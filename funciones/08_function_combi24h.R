@@ -1,13 +1,21 @@
-# ----------------------------------------------------------------------------------------------- #
-# ---- Funcion para captuar COMBIS de 24 horas, para analisis de causa efecto ------------------- #
-# ---- v1 22.06.2020 - Hay que reciclar las funciones ya creadas -------------------------------- #
-# ----------------------------------------------------------------------------------------------- #
-# 24 horas se entiende como la presencia de períodos consecutivos.
-# test <- function_24h(epi) 
+#' @title Combinar peridoso para formar 24h
+#' @description Funcion para COMBINACIONES de 24 horas, para analisis de causa efecto
+#'   v1 22.06.2020 - 24 horas se entiende como la presencia de períodos consecutivos.
+#'   calcula latencias como se describe en la documentacion.
+#' @param epi data.frame de epi tipo validEvents
+#' @return data.frame con los resultados
+#' @export
+#' @examples
+#' # test <- function_combi24h(epi) 
+#' #
+#' 
 
 function_combi24h <- function(epi){
+    # Nulo
+    V1 <- V2 <- Var1 <- Var2 <- dia.noc <- fec.hora <- seq.dia <- NULL
+    
     # Capturar sujetos y crear contenedor en blanco
-    check.epidata(epi)
+    # check.epidata(epi)
     contador <- 0
 
     # Reconstruir periodo
