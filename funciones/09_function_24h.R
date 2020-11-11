@@ -206,6 +206,5 @@ function_24h <- function(epi){
     # paste(names(par24data), collapse = " ")
     return(list(conpar = par24data, sinpar = sinPar))
 }
-    
-    
-    
+
+

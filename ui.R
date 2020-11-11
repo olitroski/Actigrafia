@@ -386,14 +386,55 @@ ui <- navbarPage(
     
     # | ----
     # | ------ Panel 4 - ESTADISTICAS -------------- -------------------
-    tabPanel("Informes",
-        verbatimTextOutput("test1"),
-        verbatimTextOutput("test2")
-    )
+    tabPanel("Estadísticas",
+        fluidRow(
+            
+            # | Seleccion de Sujetos + Botones -------------------------------
+            column(3,
+                   fluidRow(
+                       column(12,
+                            h4("Sujetos Terminados"),
+                            p("Se puede borrar los resultados de un sujeto y dejarlo en", 
+                              strong("condición de edición"), 
+                              "o",
+                              strong("compilar"), 
+                              "todos los resultados en un solo archivo de Excel.")
+                       )
+                   ),
+                   # Botones de edición
+                   fluidRow(
+                       column(4, offset = 1,
+                              actionButton("compilar", "Compilar", width = "110", icon = icon("save"))
+                       ),
+                       column(4, offset = 1,
+                              actionButton("reEditar", "A Edicion", width = "110", icon = icon("edit"))
+                       ),
+                   ),
+                   hr(),
+                   
+                   # Seleccion de sujetos
+                   uiOutput("subjInput2")
+            ),
+            
+            # | Mostrar resultados ---------------------------------------------
+            column(9, 
+                tabsetPanel(
+                    tabPanel("Actograma", 
+                        imageOutput("finActograma")
+                    ),
+                    tabPanel("Actividad",
+                        verbatimTextOutput("actTab")
+                    ),
+                    tabPanel("Episodios",
+                        verbatimTextOutput("epiTab")
+                    ),
+                    tabPanel("Estadisticas",
+                        verbatimTextOutput("statTab")
+                    )
+                )
+            )
+        )
+    ),
     
-    
-
-
-    
-    
+    tags$head(tags$style(type="text/css", "#finActograma img {max-width: 100%; width: 100%; height: auto}"))
 )

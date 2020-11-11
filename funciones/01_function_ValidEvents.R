@@ -83,7 +83,7 @@ function_ValidEvents <- function(epi = NULL, drop = TRUE){
         datos <- mutate(datos, count = n())
         
         # Registrar los periodos con menos de 3 episodios
-        temp <- summarize(datos, N = n())
+        temp <- dplyr::summarize(datos, N = n())
         temp <- filter(temp, N < 3)
         if (nrow(temp) > 0){
             id.drop <- bind_rows(id.drop,

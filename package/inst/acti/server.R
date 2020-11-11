@@ -63,6 +63,8 @@ server <- function(input, output, session){
 
     # | -- -- Table directorio ------------------------------------------------
     output$dfdir <- renderTable({
+        validate(need(subjectDF(), "Esperado datos!"))
+        
         # Los radio buttons para el filtraje
         if (input$filterDir != "Todos"){
             filter(subjectDF(), Status == input$filterDir)            
@@ -77,6 +79,8 @@ server <- function(input, output, session){
     # | -- -- Tabla recuentos -------------------------------------------------
     # Aca voy a insertar el procesado del archivo de settings.  <<SETTINGS>>
     output$tableDir <- renderTable({
+        validate(need(subjectDF(), "Esperado datos!"))
+            
         if (subjectDF()[1,1] != "Directorio sin archivos AWD"){
             # Crear la tabla de recuentos
             summDF <- otable(rvar = "Status", data = subjectDF())
@@ -84,15 +88,11 @@ server <- function(input, output, session){
             summDF <- rename(summDF, N = freq, Porcentaje = pct)
             levels(summDF$Status)[length(levels(summDF$Status))] <- "Total"
             summDF
-            
         } else {
             data.frame(Status = "Directorio sin archivos AWD")
         }
     })
 
-        
-    
-    
 
     # | -- Parametros detección -----------------------------------------------
     # | -- -- Settings ----
@@ -116,8 +116,7 @@ server <- function(input, output, session){
                   "<strong>Sensibilidad de la deteción</strong><br>",         set()$sensivar, sep = "")
         )
     })
-    
-    
+
     # | -- -- Botón procesar en masa "massProc" -------------------------------
     # massProc: Modal de confirmación
     warnModal.mass <- function(){
@@ -182,11 +181,13 @@ server <- function(input, output, session){
     
     # | renderUI selección de sujetos -----------------------------------------
     output$subjInput <- renderUI({
+        validate(need(subjectDF(), "Esperando datos!"))
         lechoices <- filter(subjectDF(), Status == "En edicion")
         lechoices <- as.character(lechoices$Sujeto)
         
         # Por si queda en cero
         if (length(lechoices) == 0){
+            # print("los botones1")
             radioButtons(inputId = "awd_select", label = NULL, choices = c("No hay sujetos"))
         } else {
             radioButtons(inputId = "awd_select", label = NULL, choices = lechoices)
@@ -234,29 +235,17 @@ server <- function(input, output, session){
     
     # Modales de procesado
     epiModal <- function(){
-        modalDialog(
-            title = "Procesando...", size = "s", easyClose = FALSE, strong("Procesando Episodios"), footer = NULL, fade = FALSE
-        )
+        modalDialog(title = "Procesando...", size = "s", easyClose = FALSE, strong("Procesando Episodios"), footer = NULL, fade = FALSE)
     }
-    
     actModal <- function(){
-        modalDialog(
-            title = "Procesando...", size = "s", easyClose = FALSE, strong("Procesando Actograma"), footer = NULL, fade = FALSE
-        )
+        modalDialog(title = "Procesando...", size = "s", easyClose = FALSE, strong("Procesando Actograma"), footer = NULL, fade = FALSE)
     }
-    
     statModal <- function(){
-        modalDialog(
-            title = "Procesando...", size = "s", easyClose = FALSE, strong("Procesando Estadísticas"), footer = NULL, fade = FALSE
-        )
+        modalDialog(title = "Procesando...", size = "s", easyClose = FALSE, strong("Procesando Estadísticas"), footer = NULL, fade = FALSE)
     }
-    
     xlsxModal <- function(){
-        modalDialog(
-            title = "Procesando...", size = "s", easyClose = FALSE, strong("Exportando Excel"), footer = NULL, fade = FALSE
-        )
+        modalDialog(title = "Procesando...", size = "s", easyClose = FALSE, strong("Exportando Excel"), footer = NULL, fade = FALSE)
     }
-    
     
     # edFin.btn: Botón para mostrar el modal
     observeEvent(input$edFin.btn, {
@@ -286,6 +275,7 @@ server <- function(input, output, session){
     # edFin.btn: Mostrar el modal y ejecutar acciones 
     observeEvent(input$finalOK,{
         removeModal()
+        cat("\n----------------------------------------------------------\n")
         cat(paste("Terminando sujeto", awdfile(), "....\n"))
         
         # ------ Archivo de terminado y epi
@@ -299,9 +289,9 @@ server <- function(input, output, session){
         saveRDS(epi, file = paste0(awdfile(), ".epi.RDS"))
         removeModal()
         
-        
         # ------ Guardar actograma 
         showModal(actModal())
+        cat("Guardando Actograma...\n")
         w <- 1400
         h <- (length(acveditRDS()[["semiper"]]) * 110 + 220) * 1.5
         filename <- paste0(awdfile(), ".actogram.png")
@@ -310,7 +300,7 @@ server <- function(input, output, session){
         dev.off()
         removeModal()
         
-        # ----- Calcular STATS ---------------------------------------------------------
+        # | ----- Calcular STATS ---------------------------------------------------------
         showModal(statModal())
         epi <- create.epi(acveditRDS(), filterRDS(), set())
         epi <- epi$epiviejo
@@ -327,6 +317,7 @@ server <- function(input, output, session){
         check.epidata(epi)                              # 2
         
         # Hacer los analisis
+        cat("Calculando estadísticas...\n")
         horaini <- function_hi(epi)                     # 3
         conteo <- function_conteo(epi)                  # 4
         duracion <- function_duration(epi)              # 5
@@ -353,6 +344,7 @@ server <- function(input, output, session){
         removeModal()
         
         # Crear el Excel
+        cat("\nExportando Excel...\n")
         showModal(xlsxModal())
         excel <- createWorkbook()
         hojas <- names(stats)
@@ -369,19 +361,19 @@ server <- function(input, output, session){
         # ----- Listo finalizar 
         showNotification(paste("Listo :)", awdfile()), closeButton = FALSE, type = "message")
         cat(paste("Sujeto:", awdfile(), "terminado\n"))
-        
+        cat("----------------------------------------------------------\n")
     })
     
 
     # | Actograma -------------------------------------------------------------
     # El ui render, el height se setea grande para que no de error de margins
     output$actoUI <- renderUI({
-        # validate(need(showActogram$val, "Esperando datos!"))
         validate(need(awdfile(), "Esperando datos!"))
-        validate(need(acveditRDS(), "Esperado datos!"))
         
         # Carga al tiro
-        if (awdfile() != "No hay sujetos"){
+        if (awdfile() == "No hay sujetos"){
+            plot(0, type='n', axes=FALSE, ann=FALSE)
+        } else {
             h <- length(acveditRDS()[["semiper"]]) * 110 + 220
             plotOutput("actograma", width = "100%", height = h)
         }
@@ -390,7 +382,7 @@ server <- function(input, output, session){
     # Dibuja el actograma a partir del awdfile() y el acvditRDS() 
     output$actograma <- renderPlot({
         validate(need(acveditRDS(), "Esperando datos!"))
-        validate(need(awdfile(), "Esperando datos!"))
+        
         
         # Verifica que haya algo para graficar
         if (length(acveditRDS()[["semiper"]]) > 0){
@@ -1568,19 +1560,155 @@ server <- function(input, output, session){
     
     # _________________________________________ -------------------------------
     # Panel - ESTADISTICAS ----------------------------------------------------
-    output$test1 <- renderPrint({
-        validate(need(input$perChoose, "Esperando input!"))
-
+    # | ---- Determina awdfin() ----------------------------------------------
+    awdfin <-  reactive({
+        input$awd_fin
     })
     
-    output$test2 <- renderPrint({
-        validate(need(input$perChoose, "Esperando input!"))
+    # | renderUI selección de terminados -----------------------------------------
+    output$subjInput2 <- renderUI({
+        validate(need(subjectDF(), "Esperando datos!"))
+        lechoices <- filter(subjectDF(), Status == "Terminado")
+        lechoices <- as.character(lechoices$Sujeto)
+        
+        # Por si queda en cero
+        if (length(lechoices) == 0){
+            # print("los botones1")
+            radioButtons(inputId = "awd_fin", label = NULL, choices = c("No hay sujetos"))
+        } else {
+            radioButtons(inputId = "awd_fin", label = NULL, choices = lechoices)
+        }
     })
     
+    # | ---- Boton re-Editar ------------------------------------------------------
+    # Pasar a edicion
+    reEditar.modal <- function(){
+        modalDialog(
+            title = "Pasar el sujeto a Edición",
+            size = "m",
+            easyClose = TRUE,
+            div(h4(input$awd_fin),
+                p(awdfile()),
+                p(strong("Con esta acción se borran las estadísticas calculadas y se pasa el sujeto a condición de edición"))),
+            footer = tagList(
+                modalButton("Cancelar", icon = icon("window-close")),
+                actionButton("reEditarOK", "re-Editar", icon = icon("edit"))  # El valor resultante
+            )
+        )
+    }
+    # Boton del UI para mostrar modal
+    observeEvent(input$reEditar, {
+        showModal(reEditar.modal())
+    })
+    # Confirmar modal
+    observeEvent(input$reEditarOK,{
+        showNotification("Borrando archivos...", duration = 2, closeButton = FALSE, type = "message")
+        # Borrar asi no mas
+        file.remove(file.path(getwd(), paste0(awdfin(), ".epi.RDS")))
+        file.remove(file.path(getwd(), paste0(awdfin(), ".finished.RDS")))
+        file.remove(file.path(getwd(), paste0(awdfin(), ".stats.RDS")))
+        file.remove(file.path(getwd(), paste0(awdfin(), ".stats.xlsx")))
+        file.remove(file.path(getwd(), paste0(awdfin(), ".actogram.png")))
+        removeModal()
+    })
+    
+    
+    # | ---- Boton Compilar -------------------------------------------------------
+    # Mensaje de compilar
+    compi.modal <- function(){
+        modalDialog(
+            title = "Compilar estadisticas",
+            size = "m",
+            easyClose = TRUE,
+            div(p(strong("Con esta acción se combinan las estadisticas de todos los sujetos en un solo archivo."))),
+            footer = tagList(
+                modalButton("Cancelar", icon = icon("window-close")),
+                actionButton("compiOK", "Compilar", icon = icon("save")) 
+            )
+        )
+    }
+    # Boton del UI para mostrar modal
+    observeEvent(input$compilar, {
+        # Si no hay sujetos
+        if (awdfin() == "No hay sujetos"){
+            showNotification("No hay sujetos...", duration = 3, closeButton = FALSE, type = "error")
+        } else {
+            showModal(compi.modal())
+        }
+    })
+    # Confirmacion del modal
+    observeEvent(input$compiOK,{
+        showNotification("Compilando archivos...", duration = 3, closeButton = FALSE, type = "message")
+        validate(need(subjectDF(), "Esperando datos!"))
+        
+        # browser()
+        # Crear nulos
+        epi <- drop <- horaini <- conteo <- duracion <- maximos <- latencia <- CausaEfecto <- par24horas <- NULL
+        
+        # Lupeo y combinacion
+        lechoices <- filter(subjectDF(), Status == "Terminado")
+        lechoices <- as.character(lechoices$Sujeto)
+        
+        for (f in lechoices){
+            temp <- readRDS(paste0(f, ".stats.RDS"))
+            epi <- bind_rows(epi, temp$epi)
+            drop <- bind_rows(drop, temp$drop)
+            horaini <- bind_rows(horaini, temp$horaini)
+            conteo <- bind_rows(conteo, temp$conteo)
+            duracion <- bind_rows(duracion, temp$duracion)
+            maximos <- bind_rows(maximos, temp$maximos)
+            latencia <- bind_rows(latencia, temp$latencia)
+            CausaEfecto <- bind_rows(CausaEfecto, temp$CausaEfecto)
+            par24horas <- bind_rows(par24horas, temp$par24horas)
+        }
 
+        # Crear el Excel
+        cat("\nExportando Excel...\n")
+        excel <- createWorkbook()
+        hojas <- c("epi", "drop", "horaini", "conteo", "duracion", "maximos", "latencia", "CausaEfecto", "par24horas")
+        for (xls in hojas){
+            addWorksheet(excel, xls)
+            eval(parse(text = paste0("writeData(excel, '", xls, "', ", xls, ")")))
+            eval(parse(text = paste0("freezePane(excel, '", xls, "', firstRow = TRUE)")))
+            eval(parse(text = paste0("c <- ncol(", xls, ")")))
+            eval(parse(text = paste0("setColWidths(excel, '", xls, "', cols = 1:", c, ", widths = 'auto')")))
+        }
+        saveWorkbook(excel, "EstadisticasGlobales.xlsx", overwrite=TRUE)
+        
+        removeModal()
+    })
+    
+    
+    
+    
+    # | ---- Actograma ------------------------------------------------------------
+    output$finActograma <- renderImage({
+        list(src=paste0(awdfin(), ".actogram.png"))
+    }, deleteFile = FALSE)
+    
+    
+    # | ---- resto de tablas ------------------------------------------------------
+    options(width = 150)
+    
+    # Tabla de actividad
+    output$actTab <- renderPrint({
+        readRDS(paste0(awdfin(), ".acvedit.RDS"))
+    })
+    
+    # Tabla epi
+    output$epiTab <- renderPrint({
+        readRDS(paste0(awdfin(), ".stats.RDS"))$epi
+    })
+    
+    # stats
+    output$statTab <- renderPrint({
+        temp <- readRDS(paste0(awdfin(), ".stats.RDS"))
+        temp$epi <- NULL
+        temp
+    })
+    
+    
 }
-
-
 
 
 

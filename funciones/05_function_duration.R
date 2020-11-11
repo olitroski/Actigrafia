@@ -101,7 +101,7 @@ function_duration <- function(epi){
             # -----------------------------------------------
             
             ## Tercios
-            TerData <- data.frame(summarize(group_by(periodData, estado, ter), time = n()))
+            TerData <- data.frame(dplyr::summarize(group_by(periodData, estado, ter), time = n()))
             TerData <- mutate(TerData, TStage = paste("T", ter, estado, sep = ""))
             
             # Corregir si faltan
@@ -130,7 +130,7 @@ function_duration <- function(epi){
                               T3tot = sum(T3S,T3W,na.rm=TRUE), T3Sp = round(T3S/T3tot, 3)*100, T3Wp = round(T3W/T3tot, 3)*100)
             
             ## Datos Mitades
-            MidData <- data.frame(summarize(group_by(periodData, estado, mit), time = n()))
+            MidData <- data.frame(dplyr::summarize(group_by(periodData, estado, mit), time = n()))
             MidData <- mutate(MidData, MStage = paste("M", mit, estado, sep = ""))
             
             # Corregir si faltan

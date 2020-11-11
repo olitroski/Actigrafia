@@ -100,4 +100,3 @@ function_combi24h <- function(epi){
     # head(combiData)
     return(combiData)
 }
-        

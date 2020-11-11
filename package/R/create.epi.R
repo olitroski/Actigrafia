@@ -108,8 +108,8 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = TRUE){
     acvdata <- mutate(acvdata, indx = indx - 1)
 
     # ---- Tabla de episodios
-    tabepi <- group_by(acvdata, seqStage)
-    tabepi <- summarize(tabepi, 
+    tabepi <- dplyr::group_by(acvdata, seqStage)
+    tabepi <- dplyr::summarize(tabepi, 
                         duracion = unique(duracion),
                         min.index = min(indx), max.index = max(indx),
                         ini.time = min(time), 
@@ -354,8 +354,8 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = TRUE){
     
     # | - 7. Crar periodos Dia-Noche (DN) y Noche-Dia (ND) --------------------
     # Con una tabla auxiliar mejor
-    periodo <- group_by(filter(tabepi, temp != "Drop"), temp)
-    periodo <- summarize(periodo, ini = min(ini.time), fin = max(fin.time))
+    periodo <- dplyr::group_by(filter(tabepi, temp != "Drop"), temp)
+    periodo <- dplyr::summarize(periodo, ini = min(ini.time), fin = max(fin.time))
     periodo <- arrange(periodo, ini)
     periodo <- mutate(periodo, dianoc = str_split(periodo$temp, " ", simplify = TRUE)[,1])
     

@@ -89,10 +89,10 @@ function_hi <- function(epi){
             mitad2 <- ifelse(mitad > 0 & mitad < 12 & semiper == "Noche", mitad + 24, mitad)
             
             ## Tabulacion data.frame periodo
-            df <- data.frame(id = s,
-                             period = p,
-                             dia_noc = semiper,
-                             stage_ini = sw,
+            df <- data.frame(id = as.character(s),
+                             period = as.character(p),
+                             dia_noc = as.character(semiper),
+                             stage_ini = as.character(sw),
                              hi = hora,
                              # hi2 = hora2,
                              hi_abs = hora.abs,
@@ -102,7 +102,7 @@ function_hi <- function(epi){
                              hf = round(horaf, 3),
                              hf2 = horaf2,
                              wday = wday,
-                             fecha = fec)
+                             fecha = fec, stringsAsFactors = FALSE)
             
             # Agregar a la base general
             hi.data <- rbind(hi.data, df)
