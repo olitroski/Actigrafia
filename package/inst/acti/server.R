@@ -78,8 +78,15 @@ server <- function(input, output, session){
             filter(subjectDF(), Status == input$filterDir)            
         } else {
             tabladir <- subjectDF()
-            names(tabladir) <- c("Id Sujeto", "Archivos", "Terminado", "Status")
-            tabladir
+            
+            # Por si no hubieran archivos
+            if (tabladir[1,1] != "Directorio sin archivos AWD"){
+                names(tabladir) <- c("Id Sujeto", "Archivos", "Terminado", "Status")
+                tabladir
+            } else {
+                tabladir
+            }
+            
         }
     }, digits = 0, align = "c", striped = TRUE, hover = TRUE, width = "100%", spacing = "s")
 

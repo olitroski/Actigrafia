@@ -66,6 +66,25 @@ Luego de esto se instalará la aplicación. Las últimas líneas debieran decir 
 
 Y con esto ya estaríamos listos. Si surgen errores de algún tipo se deben evaluar y corregir. El más recurrente es que no puede remover una librería antigua, en este caso `digest` si se borra la carpeta de la librería y se reinstala funciona ok.
 
+## Reinstalar la aplicación
+
+Instalar una nueva versión sobre una versión previa provocar problemas. Algo así:  
+
+```
+Installing package into ‘D:/Documentos/R/win-library/3.6’
+(as ‘lib’ is unspecified)
+* installing *source* package 'olitosleep' ...
+ERROR: cannot remove earlier installation, is it in use?
+* removing 'D:/Documentos/R/win-library/3.6/olitosleep'
+* restoring previous 'D:/Documentos/R/win-library/3.6/olitosleep'
+```
+
+Para evitar esto lo mejor será ejecutar el RStudio como administrador, para ello basta con hacer clic derecho en el icono del programa y buscar la opción **Ejecutar como administrador**.
+
+![](https://raw.githubusercontent.com/olitroski/Actigrafia/master/varios/asadmin.png)
+
+Luego se debe instalar como ya se indicó.
+
 ## Ejecutar la aplicación
 
 Esta aplicación es en el fondo una librería de R, por lo cual se debe cargar y luego ejecutar la función `olitosleep()`. Lo anterior de la instalación ya no se debe hacer y de aquí en adelante se deben ejecutar estas dos lineas.
