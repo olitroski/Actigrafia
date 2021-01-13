@@ -18,7 +18,15 @@ server <- function(input, output, session){
     # Si existe lo carga
     } else {
         path$ruta <- readLines(savedir_path)
-        setwd(readLines(savedir_path))
+        
+        # Hay que revisar que exista el dir por si movieron los archivos
+        if (dir.exists(readLines(savedir_path)) == TRUE){
+            setwd(readLines(savedir_path))
+        } else {
+            writeLines(Sys.getenv("USERPROFILE"), savedir_path)
+            path$ruta <- Sys.getenv("USERPROFILE")
+            setwd(Sys.getenv("USERPROFILE"))
+        }
     }
     
     # ---- Boton choose dir ---- #     <<<< path$ruta >>>>

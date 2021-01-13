@@ -64,7 +64,7 @@ Luego de esto se instalará la aplicación. Las últimas líneas debieran decir 
 * DONE (olitosleep)
 ```
 
-Y con esto ya estaríamos listos. Si surgen errores de algún tipo se deben evaluar y corregir.
+Y con esto ya estaríamos listos. Si surgen errores de algún tipo se deben evaluar y corregir. El más recurrente es que no puede remover una librería antigua, en este caso `digest` si se borra la carpeta de la librería y se reinstala funciona ok.
 
 ## Ejecutar la aplicación
 
