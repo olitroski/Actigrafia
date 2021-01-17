@@ -12,6 +12,7 @@
 
 # ----- Cargar carpeta de trabajo --------------------------------------------- #
 # Actualizar el Package
+# rm(list = ls())
 # mainfolder <- "D:/OneDrive/INTA/Actigrafia"
 # setwd(mainfolder)
 # source("D:/OneDrive/INTA/Actigrafia/compiApp.R")
@@ -58,9 +59,9 @@ rm(fun, funciones)
 setwd(mainfolder)
 
 # ----- Ejecutar la aplicacion ---------------------------------------------- # 
+stop()
 # Cargar App
 runApp(display.mode = "normal")
-stop()
 
 
 
@@ -70,6 +71,9 @@ stop()
 # Cargar un sujeto valido
 setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
 awdfile <- "2058-001-368 JRG Baseline.AWD"
+
+setwd("C:/Users/olitr/Desktop/testCata")
+awdfile <- "11697_02-03-2017_13_00_00_New_Analysis.AWD"    
 set <- getset(getwd())
 
 
@@ -95,6 +99,7 @@ tail(acvedit)
 acveditRDS <- check.acvfilter(awdfile, set)
 names(acveditRDS)
 names(acveditRDS$semiper)
+head(acveditRDS$semiper["per01"])
 acveditRDS$timelist
 stop()
 
@@ -147,11 +152,14 @@ tail(acv)
 
 # --- Construcción del EPI ----------------------------------------------------
 setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
-set <- getset(getwd())
 awd <- c("2058-001-368 JRG Baseline", "2058-002-298 MLR Baseline", "2058-004-433 AJM Baseline",
          "2058-007-464 JMH Baseline", "2058-009-577 KNC Baseline", "2058-012-833 DFW Visit3")
 
+setwd("C:/Users/olitr/Desktop/testCata")
+awd <- "11697_02-03-2017_13_00_00_New_Analysis"    
+
 # Probar
+set <- getset(getwd())
 acvedit <- check.acvfilter(paste0(awd[1], ".AWD"), set)
 filter <-  readRDS(paste0(awd[1], ".edit.RDS"))
 epi <- create.epi(acvedit, filter, set)

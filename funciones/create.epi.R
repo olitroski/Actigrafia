@@ -38,6 +38,7 @@
 # y el filtro se carga directo con <<return(readRDS(fichero))>>
 
 create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = TRUE){
+    # browser()
     # Nulos para libreria
     data <- dinofinal <- indx <- name <- estado <- periodo <- hrdec <- nper <- NULL
     nseq <- duracion <- dianoc <- ini <- stage <- st.edit <- act.edit <- ini.time <- NULL

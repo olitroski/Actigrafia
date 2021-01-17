@@ -250,15 +250,19 @@ server <- function(input, output, session){
     
     # Modales de procesado
     epiModal <- function(){
+        cat("Procesando Episodios\n")
         modalDialog(title = "Procesando...", size = "s", easyClose = FALSE, strong("Procesando Episodios"), footer = NULL, fade = FALSE)
     }
     actModal <- function(){
+        cat("Procesando actograma\n")
         modalDialog(title = "Procesando...", size = "s", easyClose = FALSE, strong("Procesando Actograma"), footer = NULL, fade = FALSE)
     }
     statModal <- function(){
+        cat("Procesando stats\n")
         modalDialog(title = "Procesando...", size = "s", easyClose = FALSE, strong("Procesando Estadísticas"), footer = NULL, fade = FALSE)
     }
     xlsxModal <- function(){
+        cat("Procesando excel\n")
         modalDialog(title = "Procesando...", size = "s", easyClose = FALSE, strong("Exportando Excel"), footer = NULL, fade = FALSE)
     }
     

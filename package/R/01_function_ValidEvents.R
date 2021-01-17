@@ -32,7 +32,7 @@
 
 function_ValidEvents <- function(epi = NULL, drop = TRUE){
     N <- data <- days <- dia.noc <- epi_estado <- fec.hora <- hi <- hidate <- inidate <- periodo <- realini <- seq.dia <- transito <- NULL
-    mean_act_min <- hora <- dur_min <- NULL
+    mean_act_min <- hora <- dur_min <- dia <- NULL
 	## <<< Funcion para sacar datos por sujeto >>> 
     # id <- 10648; subjdata <- epi; p <- "Noche 02"
     
@@ -167,10 +167,13 @@ function_ValidEvents <- function(epi = NULL, drop = TRUE){
 
     # Terminar la base
     datos.todo <- rename(datos.todo, mean_act = mean_act_min, fec.hora = hora) %>% select(-periodo)
+    
+    Sys.setlocale("LC_ALL", "English")
     datos.todo <- mutate(datos.todo, hora = hour(fec.hora) + minute(fec.hora)/60, 
                          dia =  wday(fec.hora, label = TRUE),
                          hora = round(hora, 3), 
                          hora.abs = floor(hora))
+    datos.todo <- mutate(datos.todo, dia = as.character(dia))
     
     # 6. Dia semana en transito
     datos.todo <- arrange(datos.todo, id, fec.hora)

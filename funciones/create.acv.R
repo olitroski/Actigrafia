@@ -14,20 +14,19 @@
 #' @importFrom stats quantile
 #' @importFrom stringr str_split
 
-
-
-## ------------------------------------------------------------------------------------ #
-## ----- Create ACV - Estado (W|S), fechas y horas partir de un awd ------------------- #
-## ------------------------------------------------------------------------------------ #
 create.acv <- function(awdfile, set){
     esp <- fec <- act3 <- index <- nombre <- dec <- acti2 <- st.edit <- NULL
+    newfec <- N <- newact <- NULL
 	cat(paste0("| Iniciando Archivo: ", awdfile, "\n"))
 
+	# ----------------------------------------------------------------------------------- #
+	# ----- Cargar datos ---------------------------------------------------------------- #
+	# ----------------------------------------------------------------------------------- #
 	# Cargar sensibilidad
 	sensi <- set$sensivar
 
     # Leer archivo
-    awd <- readLines(awdfile)
+    awd <- readLines(awdfile, warn = FALSE)
     awd.head <- awd[1:7]
     awd.data <- awd[-(1:7)]
 
@@ -44,8 +43,9 @@ create.acv <- function(awdfile, set){
     if (sum(is.na(numtest)) > 0){
         stop("Hay un valor no numerico en el AWD a partir linea 8")
     }
+    rm(numtest)
 
-
+    
     # ----------------------------------------------------------------------------------- #
     # ----- Antecedentes del header  ---------------------------------------------------- #
     # ----------------------------------------------------------------------------------- #
@@ -55,9 +55,9 @@ create.acv <- function(awdfile, set){
     date <- awd.head[2]
     hour <- awd.head[3]
     epoch.len <- as.numeric(awd.head[4])
-    edad <- awd.head[5]
-    serie <- awd.head[6]
-    sexo <- awd.head[7]
+    # edad <- awd.head[5]
+    # serie <- awd.head[6]
+    # sexo <- awd.head[7]
 
     # Identificar el epoch, si 4 = 1 minuto, si 1 = 15 segundos, 2 = 30 secs
     if (epoch.len == 1){
@@ -69,16 +69,16 @@ create.acv <- function(awdfile, set){
     } else {
         stop("error, algo paso con el epoch len")
     }
-
+    
 	# cat(paste("|--- cAcv: Sens = ", sensi, " - Samp = ", epoch.len, "secs \n", sep = ""))
-
-    # Crear fecha-hora inicial y Cambiar tambien el mes a ingles "se trabaja en character"
-    fec.ini <- paste(awd.head[2], awd.head[3])
+    
+    # Crear fecha-hora inicial y Cambiar tambien el mes a ingles "se trabaja en string"
+    fec.ini <- paste(date, hour)
     mes <- data.frame(eng = as.character(c(1:12)),
         esp = c("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"),
         stringsAsFactors = FALSE)
     mes <- filter(mes, esp == unlist(str_split(fec.ini, "-", 3))[2])
-
+    
     # Asume que esta en espanol, se corrige si ingles.
     if (nrow(mes) > 0){
         fec.ini <- str_replace(fec.ini, mes[1,2], mes[1,1])
@@ -86,18 +86,44 @@ create.acv <- function(awdfile, set){
     } else {
         fec.ini <- dmy_hm(fec.ini)
     }
+    rm(mes)
 
     # --- Crear Secuencia de fechas (Crea el AWD) ------------------------------------- #
     fec.ini <- fec.ini + seconds(seq(0, by = epoch.len, length.out = length(awd.data)))
-    awd <- data.frame(nombre = awd.head[1], act = awd.data, fec = fec.ini, stringsAsFactors = FALSE)
-    awd <- mutate(awd, dec = hour(fec)+minute(fec)/60)
-
+    awd <- data.frame(nombre = name, act = awd.data, fec = fec.ini, stringsAsFactors = FALSE)
+    rm(fec.ini, awd.data, date, hour)
+    
+    # <<<<< Arreglo de epoch >>>>>
+    # Todo a minutos no mas... chao con los 15 secs
+    if (epoch.len == 15){
+        # Pasar a minutos y usar pa sumar actividad
+        awd <- dplyr::mutate(awd, newfec = format(fec, format = "%Y-%m-%d %H:%M"))
+        awd <- dplyr::select(awd, -fec)
+        awd <- dplyr::group_by(awd, newfec)
+        newawd <- dplyr::summarize(awd, newact = sum(act), N = n())
+        newawd <- as.data.frame(newawd)
+        newawd <- newawd[newawd$N == 4, ]
+        
+        # Reconstruir el AWD
+        newawd <- select(newawd, -N)
+        newawd <- rename(newawd, act = newact, fec = newfec)
+        newawd <- mutate(newawd, nombre = name)
+        awd <- select(newawd, nombre, act, fec)
+        awd <- mutate(awd, fec = lubridate::ymd_hm(fec))
+        rm(newawd)
+        
+    } else if (epoch.len == 30){
+        stop("30 secs epoch fix not implemented yet, func 'create.acv' line 95")
+    }
+    
     # Recorte de peaks de actividad al percentil 98
     awd <- mutate(awd, act2 = ifelse(act > 0, act, NA))
     p98 <- quantile(awd$act2, 0.98, na.rm = TRUE)                                       # >>>> el centile <<<<
     awd <- mutate(awd, act3 = ifelse(act < p98, act, p98), act3 = round(act3, 0))
     awd <- ordervar(awd, c("act2", "act3"), after = "act")
-
+    
+    # Hora decimal
+    awd <- mutate(awd, dec = hour(fec)+minute(fec)/60)
 
     # --------------------------------------------------------------------------------- #
     # ----- Algoritmo del Actiwatch - MiniMitter -------------------------------------- #
