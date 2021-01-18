@@ -156,7 +156,7 @@ awd <- c("2058-001-368 JRG Baseline", "2058-002-298 MLR Baseline", "2058-004-433
          "2058-007-464 JMH Baseline", "2058-009-577 KNC Baseline", "2058-012-833 DFW Visit3")
 
 setwd("C:/Users/olitr/Desktop/testCata")
-awd <- "11697_02-03-2017_13_00_00_New_Analysis"    
+awd <- "11681_20-03-2017_13_00_00_New_Analysis"    
 
 # Probar
 set <- getset(getwd())
