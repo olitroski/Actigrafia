@@ -1,4 +1,58 @@
-[TOC]
+# Contenidos
+- [Contenidos](#contenidos)
+- [Estadísticas Episodios](#estadísticas-episodios)
+  - [Definiciones](#definiciones)
+  - [Consejos para el análisis](#consejos-para-el-análisis)
+  - [Consejos para combinar tablas](#consejos-para-combinar-tablas)
+  - [Hora decimal](#hora-decimal)
+  - [Hora continua](#hora-continua)
+- [Para trabajar con archivo antiguos](#para-trabajar-con-archivo-antiguos)
+  - [1. Leer el EPI](#1-leer-el-epi)
+  - [2. Leer el ARQ](#2-leer-el-arq)
+  - [3. Combinar](#3-combinar)
+- [Pre procesado](#pre-procesado)
+  - [Descartar el Dia 01](#descartar-el-dia-01)
+  - [Periodos repetidos](#periodos-repetidos)
+  - [Crear periodos](#crear-periodos)
+  - [Mínimo de episodios](#mínimo-de-episodios)
+  - [Primer episodio](#primer-episodio)
+  - [Días de la semana](#días-de-la-semana)
+    - [Dia del período](#dia-del-período)
+    - [Noche del período](#noche-del-período)
+  - [Redondear duración](#redondear-duración)
+- [1. Hora de Inicio](#1-hora-de-inicio)
+  - [Variables de Inicio](#variables-de-inicio)
+  - [Errores detectados](#errores-detectados)
+- [2. Conteo de episodios](#2-conteo-de-episodios)
+  - [Conteos](#conteos)
+  - [Conteos en Mitades](#conteos-en-mitades)
+    - [Calcular la mitad del período](#calcular-la-mitad-del-período)
+    - [Asignación episodio que cruza la mitad](#asignación-episodio-que-cruza-la-mitad)
+    - [Versión 1. Según hora](#versión-1-según-hora)
+    - [Versión 2. Según proporción](#versión-2-según-proporción)
+    - [Cálculos](#cálculos)
+  - [Variables de Conteos](#variables-de-conteos)
+- [3. Duración de estados](#3-duración-de-estados)
+  - [Duraciones generales](#duraciones-generales)
+  - [Duraciones en Mitad y Tercios](#duraciones-en-mitad-y-tercios)
+  - [Promedios](#promedios)
+  - [Variables de duración](#variables-de-duración)
+- [4. Duración máxima](#4-duración-máxima)
+  - [Máximos en mitades](#máximos-en-mitades)
+  - [Variables de máximos](#variables-de-máximos)
+- [5. Latencias](#5-latencias)
+  - [Latencias del inicio](#latencias-del-inicio)
+  - [Latencia del final](#latencia-del-final)
+  - [Variables Latencia](#variables-latencia)
+- [6. Día completo](#6-día-completo)
+  - [Períodos consecutivos](#períodos-consecutivos)
+    - [Sujetos sin pares válidos](#sujetos-sin-pares-válidos)
+  - [Variables día completo](#variables-día-completo)
+- [7. Causa efecto](#7-causa-efecto)
+  - [Un ejemplo](#un-ejemplo)
+
+
+
 
 # Estadísticas Episodios
 
@@ -634,10 +688,10 @@ Lo primero a tener en consideración es que un **máximo implica que si o si un 
 
 Esto limita el cálculo de esta estadística a aquellos periodos (u otro segmento) que posea al menos 2 episodios del mismo tipo, por ejemplo:
 
-| Secuencia Noche   | Secuencia Dia     | Status estadística duración máxima                           |
-| ----------------- | ----------------- | ------------------------------------------------------------ |
-| S                 | W                 | No permite calcular duración máxima                          |
-| S - W - S         | W - S - W         | Permite el cálculo de sólo 1 máximo                          |
+| Secuencia Noche   | Secuencia Dia     | Status estadística duración máxima                                       |
+| ----------------- | ----------------- | ------------------------------------------------------------------------ |
+| S                 | W                 | No permite calcular duración máxima                                      |
+| S - W - S         | W - S - W         | Permite el cálculo de sólo 1 máximo                                      |
 | S - W - S - W - S | W - S - W - S - W | A partir de cinco episodios se pueden calcular máximos a los dos estados |
 
 **Esto opera para cualquier partición de la noche o el día**, es decir, si se desea conocer cuál es el episodio de sueño más largo de la segunda mitad de la noche se requiere que tenga al menos 3 episodios con la secuencia `S - W - S`. Lo mismo para el día.
