@@ -103,3 +103,13 @@ Cuando se abre la aplicación se abrirá cargará todo lo necesario y se abrirá
 
 No se debe cerrar RStudio porque se cerrará la aplicación, si se desea salir simplemente basta cerrarla, no pasa nada si se corta la luz o algo así.
 
+# Anexo
+
+## Detalle de las estadísticas
+
+El detalle de las estadísticas se puede encontrar acá. [Procesamiento de datos](https://github.com/olitroski/Actigrafia/blob/master/Procesamiento%20de%20datos.md)
+
+## Archivos de prueba
+
+Se pueden descargar archivos de prueba para dejarlos en alguna carpeta y probar el programa, es un archivo comprimido en zip. 
+
