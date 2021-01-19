@@ -1,3 +1,19 @@
+# Contenidos
+- [Contenidos](#contenidos)
+- [Olito Sleep](#olito-sleep)
+  - [Instalar la aplicación](#instalar-la-aplicación)
+    - [Sistema operativo](#sistema-operativo)
+    - [Instalar R](#instalar-r)
+    - [Instalar RStudio](#instalar-rstudio)
+    - [Instalar la librería devtools](#instalar-la-librería-devtools)
+    - [Instalar la aplicación](#instalar-la-aplicación-1)
+  - [Reinstalar la aplicación](#reinstalar-la-aplicación)
+  - [Ejecutar la aplicación](#ejecutar-la-aplicación)
+- [Cambios recientes](#cambios-recientes)
+- [Anexo](#anexo)
+  - [Detalle de las estadísticas](#detalle-de-las-estadísticas)
+  - [Archivos de prueba](#archivos-de-prueba)
+
 # Olito Sleep
 
 Aplicación para analizar sueño y vigilia a partir de archivos AWD de Actigrafía.
