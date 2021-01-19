@@ -103,13 +103,25 @@ Cuando se abre la aplicación se abrirá cargará todo lo necesario y se abrirá
 
 No se debe cerrar RStudio porque se cerrará la aplicación, si se desea salir simplemente basta cerrarla, no pasa nada si se corta la luz o algo así.
 
+# Cambios recientes
+
+Los últimos cambios importantes son:
+
+* Ene2020: Se permite mover la carpeta de trabajo, el resultado es que vuelve a la carpeta base
+* Ene2020: Corrección a los AWD con Epoch menor a 1 minuto que colgaban el programa, solución es la de Actividorm: Pasar todo a base de 1 minuto.
+* **-Aun si solución-** cuando un sujeto tiene una noche muy fragmentada y ningún episodio de sueño sobrepasa el limite para hacer el cambio a noche. La **solución propuesta** es tomar el 1er episodio de sueño que ocurra luego de las 00:00 como inicio de la noche, así no se pierde el período y se corrige el problema que causa en los correlativos.
+
 # Anexo
 
 ## Detalle de las estadísticas
 
-El detalle de las estadísticas se puede encontrar acá. [Procesamiento de datos](https://github.com/olitroski/Actigrafia/blob/master/Procesamiento%20de%20datos.md)
+El detalle de las estadísticas se puede encontrar acá.
+
+[Procesamiento de datos](https://github.com/olitroski/Actigrafia/blob/master/Procesamiento%20de%20datos.md)
 
 ## Archivos de prueba
 
 Se pueden descargar archivos de prueba para dejarlos en alguna carpeta y probar el programa, es un archivo comprimido en zip. 
+
+[Archivos de prueba](https://github.com/olitroski/Actigrafia/raw/master/testfolder/testfolder.zip)
 
