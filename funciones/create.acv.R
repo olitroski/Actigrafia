@@ -2,6 +2,7 @@
 #' @description ACV es Activity, esta funcion toma el raw data y hace la primera pasada de computos. Crea la secuencia, quita los marcadores M, aplica el algoritmo del minimitter y el estado actigrafico suavizado segun el valor de consolidacion de estado. Hace varios recortes que ya documentare.
 #' @param awdfile es el string del archivo awd (el original)
 #' @param set El objeto de settings
+#' @param finalizar Default en False, es pera guardar un acv original con mas data al cerrar el sujeto
 #' @return Un data frame con toda la data necesaria para comenzar el proceso
 #' @export
 #' @examples
@@ -14,18 +15,15 @@
 #' @importFrom stats quantile
 #' @importFrom stringr str_split
 
-create.acv <- function(awdfile, set){
+create.acv <- function(awdfile, set, finalizar = FALSE){
     esp <- fec <- act3 <- index <- nombre <- dec <- acti2 <- st.edit <- NULL
     newfec <- N <- newact <- NULL
+    minimo <- act.raw <-act.smooth <- hrdec <- NULL
 	cat(paste0("| Iniciando Archivo: ", awdfile, "\n"))
 
 	# ----------------------------------------------------------------------------------- #
 	# ----- Cargar datos ---------------------------------------------------------------- #
 	# ----------------------------------------------------------------------------------- #
-	# Cargar sensibilidad
-	sensi <- set$sensivar
-
-    # Leer archivo
     awd <- readLines(awdfile, warn = FALSE)
     awd.head <- awd[1:7]
     awd.data <- awd[-(1:7)]
@@ -43,7 +41,7 @@ create.acv <- function(awdfile, set){
     if (sum(is.na(numtest)) > 0){
         stop("Hay un valor no numerico en el AWD a partir linea 8")
     }
-    rm(numtest)
+    rm(numtest, awd)
 
     
     # ----------------------------------------------------------------------------------- #
@@ -86,36 +84,11 @@ create.acv <- function(awdfile, set){
     } else {
         fec.ini <- dmy_hm(fec.ini)
     }
-    rm(mes)
 
     # --- Crear Secuencia de fechas (Crea el AWD) ------------------------------------- #
     fec.ini <- fec.ini + seconds(seq(0, by = epoch.len, length.out = length(awd.data)))
     awd <- data.frame(nombre = name, act = awd.data, fec = fec.ini, stringsAsFactors = FALSE)
-    rm(fec.ini, awd.data, date, hour)
-    
-    # <<<<< Arreglo de epoch >>>>>
-    # Todo a minutos no mas... chao con los 15 secs
-    if (epoch.len == 15){
-        # Pasar a minutos y usar pa sumar actividad
-        awd <- dplyr::mutate(awd, newfec = format(fec, format = "%Y-%m-%d %H:%M"))
-        awd <- dplyr::select(awd, -fec)
-        awd <- dplyr::group_by(awd, newfec)
-        newawd <- dplyr::summarize(awd, newact = sum(act), N = n())
-        newawd <- as.data.frame(newawd)
-        newawd <- newawd[newawd$N == 4, ]
-        
-        # Reconstruir el AWD
-        newawd <- select(newawd, -N)
-        newawd <- rename(newawd, act = newact, fec = newfec)
-        newawd <- mutate(newawd, nombre = name)
-        awd <- select(newawd, nombre, act, fec)
-        awd <- mutate(awd, fec = lubridate::ymd_hm(fec))
-        rm(newawd)
-        
-    } else if (epoch.len == 30){
-        stop("30 secs epoch fix not implemented yet, func 'create.acv' line 95")
-    }
-    
+
     # Recorte de peaks de actividad al percentil 98
     awd <- mutate(awd, act2 = ifelse(act > 0, act, NA))
     p98 <- quantile(awd$act2, 0.98, na.rm = TRUE)                                       # >>>> el centile <<<<
@@ -124,14 +97,13 @@ create.acv <- function(awdfile, set){
     
     # Hora decimal
     awd <- mutate(awd, dec = hour(fec)+minute(fec)/60)
+    rm(fec.ini, awd.data, p98, mes, date, hour)
+    
 
     # --------------------------------------------------------------------------------- #
     # ----- Algoritmo del Actiwatch - MiniMitter -------------------------------------- #
     # --------------------------------------------------------------------------------- #
 	cat("|--- cAcv: Algorithm Minimitter -Start-\n")
-    ## Usa el vector de actividad recortado con el percentil 98
-    ini <- 1
-    fin <- nrow(awd)
 
     # Secuencia para determinar multiplcadores
     if (epoch.len == 15){
@@ -155,25 +127,33 @@ create.acv <- function(awdfile, set){
     }
 
     # Algoritmo de deteccion
+	sensi <- set$sensivar
+    fin <- nrow(awd)
     act <- awd$act3
     acti.st <- rep(NA, times = fin)
+    
     for (i in 1:fin){                                                                           # xx
-        # Crear el vector de indices y extraerlo desde el de actividad
+        # Crear el vector de indices y extraerlo desde el de actividad, con ajuste inicio y fin
         indx <- c(i - pre, i, i + pos)
+        
+        temp1 <- which(indx < 1)
         indx[indx < 1] <- 0
+
+        temp2 <- which(indx > fin)
         indx[indx > fin] <- 0
-        epoch.data <- act[indx]     # <<<< la secuencia de actividad >>>>
-
-        # Si el trozo esta cerca del inicio|fin agrega ceros para tener una secuencia con N ok
-        if (i < length(indx)){
-            epoch.data <- c(rep(0, length(indx) - length(epoch.data)), epoch.data)
-        } else if (i >= (fin - 8)) {
-            epoch.data <- c(epoch.data, rep(0, length(indx) - length(epoch.data)))
+        
+        # Secuencia de actividad y multiplicador
+        epoch.data <- act[indx]     
+            
+        if (length(temp1) > 0){
+            A <- sum(multi[-temp1] * epoch.data)
+        } else if (length(temp2) > 0){
+            # A <- sum(multi[-temp2] * epoch.data)
+            A <- A  # copia el A anterior pa mantener estado
+        } else {
+            A <- sum(multi * epoch.data)
         }
-
-        # Calculos, ponderados al multiplicador
-        A <- sum(multi * epoch.data)
-
+        
         # Decisiones segun la sensibilidad
         if (sensi == 20){
             if (A > 20){acti.st[i] <- "W"} else {acti.st[i] <- "S"}
@@ -188,7 +168,9 @@ create.acv <- function(awdfile, set){
     awd$acti <- acti.st
     awd <- mutate(awd, index = 1:dim(awd)[1])
 
+    rm(fin, act, acti.st, pre, pos, multi, i, indx, epoch.data, A, temp1, temp2, sensi)
 
+    
     # ----------------------------------------------------------------------------------- #
     # ---- Calcular ahora el estado actigrafico corregido ------------------------------- #
     # ----------------------------------------------------------------------------------- #
@@ -199,7 +181,7 @@ create.acv <- function(awdfile, set){
     tdiff <- as.numeric(tdiff)
     tdiff <- set$statedur / tdiff
 
-    # Buscar el STATE inicial como los primeros "statedur" (5) epoch iguales
+    # Buscar el "STATE inicial" como los primeros "statedur" (5) epoch iguales
     # pueden entonces quedar algunos epoch iniciales sin estado corregido.
     ws <- "NotOK"
     i <- 1
@@ -222,22 +204,25 @@ create.acv <- function(awdfile, set){
     }
 
     # Si es que parte desde el inicio en el mismo estado obliga a que parta del epoch 2
-    if (i == 1){
-        i <- 2
+    # if (i == 1){
+    #     i <- 2
+    # }
+    if (i > 1){
+        temp.ini <- 1:(i-1)
     }
 
     # Listo, ahora a contar desde i con "obj::state" como inicial
-    acti.fix <- rep(1:fin)      # de aqui sale el acti2[1]=1
     acti <- awd$acti
+    acti.fix <- rep(1:length(acti))     # de aqui sale el acti2[1]=1
     for (x in i:(nrow(awd) - tdiff + 1)){
         # Capturar el trozo
         stXmin <- acti[x:(x + tdiff - 1)]
-
+        
         # Contar el STATE
         if (length(which(stXmin == state)) > 0){
             acti.fix[x] <- state
         } else if (length(which(stXmin == state)) == 0){
-            # Cambio estado ejem si state == W
+            # Cambio estado ejem si state == W y se encuentra S mas adelante
             # W W W W W[S S S S S]S S S S W W W W W
             #           x
             state <- acti[x]      # El de mini mitter
@@ -248,10 +233,13 @@ create.acv <- function(awdfile, set){
     # Arreglar el final
     acti.fix[(nrow(awd) - tdiff + 2):nrow(awd)] <- state
     awd$acti2 <- acti.fix
+    awd$acti2[temp.ini] <- NA 
 
+    rm(i, nS, nW, state, stXmin, tdiff, ws, x, acti.fix, acti, temp.ini)
 
-
-    # ---- Cambiar nombres de variables y ordenar ------------------------------------- #
+    # ----------------------------------------------------------------------------------- #
+    # ---- Ordenar y terminar  ---------------------------------------------------------- #
+    # ----------------------------------------------------------------------------------- #
     awd <- select(awd, index, nombre, act, act3, fec, dec, acti, acti2)
     names(awd) <- c("indx","nombre","act.raw", "act.smooth", "time", "hrdec", "st.mm", "st.stable")
 
@@ -269,6 +257,34 @@ create.acv <- function(awdfile, set){
     # Agregar el nombre el archivos
     awd$filename <- awdfile
 
-    # --- ahora si, listo  :) ---------- #
-    return(awd)
+    # <<<< Dejarlo en minutos >>>>>
+    if (finalizar == FALSE){
+        # Pasar a minutos y usar pa sumar actividad
+        awd <- dplyr::mutate(awd, newfec = format(time, format = "%Y-%m-%d %H:%M"))
+        awd <- dplyr::group_by(awd, newfec)
+        
+        # Sacar los minutos incompletos y etiquetar minimos
+        awd <- mutate(awd, N = n()) %>% filter(N == 4)
+        awd <- mutate(awd, minimo = min(time), minimo = ifelse(minimo == time, 1, 0))
+        
+        # Calcular el resto de las variables
+        awd <- mutate(awd, 
+                      act.raw = sum(act.raw),
+                      act.smooth = sum(act.smooth),
+                      time = min(time),
+                      hrdec = min(hrdec),
+                      act.edit = act.smooth)
+                      
+        # Filtrar y terminar
+        awd <- as.data.frame(awd)
+        awd <- filter(awd, minimo == 1) %>% select(-N, -minimo, -newfec)
+        awd <- mutate(awd, indx = 1:nrow(awd))
+        write.table(awd, "clipboard-16384", sep="\t", row.names=FALSE)
+        
+        return(awd)        
+
+    } else {
+        # --- ahora si, listo  :) ---------- #
+        return(awd)
+    }
 }

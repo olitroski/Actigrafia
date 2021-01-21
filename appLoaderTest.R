@@ -12,10 +12,10 @@
 
 # ----- Cargar carpeta de trabajo --------------------------------------------- #
 # Actualizar el Package
-# rm(list = ls())
-# mainfolder <- "D:/OneDrive/INTA/Actigrafia"
-# setwd(mainfolder)
-# source("D:/OneDrive/INTA/Actigrafia/compiApp.R")
+rm(list = ls())
+mainfolder <- "D:/OneDrive/INTA/Actigrafia"
+setwd(mainfolder)
+source("D:/OneDrive/INTA/Actigrafia/compiApp.R")
 
 # Espacio de trabajo
 rm(list = ls())
@@ -73,7 +73,8 @@ setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
 awdfile <- "2058-001-368 JRG Baseline.AWD"
 
 setwd("C:/Users/olitr/Desktop/testCata")
-awdfile <- "11697_02-03-2017_13_00_00_New_Analysis.AWD"    
+awdfile <- "11697_02-03-2017_13_00_00_New_Analysis.AWD"  
+awdfile <- "11681_20-03-2017_13_00_00_New_Analysis.AWD"
 set <- getset(getwd())
 
 

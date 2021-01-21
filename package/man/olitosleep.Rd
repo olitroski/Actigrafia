@@ -4,7 +4,10 @@
 \alias{olitosleep}
 \title{Lanza la aplicacion olitosleep}
 \usage{
-olitosleep()
+olitosleep(inter = TRUE)
+}
+\arguments{
+\item{inter}{Si no tiene internet pasar a FALSO para utilizar, de lo contrario se realizaran chequeos.}
 }
 \description{
 Esta funcion carga la aplicacion de shiny.

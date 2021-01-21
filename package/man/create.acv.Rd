@@ -4,12 +4,14 @@
 \alias{create.acv}
 \title{Crea el primer ACV}
 \usage{
-create.acv(awdfile, set)
+create.acv(awdfile, set, finalizar = FALSE)
 }
 \arguments{
 \item{awdfile}{es el string del archivo awd (el original)}
 
 \item{set}{El objeto de settings}
+
+\item{finalizar}{Default en False, es pera guardar un acv original con mas data al cerrar el sujeto}
 }
 \value{
 Un data frame con toda la data necesaria para comenzar el proceso

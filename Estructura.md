@@ -202,13 +202,61 @@ Los valores de detección ser guardan en objetos estándar.
 
 ## Procesar
 
-Este botón es el que procesa los archivos AWD en originales con el formato clásico de `Minimitter`.
+Este botón es el que procesa los archivos AWD en originales con el formato clásico de `Minimitter`. El detalle de como se hace está en el PowerPoint
 
-> Este proceso de detección tienen 
+### `create.acv()`
 
-El detalle de como se hace está en el PowerPoint
+Esta función es la que toma un AWD y le hace las detecciones. En general el código se estructura así:
 
+**Trabajo de datos**
 
+1. Carga los datos: Le quita las M si hubieran y separa header de la data
+
+2. Procesa el header, detectando el **epoch**, arreglando la fecha para que el sistema tenga un dato válido.
+
+3. Crea la secuencia de fechas y horas con base en la cantidad de líneas y el epoch
+
+4. Si el epoch es 15 lo pasa a base de 1 minuto (como el mxm de actividorm)
+
+   > Este es un parche que no debiera afectar para nada la detección. Lo importante es que el valor de `epoch.len` se cambia a `60`.
+
+5. Calcula el percentil 98 a la variable de actividad (`act > 0`) y si el valor de actividad del epoch supera el `p98` reemplaza el valor por el valor de `p98`. Queda en la variable `act.smooth`.
+
+**Algoritmo de MiniMitter**
+
+1. Crea un vector multiplicador dependiendo del epoch para determinar posteriormente el estado
+
+```R
+    # Secuencia para determinar multiplcadores
+    if (epoch.len == 15){
+        pre <- c(8:1)
+        pos <- c(1:8)
+        multi <- c(rep(1/25,4), rep(1/5,4), 4, rep(1/5,4), rep(1/25,4))
+    } else if (epoch.len == 30){
+        pre <- c(4:1)
+        pos <- c(1:4)
+        multi <- c(1/25, 1/25, 1/5 ,1/5 , 2 , 1/5, 1/5, 1/25, 1/25)
+    } else if (epoch.len == 60){
+        pre <- c(2:1)
+        pos <- c(1:2)
+        multi <- c(1/25, 1/5, 1, 1/5, 1/25)
+    } else if (epoch.len == 120){
+        pre <- 1
+        pos <- 1
+        multi <- c(0.12, 1/2, 0.12)
+    } else {
+        stop("En la seleccion del multiplicador")
+    }
+```
+
+2. hace un loop sobre todo el archivo (porque no se me ocurrió como hacerlo en vectorial) aplicando cada `x` epoch el multiplicador.
+
+   > Ojo que para la detección usa la variable `act`, es decir la actividad original no la suavizada, esa para otra cosa.
+
+**Estado actigráfico nuevo**
+
+1. Esto es el `S|W` según la variable setting **statedur**, le dicen la consolidación de estado que suele estar en 5 minutos.
+2. Como no puede partir desde el inicio porque cada epoch se evalúa antes y después.
 
 # 2) Pestaña del Actograma
 

@@ -104,7 +104,6 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = TRUE){
     # | - 3. Tabla de episodios -----------------------------------------------
     # Hacer una tabla de episodios para no operar sobre la base de detecciones
     # debiera ser mas rapido asi
-    # browser()
     # rehacer el index
     acvdata <- mutate(acvdata, indx = indx - 1)
 
@@ -124,9 +123,7 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = TRUE){
     tabepi[["fin.time"]][nrow(tabepi)] <- tabepi[["ini.time"]][nrow(tabepi)] + minutes(tabepi[["duracion"]][nrow(tabepi)])
     tabepi <- as.data.frame(tabepi)     # muahaha... ahora no salen errores fucking tibbles
     
-    
-    # Variables adicionales a la tabla de episodios
-    # dia o noche del inicio del episodio
+    # Dia o noche traido desde acvdata
     tabepi[["dianoc"]] <- NA
     for (i in 1:nrow(tabepi)){
         index <- tabepi[["min.index"]][i]
