@@ -50,16 +50,17 @@ function_ValidEvents <- function(epi = NULL, drop = TRUE){
         # <<< 1. Dia 01 >>> WRONG porque el Dia 01 viene despues de la Noche 01 ---------
         # Se saca el periodo "Dia 01" porque no es un dia completo.
         # --- 20.08.2020 --- Modificacion incluye Dia 01--
+        # --- 22.01.2020 --- Pelotudo, era 00
         if (drop == TRUE){
-            datos <- filter(datos, periodo != "Dia 01")
-            id.drop <- bind_rows(id.drop, data.frame(id = id, drop = "Dia 01", stringsAsFactors = FALSE))
+            datos <- filter(datos, periodo != "Dia 00")
+            id.drop <- bind_rows(id.drop, data.frame(id = id, drop = "Dia 00", stringsAsFactors = FALSE))
         }
-        
-        
+
+                
         # <<< 2. Repetidos >>> se evaluan los repetidos segun hora y dia ----------------
         # Se ordena por la fechora, se crea una 2da var desplazada 1 fila pa abajo, por si hay repetido
         temp <- nrow(datos)
-        datos <- arrange(datos, id, periodo, hora)
+        datos <- arrange(datos, hora)
         datos <- distinct(datos, id, periodo, hora, estado, dur_min, .keep_all = TRUE)
         
         # Registrar si hay repetidos
@@ -70,18 +71,18 @@ function_ValidEvents <- function(epi = NULL, drop = TRUE){
         rm(temp)
         
         
-        # <<< 3. Crear variables del periodo -------
+        # <<< 3. Crear variables del periodo -------------------------------------------
         datos <- select(datos, -num_epi)
         datos <- bind_cols(datos, data.frame(str_split_fixed(datos$periodo, " ", n = 2), stringsAsFactors=FALSE))
         datos <- rename(datos, dia.noc = X1, seq.dia = X2)
-        
+
         
         # <<< 4. Minimo 3 eventos por dia o noche >>> -----------------------------------
         # Se quita, ahora se usa todo, pero se registra
         # Cada periodo (dia o noche completo) debe tener minimo 3 episodios para poder hacer calculos
         datos <- group_by(datos, periodo)
         datos <- mutate(datos, count = n())
-        
+
         # Registrar los periodos con menos de 3 episodios
         temp <- dplyr::summarize(datos, N = n())
         temp <- filter(temp, N < 3)
@@ -100,7 +101,7 @@ function_ValidEvents <- function(epi = NULL, drop = TRUE){
         # Pero aca interesa (en esta funcion) que en dia inicie con "W" y noche con "S", aca se arregla si no
         temp <- NULL
         periodo <- unique(datos$periodo)      # p <- periodo[3]
-        
+        # Por la chuta este loop es mega innecesario... algun dia lo arreglo
         for (p in periodo){
             # Captura el periodo
             filtro <- filter(datos, periodo == p)
@@ -110,19 +111,11 @@ function_ValidEvents <- function(epi = NULL, drop = TRUE){
             
             # Guardar el epoch 
             if (dianoc == "Noche" & estado == "W"){
-                # Ahora no hace nada, o sea lo quita del compilado
-                # filtro <- slice(filtro, -1)
-                # temp <- rbind(temp, filtro)               
-                
                 # Registar error
                 id.drop <- bind_rows(id.drop, 
                                      data.frame(id = id, drop = paste(filtro$dia.noc[1], filtro$seq.dia[1], "Bad Ini"), stringsAsFactors = FALSE))
                 
             } else if (dianoc == "Dia" & estado == "S"){
-                # ahora no se guarda
-                # filtro <- slice(filtro, -1)
-                # temp <- rbind(temp, filtro)
-                
                 # Registrar el error
                 id.drop <- bind_rows(id.drop, 
                                      data.frame(id = id, drop = paste(filtro$dia.noc[1], filtro$seq.dia[1], "Bad Ini"), stringsAsFactors = FALSE)) 
@@ -165,6 +158,7 @@ function_ValidEvents <- function(epi = NULL, drop = TRUE){
         rm(temp)
     }
 
+    
     # Terminar la base
     datos.todo <- rename(datos.todo, mean_act = mean_act_min, fec.hora = hora) %>% select(-periodo)
     
@@ -174,6 +168,7 @@ function_ValidEvents <- function(epi = NULL, drop = TRUE){
                          hora = round(hora, 3), 
                          hora.abs = floor(hora))
     datos.todo <- mutate(datos.todo, dia = as.character(dia))
+    
     
     # 6. Dia semana en transito
     datos.todo <- arrange(datos.todo, id, fec.hora)
@@ -192,7 +187,8 @@ function_ValidEvents <- function(epi = NULL, drop = TRUE){
     datos.todo <- mutate(datos.todo, dia = transito)
     datos.todo <- select(datos.todo, -transito, -realini, -inidate, -hidate, -hi, -periodo)
     
-    # 7. Minutos con decimales x problema con la expansion
+    
+    # 7. Asegurar Minutos con decimales x problema con la expansion
     datos.todo <- mutate(datos.todo, dur_min = floor(dur_min))  
     
     # Ajuste segun funcion

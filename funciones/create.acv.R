@@ -18,7 +18,7 @@
 create.acv <- function(awdfile, set, finalizar = FALSE){
     esp <- fec <- act3 <- index <- nombre <- dec <- acti2 <- st.edit <- NULL
     newfec <- N <- newact <- NULL
-    minimo <- act.raw <-act.smooth <- hrdec <- NULL
+    minimo <- act.raw <-act.smooth <- hrdec <- temp.ini <-  NULL
 	cat(paste0("| Iniciando Archivo: ", awdfile, "\n"))
 
 	# ----------------------------------------------------------------------------------- #
@@ -203,10 +203,7 @@ create.acv <- function(awdfile, set, finalizar = FALSE){
         }
     }
 
-    # Si es que parte desde el inicio en el mismo estado obliga a que parta del epoch 2
-    # if (i == 1){
-    #     i <- 2
-    # }
+    # Para rellenarlos primeros despues
     if (i > 1){
         temp.ini <- 1:(i-1)
     }
@@ -279,7 +276,6 @@ create.acv <- function(awdfile, set, finalizar = FALSE){
         awd <- as.data.frame(awd)
         awd <- filter(awd, minimo == 1) %>% select(-N, -minimo, -newfec)
         awd <- mutate(awd, indx = 1:nrow(awd))
-        write.table(awd, "clipboard-16384", sep="\t", row.names=FALSE)
         
         return(awd)        
 

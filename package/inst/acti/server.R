@@ -304,6 +304,7 @@ server <- function(input, output, session){
         saveRDS(txt, file = file.path(awdfolder(), filename))
         
         # Archivo epi
+        # browser()
         epi <- create.epi(acveditRDS(), filterRDS(), set())
         saveRDS(epi, file = paste0(awdfile(), ".epi.RDS"))
         removeModal()

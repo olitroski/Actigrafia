@@ -73,7 +73,7 @@ setwd("D:/OneDrive/INTA/Actigrafia/testfolder")
 awdfile <- "2058-001-368 JRG Baseline.AWD"
 
 setwd("C:/Users/olitr/Desktop/testCata")
-awdfile <- "11697_02-03-2017_13_00_00_New_Analysis.AWD"  
+# awdfile <- "11697_02-03-2017_13_00_00_New_Analysis.AWD"  
 awdfile <- "11681_20-03-2017_13_00_00_New_Analysis.AWD"
 set <- getset(getwd())
 
@@ -163,9 +163,10 @@ awd <- "11681_20-03-2017_13_00_00_New_Analysis"
 set <- getset(getwd())
 acvedit <- check.acvfilter(paste0(awd[1], ".AWD"), set)
 filter <-  readRDS(paste0(awd[1], ".edit.RDS"))
+
+
 epi <- create.epi(acvedit, filter, set)
 epi <- epi$epiviejo
-
 
 # library(microbenchmark)
 # microbenchmark(create.epi(acvedit, filter, set), times = 50)

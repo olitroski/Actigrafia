@@ -1,11 +1,41 @@
-Para instalar
-
-1. Abrir R o RStudio
-2. Pegar este comando.
-``
-source("https://raw.githubusercontent.com/olitroski/Actigrafia/master/exe_control.R")
-``
-
+- [Actigrafía](#actigrafía)
+  - [1. Data Source](#1-data-source)
+  - [2. Archivos de salida Actividorm](#2-archivos-de-salida-actividorm)
+    - [acv01](#acv01)
+    - [epi](#epi)
+    - [arq](#arq)
+    - [Manuales](#manuales)
+  - [3. Main Script](#3-main-script)
+    - [Archivo de Settings](#archivo-de-settings)
+- [4. Aplicación Shiny](#4-aplicación-shiny)
+- [1) Pestaña de los Archivos](#1-pestaña-de-los-archivos)
+  - [Cuadro directorio](#cuadro-directorio)
+  - [Botón buscar](#botón-buscar)
+  - [Cargar el directorio](#cargar-el-directorio)
+    - [`subjectDF()`](#subjectdf)
+  - [Archivo de Settings](#archivo-de-settings-1)
+    - [`getset(awdpath())`](#getsetawdpath)
+  - [Procesar](#procesar)
+    - [`create.acv()`](#createacv)
+- [2) Pestaña del Actograma](#2-pestaña-del-actograma)
+    - [`reactivePoll`](#reactivepoll)
+    - [`check.acvfilter()`](#checkacvfilter)
+  - [Listado sujetos](#listado-sujetos)
+  - [Botón editar](#botón-editar)
+  - [Actograma](#actograma)
+    - [`output$actoUI`](#outputactoui)
+    - [`output$actograma`](#outputactograma)
+    - [`create.actogram()`](#createactogram)
+    - [`create.plotActo()`](#createplotacto)
+    - [Filtros](#filtros)
+  - [Botón finalizar](#botón-finalizar)
+- [3) Pestaña de Edición](#3-pestaña-de-edición)
+  - [Sujeto y Período a editar](#sujeto-y-período-a-editar)
+  - [Tabla de estados](#tabla-de-estados)
+    - [`stagesTable()`](#stagestable)
+  - [Detalle del filtro](#detalle-del-filtro)
+    - [Inicio y fin](#inicio-y-fin)
+    - [`create.epi()`](#createepi)
 
 # Actigrafía
  Programa para analizar actividad motora en relación al ciclo de sueño y vigilia.
@@ -412,3 +442,10 @@ Esta sección carga el archivo `filterRDS()` con los filtros, muestra el encabez
 
 Este cuadro muestra el inicio y fin del registro que por defecto viene en blanco y se debe determinar manualmente. Sirve para establecer los límites que se leerán al crear el archivo EPI.
 
+### `create.epi()`
+
+Datos a notar
+
+* **Actividorm** suele estar un minuto atrás en los episodios de sueño y vigilia, esto es porque la app toma el inicio del minuto como punto de corte. Esto solo pasa con archivos con epoch de 15 segundos.
+* Por algún motivo he visto noches que comienzan antes de las 20:00, esto puede ser porque un episodio de sueño cruza tal hora y parte contando directo desde las 20 horas, en mi caso es estricto en "**episodios que comiencen después de las 20:00 y que duren más de X minutos**"
+* En **Actividorm** duraciones tienen minutos con decimales cuando el epoch es de 15 segundos. En la app está todo seteado al minuto, es decir la duración es un valor entero. Esto es importante para algunos cálculos internos y comprobación de errores..

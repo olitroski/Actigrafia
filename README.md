@@ -13,6 +13,7 @@
 - [Anexo](#anexo)
   - [Detalle de las estadísticas](#detalle-de-las-estadísticas)
   - [Archivos de prueba](#archivos-de-prueba)
+  - [Archivo de estructura](#archivo-de-estructura)
 
 # Olito Sleep
 
@@ -141,3 +142,7 @@ Se pueden descargar archivos de prueba para dejarlos en alguna carpeta y probar 
 
 [Archivos de prueba](https://github.com/olitroski/Actigrafia/raw/master/testfolder/testfolder.zip)
 
+## Archivo de estructura
+En el siguiente link se puede encontrar descripciones adicionales sobre la estructura del programa
+
+[Estructura del programa](https://github.com/olitroski/Actigrafia/blob/master/Estructura.md)

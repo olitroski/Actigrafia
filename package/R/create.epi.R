@@ -49,11 +49,13 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = TRUE){
     seqStage <- temp <- time <- tipo <- weekday <- NULL
     
     periodo2 <- dur_min <- mean_act_min <- num_epi <- epi_estado <- NULL
+    seqND <- seqDN <- NULL
     
-    # Los filtros
-    filtro <- filter$filter
 
     # | - 1. Crear dia noche y juntar periodos ----------------------------------
+    # Los filtros
+    filtro <- filter$filter
+    
     # Crear el tag Dia|Noche en los semiperiodos, para asegurar que existan y
     # no secundarios al estado de sueno como en actividorm
     i <- as.numeric(set$inidia)/3600
@@ -83,8 +85,7 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = TRUE){
     # Los indices de los episodios
     swIndex <- bind_rows(wsegm, ssegm)
     swIndex <- arrange(swIndex, ini)
-    rm(wsegm, ssegm)
-
+    
     # Agregar la duracion de los episodios
     acvdata$seqStage <- NA
     acvdata$duracion <- NA
@@ -98,14 +99,12 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = TRUE){
         dur <- hour(dur)*60 + minute(dur) + second(dur)/60
         acvdata[["duracion"]][swIndex$ini[i]:swIndex$fin[i]] <- dur
     }
-    rm(swIndex, i, dur)
+    rm(swIndex, i, dur, wsegm, ssegm)
 
 
     # | - 3. Tabla de episodios -----------------------------------------------
     # Hacer una tabla de episodios para no operar sobre la base de detecciones
     # debiera ser mas rapido asi
-    # rehacer el index
-    acvdata <- mutate(acvdata, indx = indx - 1)
 
     # ---- Tabla de episodios
     tabepi <- dplyr::group_by(acvdata, seqStage)
@@ -304,7 +303,7 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = TRUE){
         valLineDN <- tabepi$dianoc[i]
         valPrevDN <- tabepi$dianoc[i - 1]
         
-        # Si el actual es "drop" y aumenta el i
+        # Si el actual es "drop" o sea notNA aumenta el i
         if (is.na(valLine) == FALSE){
             tabepi$seqDianoc[i] <- "Drop"
             i <- i + 1
@@ -340,11 +339,13 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = TRUE){
     }
     
     # la variable secuencial
-    tabepi <- mutate(tabepi, 
-                     temp = ifelse(seqDianoc == "Drop", as.character(666), seqDianoc), 
-                     temp = as.numeric(temp),
-                     temp = ifelse(temp == 666, "Drop", ifelse(temp < 10, paste0("0", temp), as.character("temp"))),
-                     temp = ifelse(temp == "Drop", "Drop", paste(dianoc, temp)))
+    options(warn = -1)
+    tabepi <- mutate(tabepi, temp = ifelse(seqDianoc == "Drop", "Drop",
+                                           ifelse(as.numeric(seqDianoc) < 10, paste0("0", seqDianoc),
+                                                  seqDianoc)),
+                             temp = ifelse(seqDianoc == "Drop", "Drop",
+                                           paste(dianoc, temp)))
+    options(warn = 0)
 
     # Limpiar
     rm(i, seqnum, start, valLine, valLineDN, valPrev, valPrevDN)    
@@ -356,104 +357,126 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = TRUE){
     periodo <- dplyr::summarize(periodo, ini = min(ini.time), fin = max(fin.time))
     periodo <- arrange(periodo, ini)
     periodo <- mutate(periodo, dianoc = str_split(periodo$temp, " ", simplify = TRUE)[,1])
+    periodo <- mutate(periodo, num = str_split(periodo$temp, " ", simplify = TRUE)[,2])
+    periodo <- as.data.frame(periodo)
     
-    # Marcar consecutivos "Dia-Noche"
+    # Establecer el inicio (pa partir del 2)
+    #       Son hartas combinaciones posibles        #
+    # ---------------------------------------------- #
+    # ---- Para el segundo periodo ----
+    # 1 Anterior Dia 0 y Actual Noche, X+1
+    # 2 Anterior Dia 0 y Actual Dia, X+1          Estos 2 son 1, pero queda muy largo 
+    
+    # 3 Anterior Noche 1 y Actual Dia y Consecutivo, X     >>>>
+    # 4 Anterior Noche 1 y Actual Noche, X+1
+    
+    # ---- En adelante ----
+    # 5 Anterior Dia y Actual Noche, X+1
+    # 6 Anterior Dia y Actual Dia, X+1
+    # 7 Anterior Noche y Actual Dia y Consecutivo, X       >>>>>
+    # 8 Anterior Noche y Actual Dia y No-Consecutivo, X+1
+    # 9 Anterior Noche y Actual Noche, X+1
+    
+    periodo$seqND <- NA
     if (periodo$dianoc[1] == "Dia"){
-        seqnum <- 0
+        periodo$seqND[1] <- 0
+        X <- 0
     } else {
-        seqnum <- 1
+        periodo$seqND[1] <- 1
+        X <- 1
     }
-
-    periodo$perDN <- NA
-    change <- TRUE
-    i <- 1
-    while (change == TRUE){
-        if (is.na(periodo$dianoc[i + 1] == "Noche") == TRUE){     # Para la ultima linea
-            periodo$perDN[i] = seqnum
-            i <- i + 1
-        } else if (periodo$dianoc[i] == "Noche" & periodo$dianoc[i + 1] == "Dia" & periodo$fin[i] == periodo$ini[i + 1]){
-            periodo$perDN[i] = seqnum
-            periodo$perDN[i + 1] = seqnum
-            seqnum <- seqnum + 1
-            i <- i + 2
+    
+    # No voy a hacer todas las combis, solo las X
+    for (i in 2:nrow(periodo)){
+        anterior  <- periodo$dianoc[i - 1]
+        seqval <- periodo$seqND[i -1]
+        actual    <- periodo$dianoc[i]
+        consecutivo <- periodo$fin[i-1] == periodo$ini[i]
+        
+        # 2
+        if (anterior == "Noche" & seqval == 1 & actual == "Dia" & consecutivo == TRUE){   # no es necesario este
+            periodo$seqND[i] <- X
+            
+        # 7
+        } else if (anterior == "Noche" & actual == "Dia" & consecutivo == TRUE){
+            periodo$seqND[i] <- X
+            
+        # Resto
         } else {
-            periodo$perDN[i] = seqnum
-            seqnum <- seqnum + 1
-            i <- i + 1
-        }
-        # Detiene el loop
-        if (i > nrow(periodo)){
-            change <- FALSE
+            X <- X + 1
+            periodo$seqND[i] <- X
         }
     }
-
-    # Crar periodos Noche-Dia (ND), sipis, lo hago separado del DN... 
+    
+    
+    # Las otras combis de DIA -> NOCHE
+    # ---- Para el segundo periodo ----
+    # 1 Anterior Dia 0 y Actual Noche y Consecutivo, X     >>>>
+    # 2 Anterior Dia 0 y Actual Dia, X+1          
+    
+    # 3 Anterior Noche 1 y Actual Dia, X+1
+    # 4 Anterior Noche 1 y Actual Noche, X+1
+    
+    # ---- En adelante ----
+    # 5 Anterior Dia y Actual Noche y consecutivo, X       >>>>
+    # 6 Anterior Dia y Actual Dia, X+1
+    # 7 Anterior Noche y Actual Dia y Consecutivo, X+1
+    # 8 Anterior Noche y Actual Dia y No-Consecutivo, X+1
+    # 9 Anterior Noche y Actual Noche, X+1
+    
+    periodo$seqDN <- NA
     if (periodo$dianoc[1] == "Dia"){
-        seqnum <- 0
+        periodo$seqDN[1] <- 0
+        X <- 0
     } else {
-        seqnum <- 1
+        periodo$seqDN[1] <- 1
+        X <- 1
     }
     
-    periodo$perND <- NA
-    change <- TRUE
-    i <- 1
-    while (change == TRUE){
-        if (is.na(periodo$dianoc[i + 1] == "Noche") == TRUE){     # Para la ultima linea
-            periodo$perND[i] = seqnum
-            i <- i + 1
-        } else if (periodo$dianoc[i] == "Dia" & periodo$dianoc[i + 1] == "Noche" & periodo$fin[i] == periodo$ini[i + 1]){
-            periodo$perND[i] = seqnum
-            periodo$perND[i + 1] = seqnum
-            seqnum <- seqnum + 1
-            i <- i + 2
+    for (i in 2:nrow(periodo)){
+        anterior  <- periodo$dianoc[i - 1]
+        seqval <- periodo$seqDN[i -1]
+        actual    <- periodo$dianoc[i]
+        consecutivo <- periodo$fin[i-1] == periodo$ini[i]
+        
+        # 1
+        if (anterior == "Dia" & seqval == 0 & actual == "Noche" & consecutivo == TRUE){
+            periodo$seqDN[i] <- X
+            
+        # 5
+        } else if (anterior == "Dia" & actual == "Noche" & consecutivo == TRUE){
+            periodo$seqDN[i] <- X
+            
+        # Resto    
         } else {
-            periodo$perND[i] = seqnum
-            seqnum <- seqnum + 1
-            i <- i + 1
-        }
-        # Detiene el loop
-        if (i > nrow(periodo)){
-            change <- FALSE
+            X <- X + 1
+            periodo$seqDN[i] <- X
         }
     }
-    
 
     # Hermosear
-    periodo <- as.data.frame(periodo)
     periodo <- mutate(periodo,
-                      perDN = ifelse(perDN < 10, paste0("0", perDN), perDN),
-                      perDN = paste(dianoc, perDN),
-                      perND = ifelse(perND < 10, paste0("0", perND), perND),
-                      perND = paste(dianoc, perND))
-    periodo <- rename(periodo, periodoSeq = temp, periodoDN = perDN, periodoND = perND)
-    periodo <- select(periodo, periodoSeq, periodoDN, periodoND)
-    
-    
-    # Limpiar
-    rm(i, change, seqnum)
-    
-    
+                      perND = ifelse(seqND < 10, paste0("0", seqND), seqND),
+                      perND = paste(dianoc, perND),
+                      perDN = ifelse(seqDN < 10, paste0("0", seqDN), seqDN),
+                      perDN = paste(dianoc, perDN))
+    periodo <- select(periodo, temp, perND, perDN)
+
     
     # | - 8. Juntar todo ------------------------------------------------------
-    tabepi <- rename(tabepi, periodoSeq = temp)
-    tabepi <- base::merge(tabepi, periodo, by = "periodoSeq", all = TRUE)
+    tabepi <- base::merge(tabepi, periodo, by = "temp", all = TRUE)
+    tabepi <- arrange(tabepi, ini.time)
     
-    # Mover los drop
+    # Mover los drop a las variables nuevas
+    tabepi <- rename(tabepi, periodoDN = perDN, periodoND = perND, periodoSeq = temp)
     tabepi <- mutate(tabepi, periodoDN = ifelse(seqDianoc == "Drop", "Drop", periodoDN),
                              periodoND = ifelse(seqDianoc == "Drop", "Drop", periodoND))
-    tabepi <- arrange(tabepi, ini.time)
     tabepi <- select(tabepi, -seqDianoc, -min.index, -max.index)
-    
-    
-    # #### IMPORTANTE  ####################################################
-    # <<< --- OJO --- >>> Me quedo al reves el DN y ND <<< --- OJO ---- >>>
-    tabepi <- rename(tabepi, periodoND = periodoDN, periodoDN = periodoND)
-    # #### IMPORTANTE  ####################################################
-    
-    
+
     # Pegarle al "acvedata" algunas cosas
     acvdata <- merge(acvdata, select(tabepi, seqStage, periodoSeq, periodoND, periodoDN), by = "seqStage")
     acvdata <- select(acvdata, -nper)
+    acvdata <- arrange(acvdata, time)
 
     
     # ----- EPI Viejo -------------------------------------------------------------------------------------
@@ -469,26 +492,31 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = TRUE){
     temp <- str_split(epiviejo$periodo, " ", simplify = TRUE)
     temp <- as.data.frame(temp, stringsAsFactors = FALSE)
     names(temp) <- c("dianoc", "nper")
-    temp <- mutate(temp, 
-                   nper = as.numeric(nper) + 1,
-                   nper = ifelse(nper < 10, paste0("0", nper), as.character(nper)),
-                   periodo = paste(dianoc, nper))
-    epiviejo$periodo2 <- temp$periodo
-    epiviejo <- select(epiviejo, -periodo) %>% rename(periodo = periodo2)
     
-    # Recomponer el epi_estado (solo nombre, ya ser vera si es nacesario)
+    # temp <- mutate(temp, 
+    #                nper = as.numeric(nper) + 1,
+    #                nper = ifelse(nper < 10, paste0("0", nper), as.character(nper)),
+    #                periodo = paste(dianoc, nper))
+    # epiviejo$periodo2 <- temp$periodo
+    # epiviejo <- select(epiviejo, -periodo) %>% rename(periodo = periodo2)
+    
+    # Recomponer el epi_estado (solo nombre, ya se vera si es nacesario)
     epiviejo <- rename(epiviejo, epi_estado = seqStage, hora = ini.time, dur_min = duracion)
     epiviejo <- arrange(epiviejo, hora) %>% mutate(num_epi = 1:nrow(epiviejo))
     
     # Crear ultimas variables
-    epiviejo <- mutate(epiviejo, mean_act_min = round(actividad/dur_min, 1), id = acvdata$filename[1], actividad = round(actividad, 0))
+    epiviejo <- mutate(epiviejo, 
+                       mean_act_min = round(actividad/dur_min, 1), 
+                       id = acvdata$filename[1], 
+                       actividad = round(actividad, 0))
     epiviejo <- select(epiviejo, id, periodo, hora, estado, actividad, dur_min, mean_act_min, num_epi, epi_estado)
     
     
-    # ### Botar el dia cero, igual se deja la opcion por si las moscas ####
-    if (dia0 == FALSE){epiviejo = filter(epiviejo, periodoND != "Dia 00") }
-    # ################################################################### #
-
+    # Botar el dia cero, igual se deja la opcion por si las moscas
+    if (dia0 == FALSE){
+        epiviejo = filter(epiviejo, periodo != "Dia 00")
+    }
+    
     # Combinar todo en una lista
     epi <- list(acvdata = acvdata, epitab = tabepi, epiviejo = epiviejo)
     return(epi)
