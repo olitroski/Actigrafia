@@ -126,7 +126,7 @@ Los últimos cambios importantes son:
 
 * Ene2020: Se permite mover la carpeta de trabajo, el resultado es que vuelve a la carpeta base
 * Ene2020: Corrección a los AWD con Epoch menor a 1 minuto que colgaban el programa, solución es la de Actividorm: Pasar todo a base de 1 minuto.
-* **-Aun si solución-** cuando un sujeto tiene una noche muy fragmentada y ningún episodio de sueño sobrepasa el limite para hacer el cambio a noche. La **solución propuesta** es tomar el 1er episodio de sueño que ocurra luego de las 00:00 como inicio de la noche, así no se pierde el período y se corrige el problema que causa en los correlativos.
+* **-Aun si solución-** cuando un sujeto tiene una noche muy fragmentada y ningún episodio de sueño sobrepasa el limite para hacer el cambio a noche. La **solución propuesta** es tomar el 1er episodio de sueño que ocurra luego de las 00:00 como inicio de la noche, así no se pierde el período y se corrige el problema que causa en los correlativos. De momento no ha ocurrido, pero ya sabemos que puede ocurrir.
 
 # Anexo
 
