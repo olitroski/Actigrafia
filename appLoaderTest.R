@@ -12,10 +12,10 @@
 
 # ----- Cargar carpeta de trabajo --------------------------------------------- #
 # Actualizar el Package
-# rm(list = ls())
-# mainfolder <- "D:/OneDrive/INTA/Actigrafia"
-# setwd(mainfolder)
-# source("D:/OneDrive/INTA/Actigrafia/compiApp.R")
+rm(list = ls())
+mainfolder <- "D:/OneDrive/INTA/Actigrafia"
+setwd(mainfolder)
+source("D:/OneDrive/INTA/Actigrafia/compiApp.R")
 
 # Espacio de trabajo
 rm(list = ls())
@@ -60,7 +60,7 @@ setwd(mainfolder)
 
 # ----- Ejecutar la aplicacion ---------------------------------------------- # 
 stop()
-# Cargar App
+# <| Cargar App |> -----
 runApp(display.mode = "normal")
 
 
@@ -78,7 +78,7 @@ awdfile <- "11681_20-03-2017_13_00_00_New_Analysis.AWD"
 set <- getset(getwd())
 
 
-setwd("C:/Users/olitr/Desktop")
+setwd("C:/Users/olitr/Desktop/testCata/test2")
 set <- getset(getwd())
 awdfile <- "MonaresAylen.AWD"
 awdfile <- "AsquntanMario.AWD"
@@ -162,14 +162,17 @@ awd <- c("2058-001-368 JRG Baseline", "2058-002-298 MLR Baseline", "2058-004-433
          "2058-007-464 JMH Baseline", "2058-009-577 KNC Baseline", "2058-012-833 DFW Visit3")
 
 setwd("C:/Users/olitr/Desktop/testCata")
-awd <- "11681_20-03-2017_13_00_00_New_Analysis"    
+awd <- "11681_20-03-2017_13_00_00_New_Analysis"   
+
+setwd("C:/Users/olitr/Desktop/testCata/test2")
+awd <- "AsquntanMario"
 
 # Probar
 set <- getset(getwd())
 acvedit <- check.acvfilter(paste0(awd[1], ".AWD"), set)
 filter <-  readRDS(paste0(awd[1], ".edit.RDS"))
 
-
+options(warn = 2)
 epi <- create.epi(acvedit, filter, set)
 epi <- epi$epiviejo
 

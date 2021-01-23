@@ -14,7 +14,7 @@ maindir <- "D:/OneDrive/INTA/Actigrafia"
 setwd(maindir)
 
 # Preguntar para confirmar
-confirmar <- readline("Va a modificar la librería 'olitoSleep', continuar? [y|n]: ")
+confirmar <- readline("Va a modificar la libreria 'olitoSleep', continuar? [y|n]: ")
 # confirmar <- "Y"
 if (confirmar %in% c("Y", "y", "yes", "YES", "Yes", "si", "s", "S", "Si", "SI", "si")){
     # ---- Respaldar librería -------------------------------------------------
@@ -61,7 +61,7 @@ if (confirmar %in% c("Y", "y", "yes", "YES", "Yes", "si", "s", "S", "Si", "SI", 
             # Modificar el description file
             descfile[3] <- paste("Version:", new.version)
             writeLines(descfile, "DESCRIPTION")
-            cat("Versión actualizada", new.version, "\n")
+            cat("Version actualizada", new.version, "\n")
         }
     }
     options(warn = 0)

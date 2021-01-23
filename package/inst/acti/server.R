@@ -72,22 +72,48 @@ server <- function(input, output, session){
     # | -- -- Table directorio ------------------------------------------------
     output$dfdir <- renderTable({
         validate(need(subjectDF(), "Esperado datos!"))
+        tabladir <- subjectDF()
         
-        # Los radio buttons para el filtraje
-        if (input$filterDir != "Todos"){
-            filter(subjectDF(), Status == input$filterDir)            
-        } else {
-            tabladir <- subjectDF()
+        # por si los sujetos estan terminados
+        if (tabladir[1,1] == "Archivos AWD terminados"){
+            load.awdfolder(filelist = my_files(), finForce = TRUE)
+        
+        # Si no hubieran datos
+        } else if (tabladir[1,1] == "Directorio sin archivos AWD"){
+            tabladir
             
-            # Por si no hubieran archivos
-            if (tabladir[1,1] != "Directorio sin archivos AWD"){
+        # Si hay datos
+        } else {
+            # Si estan todos seleccionados
+            if (input$filterDir == "Todos"){
                 names(tabladir) <- c("Id Sujeto", "Archivos", "Terminado", "Status")
                 tabladir
+                
+            # Si hay alguna seleccion
             } else {
-                tabladir
+                names(tabladir) <- c("Id Sujeto", "Archivos", "Terminado", "Status")
+                tablafilt <- filter(tabladir, Status == input$filterDir)        
+                tablafilt
             }
             
         }
+        
+        
+        # Los radio buttons para el filtraje
+        # if (input$filterDir != "Todos"){
+        #     filter(subjectDF(), Status == input$filterDir)            
+        # } else {
+        #     tabladir <- subjectDF()
+        #     
+        #     # Por si no hubieran archivos
+        #     if (tabladir[1,1] != "Directorio sin archivos AWD"){
+        #         names(tabladir) <- c("Id Sujeto", "Archivos", "Terminado", "Status")
+        #         tabladir
+        #     } else {
+        #         tabladir
+        #     }
+        #     
+        # }
     }, digits = 0, align = "c", striped = TRUE, hover = TRUE, width = "100%", spacing = "s")
 
     
@@ -197,15 +223,21 @@ server <- function(input, output, session){
     # | renderUI selección de sujetos -----------------------------------------
     output$subjInput <- renderUI({
         validate(need(subjectDF(), "Esperando datos!"))
-        lechoices <- filter(subjectDF(), Status == "En edicion")
-        lechoices <- as.character(lechoices$Sujeto)
         
-        # Por si queda en cero
-        if (length(lechoices) == 0){
-            # print("los botones1")
-            radioButtons(inputId = "awd_select", label = NULL, choices = c("No hay sujetos"))
-        } else {
+        tabladir <- subjectDF()
+        # Si hay sujetos
+        if (nrow(tabladir) > 1){
+            lechoices <- filter(tabladir, Status == "En edicion")
+            lechoices <- as.character(lechoices$Sujeto)
             radioButtons(inputId = "awd_select", label = NULL, choices = lechoices)
+        
+        # Si todo terminado
+        } else if (tabladir[1,1] == "Archivos AWD terminados"){
+            radioButtons(inputId = "awd_select", label = NULL, choices = c("Sujetos Terminados"))
+            
+        # Si no hay
+        } else {
+            radioButtons(inputId = "awd_select", label = NULL, choices = c("No hay sujetos"))
         }
     })
 
@@ -389,9 +421,7 @@ server <- function(input, output, session){
     # El ui render, el height se setea grande para que no de error de margins
     output$actoUI <- renderUI({
         validate(need(awdfile(), "Esperando datos!"))
-        
-        # Carga al tiro
-        if (awdfile() == "No hay sujetos"){
+        if (awdfile() == "No hay sujetos" | awdfile() == "Sujetos Terminados"){
             plot(0, type='n', axes=FALSE, ann=FALSE)
         } else {
             h <- length(acveditRDS()[["semiper"]]) * 110 + 220
@@ -401,15 +431,20 @@ server <- function(input, output, session){
     
     # Dibuja el actograma a partir del awdfile() y el acvditRDS() 
     output$actograma <- renderPlot({
+        
         validate(need(acveditRDS(), "Esperando datos!"))
         
-        
-        # Verifica que haya algo para graficar
-        if (length(acveditRDS()[["semiper"]]) > 0){
-            create.actogram(acveditRDS()[["semiper"]], set = set(), filterRDS = filterRDS())
-        } else {
+        if (awdfile() == "No hay sujetos" | awdfile() == "Sujetos Terminados"){
             plot(0, type='n', axes=FALSE, ann=FALSE)
-        } 
+            
+        } else {
+            # Verifica que haya algo para graficar
+            if (length(acveditRDS()[["semiper"]]) > 0){
+                create.actogram(acveditRDS()[["semiper"]], set = set(), filterRDS = filterRDS())
+            } else {
+                plot(0, type='n', axes=FALSE, ann=FALSE)
+            } 
+        }
     })
     
     
@@ -484,24 +519,36 @@ server <- function(input, output, session){
     # Los periodos no cambian, asi que se cargan una vez y alimentan al botón 
     # para seleccionar la data adecuada.
     output$perSelection <- renderUI({
-        
-        # Si aun no se selecciona nada da error, asi que a probar
-        if (length(acveditRDS()) == 1){
-            periodos <- NULL
-        } else {
-            periodos <- acveditRDS()$timelist
-            periodos <- paste(periodos$period, "-", periodos$tlist)
-        }
+        validate(need(awdfile(), "Esperando input!"))
         
         # Si no hay sujetos
-        if (awdfile() != "No hay sujetos"){
-            radioButtons("perChoose", label = NULL, choices = periodos)
-        } 
+        if (awdfile() == "No hay sujetos" | awdfile() == "Sujetos Terminados"){
+            # radioButtons("perChoose", label = NULL, choices = c("Sujetos terminados"))
+            actionLink("linkChoose", label = "No hay sujetos")
+            
+        }  else {
+            # Si aun no se selecciona nada da error, asi que a probar
+            if (length(acveditRDS()) == 1){
+                # periodos <- NULL
+                # radioButtons("perChoose", label = NULL, choices = periodos)
+                actionLink("linkChoose", label = "Periodos insuficientes")
+            } else {
+                periodos <- acveditRDS()$timelist
+                periodos <- paste(periodos$period, "-", periodos$tlist)
+                radioButtons("perChoose", label = NULL, choices = periodos)
+            }
+        }
+    })
+    
+    # por si aprieta el actionLink
+    observeEvent(input$linkChoose, {
         
     })
     
+    
     # | -- Tabla de estados  --------------------------------------------------
     tablaEstados <- reactive({
+        validate(need(input$perChoose, "Esperando input!"))
         stagesTable(acveditRDS(), input$perChoose)
     })
     
@@ -540,11 +587,7 @@ server <- function(input, output, session){
                     min = minui, max = maxui, value = c(minui, maxui),
                     width = "95%", step = 1)
     })
-    
-    
 
-
-    
     
     # | -- Inicio Fin filtro ----
     output$filtroIniFin <- renderPrint({
@@ -1588,13 +1631,18 @@ server <- function(input, output, session){
     # | renderUI selección de terminados -----------------------------------------
     output$subjInput2 <- renderUI({
         validate(need(subjectDF(), "Esperando datos!"))
-        lechoices <- filter(subjectDF(), Status == "Terminado")
+        # validate(need(awdfile(), "Esperando datos!"))
+        
+        # Si estuvieran todos terminados
+        tabladir <- load.awdfolder(filelist = my_files(), finForce = TRUE)
+        lechoices <- filter(tabladir, Status == "Terminado")
         lechoices <- as.character(lechoices$Sujeto)
         
         # Por si queda en cero
         if (length(lechoices) == 0){
             # print("los botones1")
-            radioButtons(inputId = "awd_fin", label = NULL, choices = c("No hay sujetos"))
+            # radioButtons(inputId = "awd_fin", label = NULL, choices = c("No hay sujetos"))
+            actionLink("linkChoose", label = "Periodos insuficientes")
         } else {
             radioButtons(inputId = "awd_fin", label = NULL, choices = lechoices)
         }

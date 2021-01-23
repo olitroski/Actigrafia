@@ -339,13 +339,9 @@ create.epi <- function(acvedit = NULL, filter = NULL, set = NULL, dia0 = TRUE){
     }
     
     # la variable secuencial
-    options(warn = -1)
-    tabepi <- mutate(tabepi, temp = ifelse(seqDianoc == "Drop", "Drop",
-                                           ifelse(as.numeric(seqDianoc) < 10, paste0("0", seqDianoc),
-                                                  seqDianoc)),
-                             temp = ifelse(seqDianoc == "Drop", "Drop",
-                                           paste(dianoc, temp)))
-    options(warn = 0)
+    tabepi <- mutate(tabepi, temp = ifelse(seqDianoc == "Drop", NA, seqDianoc))
+    tabepi <- mutate(tabepi, temp = as.numeric(temp), temp = ifelse(temp < 10, paste0("0", seqDianoc), seqDianoc))
+    tabepi <- mutate(tabepi, temp = ifelse(seqDianoc == "Drop", "Drop", paste(dianoc, temp)))
 
     # Limpiar
     rm(i, seqnum, start, valLine, valLineDN, valPrev, valPrevDN)    

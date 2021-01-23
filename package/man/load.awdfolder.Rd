@@ -4,10 +4,12 @@
 \alias{load.awdfolder}
 \title{Carga contenido del folder AWD}
 \usage{
-load.awdfolder(filelist = NULL)
+load.awdfolder(filelist = NULL, finForce = FALSE)
 }
 \arguments{
 \item{filelist}{vector de archivos que se obtiene con dir()}
+
+\item{finForce}{Para decir que todo esta terminado y se devuelva igual el listado}
 }
 \value{
 data.frame con el nombre y status del archivo
