@@ -61,9 +61,8 @@ setwd(mainfolder)
 # ----- Ejecutar la aplicacion ---------------------------------------------- # 
 stop()
 # <| Cargar App |> -----
+# options(shiny.error = browser)
 runApp(display.mode = "normal")
-
-
 
 
 

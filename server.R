@@ -336,7 +336,6 @@ server <- function(input, output, session){
         saveRDS(txt, file = file.path(awdfolder(), filename))
         
         # Archivo epi
-        # browser()
         epi <- create.epi(acveditRDS(), filterRDS(), set())
         saveRDS(epi, file = paste0(awdfile(), ".epi.RDS"))
         removeModal()
@@ -549,7 +548,11 @@ server <- function(input, output, session){
     # | -- Tabla de estados  --------------------------------------------------
     tablaEstados <- reactive({
         validate(need(input$perChoose, "Esperando input!"))
-        stagesTable(acveditRDS(), input$perChoose)
+        if (awdfile() == "Sujetos Terminados"){
+            data.frame(Data = "Sujetos Terminados", stringsAsFactors = FALSE)
+        } else {
+            stagesTable(acveditRDS(), input$perChoose)
+        }
     })
     
 
@@ -558,9 +561,13 @@ server <- function(input, output, session){
         # Espera el choose
         validate(need(input$perChoose, "Esperando input!"))
         
-        # Periodos combinado con la selección
-        create.plotSimple(gdata = acveditRDS()$semiper[[str_sub(input$perChoose, 1, 5)]],
-                          set(), filterRDS(), limites = input$rangoX, lw = input$ldNum)
+        if (awdfile() == "Sujetos Terminados"){
+            plot(0, type='n', axes=FALSE, ann=FALSE)
+        } else {
+            # Periodos combinado con la selección
+            create.plotSimple(gdata = acveditRDS()$semiper[[str_sub(input$perChoose, 1, 5)]],
+                              set(), filterRDS(), limites = input$rangoX, lw = input$ldNum)
+        }
     })
 
     # | -- Slider y control del gráfico ----
@@ -631,8 +638,10 @@ server <- function(input, output, session){
     output$inifin.iniUI <- renderUI({
         validate(need(input$perChoose, "Esperando input!"))
         # Debe ser el inicio de una vigilia
-        iniW <- filter(tablaEstados(), estado == "W")
-        selectInput("inifin.ini", label = NULL, choices = iniW$inicio)
+        if (tablaEstados()[1,1] != "Sujetos Terminados"){
+            iniW <- filter(tablaEstados(), estado == "W")
+            selectInput("inifin.ini", label = NULL, choices = iniW$inicio)
+        }
     })
 
     # inifin.iniset: Funcion modal
@@ -659,7 +668,6 @@ server <- function(input, output, session){
     
     # inifin.iniset: Acciones a tomar 
     observeEvent(input$inifin.iniOK, {
-        # browser()
         # ----- Actualizar el header ----- #
         filt <- readRDS(paste0(awdfile(), ".edit.RDS"))
         newhead <- filt$header
@@ -712,8 +720,10 @@ server <- function(input, output, session){
     # UI para seleccionar el fin del registro
     output$inifin.finUI <- renderUI({
         validate(need(input$perChoose, "Esperando input!"))
-        # Debe ser un final de episodio no mas 
-        selectInput("inifin.fin", label = NULL, choices = tablaEstados()$termino)
+        if (tablaEstados()[1,1] != "Sujetos Terminados"){
+            # Debe ser un final de episodio no mas 
+            selectInput("inifin.fin", label = NULL, choices = tablaEstados()$termino)
+        }
     })
 
     # inifin.fin: Funcion Modal 
@@ -1709,7 +1719,6 @@ server <- function(input, output, session){
         showNotification("Compilando archivos...", duration = 3, closeButton = FALSE, type = "message")
         validate(need(subjectDF(), "Esperando datos!"))
         
-        # browser()
         # Crear nulos
         epi <- drop <- horaini <- conteo <- duracion <- maximos <- latencia <- CausaEfecto <- par24horas <- NULL
         
