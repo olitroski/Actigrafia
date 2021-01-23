@@ -12,10 +12,10 @@
 
 # ----- Cargar carpeta de trabajo --------------------------------------------- #
 # Actualizar el Package
-rm(list = ls())
-mainfolder <- "D:/OneDrive/INTA/Actigrafia"
-setwd(mainfolder)
-source("D:/OneDrive/INTA/Actigrafia/compiApp.R")
+# rm(list = ls())
+# mainfolder <- "D:/OneDrive/INTA/Actigrafia"
+# setwd(mainfolder)
+# source("D:/OneDrive/INTA/Actigrafia/compiApp.R")
 
 # Espacio de trabajo
 rm(list = ls())
@@ -77,6 +77,11 @@ setwd("C:/Users/olitr/Desktop/testCata")
 awdfile <- "11681_20-03-2017_13_00_00_New_Analysis.AWD"
 set <- getset(getwd())
 
+
+setwd("C:/Users/olitr/Desktop")
+set <- getset(getwd())
+awdfile <- "MonaresAylen.AWD"
+awdfile <- "AsquntanMario.AWD"
 
 # --- Analisis inicial de un sujeto -------------------------------------------
 # Determinar S|W y estado actigrafico

@@ -30,7 +30,7 @@ if (confirmar %in% c("Y", "y", "yes", "YES", "Yes", "si", "s", "S", "Si", "SI", 
     zipname <- paste0("olitoSleep_", version, ".zip")
     packfiles <- list.files(file.path(maindir, "package"), recursive = TRUE)
     zippath <- file.path(maindir, "archivos", zipname)
-    zip(zippath, packfiles)
+    zip::zipr(zippath, packfiles)
 
     # Limpiar
     rm(packfiles, zippath, zipname)
@@ -39,7 +39,7 @@ if (confirmar %in% c("Y", "y", "yes", "YES", "Yes", "si", "s", "S", "Si", "SI", 
     # ---- Cambiar versión ----------------------------------------------------
     options(warn = -1)
     # Capturar y validar nueva version
-    new.version <- readline(paste("Versión actual", version, "indicar valor nuevo: "))
+    new.version <- readline(paste("Version actual", version, "indicar valor nuevo: "))
     # new.version <- "0.0.921"
     check.new <- str_split(new.version, "\\.", simplify = TRUE)
     check.new <- as.numeric(check.new)
@@ -51,7 +51,7 @@ if (confirmar %in% c("Y", "y", "yes", "YES", "Yes", "si", "s", "S", "Si", "SI", 
         stop(paste("Error, la nueva version debe ser superior la actual:", version))
 
     } else {
-        conf.ver <- readline(paste("Confirmar versión", new.version, "[y|n]: "))
+        conf.ver <- readline(paste("Confirmar version", new.version, "[y|n]: "))
         # conf.ver <- "y"
         if (conf.ver != "y"){
             # Salir

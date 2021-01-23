@@ -186,7 +186,7 @@ create.acv <- function(awdfile, set, finalizar = FALSE){
     ws <- "NotOK"
     i <- 1
     while (ws != "Ok"){
-        # Captura el primer STATE y ve cuantos S|W hay hasta que encuentra 5
+        # Captura el primer STATE y ve cuantos S|W hay hasta que encuentra 5 minutos seguidos
         stXmin <- awd$acti[i:(i + tdiff - 1)]
         nW <- length(which(stXmin == "W"))
         nS <- length(which(stXmin == "S"))
@@ -206,6 +206,8 @@ create.acv <- function(awdfile, set, finalizar = FALSE){
     # Para rellenarlos primeros despues
     if (i > 1){
         temp.ini <- 1:(i-1)
+    } else {
+        temp.ini <- 1
     }
 
     # Listo, ahora a contar desde i con "obj::state" como inicial
@@ -230,7 +232,9 @@ create.acv <- function(awdfile, set, finalizar = FALSE){
     # Arreglar el final
     acti.fix[(nrow(awd) - tdiff + 2):nrow(awd)] <- state
     awd$acti2 <- acti.fix
-    awd$acti2[temp.ini] <- NA 
+    if (length(temp.ini) > 1){
+        awd$acti2[temp.ini] <- NA 
+    }
 
     rm(i, nS, nW, state, stXmin, tdiff, ws, x, acti.fix, acti, temp.ini)
 
@@ -254,33 +258,44 @@ create.acv <- function(awdfile, set, finalizar = FALSE){
     # Agregar el nombre el archivos
     awd$filename <- awdfile
 
+
     # <<<< Dejarlo en minutos >>>>>
     if (finalizar == FALSE){
-        # Pasar a minutos y usar pa sumar actividad
-        awd <- dplyr::mutate(awd, newfec = format(time, format = "%Y-%m-%d %H:%M"))
-        awd <- dplyr::group_by(awd, newfec)
         
-        # Sacar los minutos incompletos y etiquetar minimos
-        awd <- mutate(awd, N = n()) %>% filter(N == 4)
-        awd <- mutate(awd, minimo = min(time), minimo = ifelse(minimo == time, 1, 0))
-        
-        # Calcular el resto de las variables
-        awd <- mutate(awd, 
-                      act.raw = sum(act.raw),
-                      act.smooth = sum(act.smooth),
-                      time = min(time),
-                      hrdec = min(hrdec),
-                      act.edit = act.smooth)
-                      
-        # Filtrar y terminar
-        awd <- as.data.frame(awd)
-        awd <- filter(awd, minimo == 1) %>% select(-N, -minimo, -newfec)
-        awd <- mutate(awd, indx = 1:nrow(awd))
-        
-        return(awd)        
+        # Este trozo es solo para epoch menores a 1 minuto
+        if (epoch.len < 60){
+            # Pasar a minutos y usar pa sumar actividad
+            awd <- dplyr::mutate(awd, newfec = format(time, format = "%Y-%m-%d %H:%M"))
+            awd <- dplyr::group_by(awd, newfec)
+            
+            # Sacar los minutos incompletos y etiquetar minimos
+            awd <- mutate(awd, N = n())
+            
+            awd <- mutate(awd, N = n()) %>% filter(N == 4)
+            awd <- mutate(awd, minimo = min(time), minimo = ifelse(minimo == time, 1, 0))
+            
+            # Calcular el resto de las variables
+            awd <- mutate(awd, 
+                          act.raw = sum(act.raw),
+                          act.smooth = sum(act.smooth),
+                          time = min(time),
+                          hrdec = min(hrdec),
+                          act.edit = act.smooth)
+                          
+            # Filtrar y terminar
+            awd <- as.data.frame(awd)
+            awd <- filter(awd, minimo == 1) %>% select(-N, -minimo, -newfec)
+            awd <- mutate(awd, indx = 1:nrow(awd))
+            return(awd)        
+            
+        # Si viene con epoch de 1 minuto no    
+        } else {
+            return(awd)
+        }
 
+    # La idea de esto sería obtener la salida del epoch original
     } else {
-        # --- ahora si, listo  :) ---------- #
         return(awd)
     }
 }
+    
